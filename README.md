@@ -34,6 +34,23 @@ If AYCF/Admin Hub is not installed, use `bash termux/install.sh` without `--with
 
 Private dining has a separate enquiry, proposal, client acceptance and booking confirmation flow. Where a proposal requires payment, a matching invoice must have its payment recorded before booking confirmation. Manual entries are explicitly labelled; this is not payment-provider verification.
 
+## Workout, meal and recipe builder
+
+Open **Alex’s admin → Plan studio**:
+
+- **Plans:** create or duplicate training programmes and meal plans. Add workout sessions, order exercises, and configure sets, reps/duration, rest and notes. Schedule recipes by day/meal with serving notes and a shopping list.
+- **Exercise library:** create, edit, duplicate or archive exercises; add equipment, cues, an optional HTTPS demonstration-video link and a built-in illustrative motion example.
+- **Recipes:** create, edit, duplicate or archive recipes with ingredients, quantities, yield, preparation and substitutions.
+- **Publish to clients:** select an active client request and explicitly publish a new customised version.
+
+Four dummy exercises, three recipes and two sample plans are added once when this update starts in local-test mode. They are labelled **Starter example**, editable, and never assigned automatically. Updating/restarting does not overwrite your changes. Remove the starter label only after replacing/reviewing that record; archive examples you do not want.
+
+Video links open the provider in a new tab; no videos load automatically, and file uploads/video hosting are not connected. Built-in motion illustrations have play/pause and static-pose controls, respect reduced-motion settings and are not a substitute for Alex’s exercise coaching. No third-party videos or fabricated footage of Alex are bundled.
+
+Published client plans snapshot exercise instructions, prescriptions, media URLs, recipes, serving notes and shopping lists. Editing or archiving library content never rewrites an existing assignment. Archiving a referenced item blocks new publication until the template is updated. External video files remain controlled by their host; a URL snapshot cannot preserve a removed or changed remote video.
+
+Update an existing Termux installation with `~/.local/bin/form-fire update`, then refresh the browser. Database migration 002 preserves existing clients and plans. No Admin Hub change is required.
+
 ## Detach later
 
 ```bash
@@ -72,7 +89,7 @@ Open http://127.0.0.1:8085. Read local verification/recovery codes with `npm run
 - Server-enforced roles and ownership, host/origin checks, CSRF, rate limits, safe JSON handling and escaped rendering.
 - Immutable assigned plan snapshots, request transitions/history and metadata-only admin audit events.
 - Integer minor-unit money records, per-currency reporting, payment/refund separation and idempotent manual event keys.
-- No client, plan, testimonial, price or earnings fixtures are seeded in the app. Tests create disposable fictional data in temporary databases.
+- Local testing includes a clearly labelled starter library: four exercises with optional motion examples, three recipes, one workout plan and one meal plan. Nothing is assigned automatically. No client, testimonial, price or earnings fixtures are seeded.
 
 ## Verification and limitations
 

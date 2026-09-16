@@ -13,6 +13,41 @@ Use fictional data while the local-test banner is displayed. Create a unique adm
 - Check-ins are one per Monday-based week for clients with active services. Feedback is private to that client. Optional measurements may be omitted.
 - Client admin notes are private and excluded from client API responses and exports. Do not copy private notes into replies or plans.
 
+## Plan studio: exercises, workouts and food
+
+The **Plans**, **Exercise library**, **Recipes** and **Publish to clients** tabs separate reusable content from client assignments. Search by name in each library. Use Duplicate to start a variation, then save it with its own title. Archive hides an item from new selection while preserving history.
+
+### Exercises and videos
+
+Create an exercise with a name, category, equipment and coaching cues. Attach a complete HTTPS video URL and a written summary. Share only videos you own or have permission to use. YouTube/Vimeo pages and hosted video-file links open in a new tab; file uploads and embedded playback are not implemented. Video changes on the remote host remain outside the app’s control.
+
+Optionally choose a built-in squat, wall press-up, hinge or row illustration. Preview from **Edit & preview**. These are two-pose starter illustrations, off by default, with Play/Pause and Show next pose controls. A reduced-motion preference keeps them static. They are not videos of Alex and are not professional technique assessments. Keep the selected illustration consistent with the exercise, or choose No animation.
+
+### Configuring a workout plan
+
+1. Create a training plan or duplicate the starter week.
+2. Add a workout session. Enter its day/week label and session name.
+3. Add exercises from the library. Set sets, reps or duration, rest in seconds and individual notes.
+4. Use arrows to reorder sessions/exercises. Remove unwanted rows. Add overall structure and guidance; save the template.
+5. In Publish to clients, choose an active request, the template and client-specific adjustments. Publish a new version when ready.
+
+To prescribe different sets or exercises for one client, duplicate and customise the template first. Client adjustments are additional text; they do not automatically modify structured prescriptions.
+
+### Configuring a meal plan
+
+1. Add or adapt recipes with ingredients/quantities, recipe yield, preparation and substitutions.
+2. Create a meal plan. Add scheduled meals with a day/week label, meal name, recipe and serving notes.
+3. Add a shopping list checked against the intended servings. The app does not calculate/scale ingredient quantities, nutrition or allergen safety automatically.
+4. Save, then publish as above. Scheduled recipes are included automatically; Additional recipe collection can include extras.
+
+### Starter examples and stable client versions
+
+The update installs four exercises, three recipes and two sample plans once, only in local-test mode. All are marked Starter example. They are fictional starting points for editing, not client-ready prescriptions or confirmed Alex recipes. They are never automatically assigned. Existing client plans remain unchanged by the upgrade.
+
+The starter label propagates into published snapshots if a template or any included exercise/recipe remains marked. Once you have replaced/reviewed an item, you can clear its label in its editor. Archiving examples is safe: restarting does not restore them. An archived exercise or recipe must be removed/replaced in a template before a new client version can be published.
+
+Saved exercise/recipe/template editors check versions and reject stale edits from another session. Refresh to load the current version. Published plan content is independent of future library edits; past assignments remain accessible even after an item is archived.
+
 ## Services
 
 Create, edit, publish, unpublish or archive a service. Leave price empty for enquiry-only pricing. Record only confirmed prices. Archive preserves request history. No prices or client success claims are invented.

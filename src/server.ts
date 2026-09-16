@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { openDb, id, transaction } from './db.ts';
 import { token, digest, passwordHash, passwordOK, totpOK } from './auth.ts';
+import { LibraryError, exerciseInput, planContent, planSnapshot } from './plan-library.ts';
 
 class HttpError extends Error { status: number; constructor(status:number,message:string){super(message);this.status=status;} }
 function check(ok:any, message:string, status=400): asserts ok { if(!ok) throw new HttpError(status,message); }
@@ -40,7 +41,7 @@ export function createApp(options:{dataDir?:string,origin?:string}={}) {
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
-        const files:Record<string,[string,string]>={'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
+        const files:Record<string,[string,string]>={'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
         const [file,type]=files[p]||['index.html','text/html'];
         res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});return res.end(readFileSync(new URL('../public/'+file,import.meta.url)));
       }
@@ -105,20 +106,58 @@ export function createApp(options:{dataDir?:string,origin?:string}={}) {
       if(p==='/api/account/deletion'&&method==='POST'){signed();if(!get("SELECT id FROM account_requests WHERE user_id=? AND status='requested'",user.id))run('INSERT INTO account_requests(id,user_id,kind) VALUES(?,?,?)',id(),user.id,'deletion');return send(201,{message:'Your deletion request is recorded for administrator review. It has not yet been processed.'});}
       if(p.startsWith('/api/admin/')) {
         admin();
-        if(p==='/api/admin/dashboard'&&method==='GET')return send(200,{clients:all('SELECT * FROM users WHERE role=?','client').map(u=>({...safeUser(u),admin_notes:u.admin_notes})),requests:all('SELECT r.*,u.name client_name,s.title service_title FROM requests r JOIN users u ON u.id=r.user_id JOIN services s ON s.id=r.service_id ORDER BY r.created_at DESC').map(decorateRequest),services:all('SELECT * FROM services'),templates:all('SELECT * FROM templates').map(t=>({...t,content:parse(t.content)})),recipes:all('SELECT * FROM recipes'),assignments:all('SELECT * FROM assignments ORDER BY created_at DESC,rowid DESC').map(a=>({...a,snapshot:parse(a.snapshot)})),checkins:all('SELECT c.*,u.name client_name FROM checkins c JOIN users u ON u.id=c.user_id ORDER BY week DESC'),invoices:all('SELECT i.*,u.name client_name FROM invoices i JOIN users u ON u.id=i.user_id ORDER BY i.created_at DESC').map(decorateInvoice),audit:all('SELECT * FROM audit ORDER BY created_at DESC,rowid DESC LIMIT 100'),account_requests:all('SELECT a.*,u.email FROM account_requests a JOIN users u ON u.id=a.user_id')});
+        if(p==='/api/admin/dashboard'&&method==='GET')return send(200,{clients:all('SELECT * FROM users WHERE role=?','client').map(u=>({...safeUser(u),admin_notes:u.admin_notes})),requests:all('SELECT r.*,u.name client_name,s.title service_title FROM requests r JOIN users u ON u.id=r.user_id JOIN services s ON s.id=r.service_id ORDER BY r.created_at DESC').map(decorateRequest),services:all('SELECT * FROM services'),templates:all('SELECT * FROM templates').map(t=>({...t,content:parse(t.content)})),recipes:all('SELECT * FROM recipes'),exercises:all('SELECT * FROM exercises ORDER BY title'),assignments:all('SELECT * FROM assignments ORDER BY created_at DESC,rowid DESC').map(a=>({...a,snapshot:parse(a.snapshot)})),checkins:all('SELECT c.*,u.name client_name FROM checkins c JOIN users u ON u.id=c.user_id ORDER BY week DESC'),invoices:all('SELECT i.*,u.name client_name FROM invoices i JOIN users u ON u.id=i.user_id ORDER BY i.created_at DESC').map(decorateInvoice),audit:all('SELECT * FROM audit ORDER BY created_at DESC,rowid DESC LIMIT 100'),account_requests:all('SELECT a.*,u.email FROM account_requests a JOIN users u ON u.id=a.user_id')});
         m=p.match(/^\/api\/admin\/services(?:\/([^/]+))?$/);
         if(m&&['POST','PUT'].includes(method)) {const sid=m[1]||id();if(m[1])check(get('SELECT id FROM services WHERE id=?',sid),'Service not found.',404);const values=[text(b.title,'Title',120),choice(b.kind,['train','eat','both','chef'],'service type'),text(b.description,'Description'),text(b.inclusions,'Inclusions'),b.published?1:0,b.archived?1:0,b.price_minor===null||b.price_minor===undefined?null:integer(b.price_minor,'Price',0),currency(b.currency)];if(m[1])run('UPDATE services SET title=?,kind=?,description=?,inclusions=?,published=?,archived=?,price_minor=?,currency=? WHERE id=?',...values,sid);else run('INSERT INTO services(title,kind,description,inclusions,published,archived,price_minor,currency,id) VALUES(?,?,?,?,?,?,?,?,?)',...values,sid);audit(user.id,'service.save',sid);return send(200,{id:sid});}
         m=p.match(/^\/api\/admin\/clients\/([^/]+)$/);if(m&&method==='PUT'){check(get('SELECT id FROM users WHERE id=? AND role=?',m[1],'client'),'Client not found.',404);run('UPDATE users SET admin_notes=? WHERE id=?',text(b.admin_notes||'','Private notes',10000,false),m[1]);audit(user.id,'client.notes',m[1]);return send(200,{ok:true});}
         m=p.match(/^\/api\/admin\/checkins\/([^/]+)$/);if(m&&method==='PUT'){check(get('SELECT id FROM checkins WHERE id=?',m[1]),'Check-in not found.',404);run('UPDATE checkins SET feedback=? WHERE id=?',text(b.feedback,'Feedback'),m[1]);audit(user.id,'checkin.feedback',m[1]);return send(200,{ok:true});}
-        m=p.match(/^\/api\/admin\/recipes(?:\/([^/]+))?$/);if(m&&['POST','PUT'].includes(method)){const rid=m[1]||id(),values=[text(b.title,'Recipe name',200),text(b.ingredients,'Ingredients',10000),text(b.portions,'Portions',1000),text(b.preparation,'Preparation',10000),text(b.substitutions||'','Substitutions',4000,false),b.archived?1:0];if(m[1]){check(get('SELECT id FROM recipes WHERE id=?',rid),'Recipe not found.',404);run('UPDATE recipes SET title=?,ingredients=?,portions=?,preparation=?,substitutions=?,archived=? WHERE id=?',...values,rid);}else run('INSERT INTO recipes(title,ingredients,portions,preparation,substitutions,archived,id) VALUES(?,?,?,?,?,?,?)',...values,rid);audit(user.id,'recipe.save',rid);return send(200,{id:rid});}
-        m=p.match(/^\/api\/admin\/templates(?:\/([^/]+))?$/);if(m&&['POST','PUT'].includes(method)) {const tid=m[1]||id(),kind=choice(b.kind,['training','meal'],'plan type'),title=text(b.title,'Title',200),c=b.content||{};check(Array.isArray(c.recipe_ids||[])&&(c.recipe_ids||[]).length<=50,'Choose up to 50 recipes.');for(const rid of c.recipe_ids||[])check(typeof rid==='string'&&get('SELECT id FROM recipes WHERE id=? AND archived=0',rid),'Recipe unavailable.');const content=JSON.stringify({schedule:text(c.schedule,'Weekly structure',10000),guidance:text(c.guidance,'Exercises or meals and guidance',20000),shopping_list:text(c.shopping_list||'','Shopping list',10000,false),recipe_ids:c.recipe_ids||[]});if(m[1]){const old=get('SELECT * FROM templates WHERE id=?',tid);check(old,'Template not found.',404);check(old.version===b.version,'This template changed. Refresh before saving.',409);check(old.kind===kind,'Create a new template to change its type.');run('UPDATE templates SET title=?,content=?,version=version+1,archived=? WHERE id=?',title,content,b.archived?1:0,tid);}else run('INSERT INTO templates(id,title,kind,content) VALUES(?,?,?,?)',tid,title,kind,content);audit(user.id,'template.save',tid);return send(200,{id:tid});}
-        if(p==='/api/admin/assignments'&&method==='POST') {const r=get('SELECT * FROM requests WHERE id=?',text(b.request_id,'Request',100)),t=get('SELECT * FROM templates WHERE id=? AND archived=0',text(b.template_id,'Template',100));check(r&&r.active&&r.kind==='coaching','Choose an active coaching request.',409);check(t,'Choose an available template.');const c=parse(t.content);const snapshot={...c,recipe_ids:undefined,recipes:c.recipe_ids.map((rid:string)=>get('SELECT title,ingredients,portions,preparation,substitutions FROM recipes WHERE id=?',rid)),customisation:text(b.customisation||'','Client adjustments',10000,false)};const aid=id();transaction(db,()=>{const version=get('SELECT COALESCE(MAX(version),0)+1 n FROM assignments WHERE request_id=? AND kind=?',r.id,t.kind).n;run('INSERT INTO assignments(id,user_id,request_id,template_id,template_version,version,title,kind,snapshot) VALUES(?,?,?,?,?,?,?,?,?)',aid,r.user_id,r.id,t.id,t.version,version,t.title,t.kind,JSON.stringify(snapshot));audit(user.id,'plan.publish',aid);});return send(201,{id:aid});}
+        m=p.match(/^\/api\/admin\/exercises(?:\/([^/]+))?$/);
+        if(m&&['POST','PUT'].includes(method)) {
+          const eid=m[1]||id(), e=exerciseInput(b);
+          const values=[e.title,e.category,e.equipment,e.instructions,e.video_url,e.video_caption,e.animation,e.is_demo,e.archived];
+          if(m[1]) {
+            const old=get('SELECT * FROM exercises WHERE id=?',eid);check(old,'Exercise not found.',404);
+            check(b.version===old.version,'This exercise changed. Refresh before saving.',409);
+            run('UPDATE exercises SET title=?,category=?,equipment=?,instructions=?,video_url=?,video_caption=?,animation=?,is_demo=?,archived=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?',...values,eid);
+          } else run('INSERT INTO exercises(title,category,equipment,instructions,video_url,video_caption,animation,is_demo,archived,id) VALUES(?,?,?,?,?,?,?,?,?,?)',...values,eid);
+          audit(user.id,'exercise.save',eid);return send(200,{id:eid});
+        }
+        m=p.match(/^\/api\/admin\/recipes(?:\/([^/]+))?$/);
+        if(m&&['POST','PUT'].includes(method)) {
+          const rid=m[1]||id(), old=m[1]?get('SELECT * FROM recipes WHERE id=?',rid):null;
+          if(m[1]) {check(old,'Recipe not found.',404);check(b.version===old.version,'This recipe changed. Refresh before saving.',409);}
+          const values=[text(b.title,'Recipe name',200),text(b.ingredients,'Ingredients',10000),text(b.portions,'Portions',1000),text(b.preparation,'Preparation',10000),text(b.substitutions||'','Substitutions',4000,false),b.archived?1:0,b.is_demo?1:0];
+          if(old)run('UPDATE recipes SET title=?,ingredients=?,portions=?,preparation=?,substitutions=?,archived=?,is_demo=?,version=version+1 WHERE id=?',...values,rid);
+          else run('INSERT INTO recipes(title,ingredients,portions,preparation,substitutions,archived,is_demo,id) VALUES(?,?,?,?,?,?,?,?)',...values,rid);
+          audit(user.id,'recipe.save',rid);return send(200,{id:rid});
+        }
+        m=p.match(/^\/api\/admin\/templates(?:\/([^/]+))?$/);
+        if(m&&['POST','PUT'].includes(method)) {
+          const tid=m[1]||id(),kind=choice(b.kind,['training','meal'],'plan type'),title=text(b.title,'Title',200);
+          const content=JSON.stringify(planContent(db,kind,b.content||{}));
+          if(m[1]) {
+            const old=get('SELECT * FROM templates WHERE id=?',tid);check(old,'Template not found.',404);
+            check(old.version===b.version,'This template changed. Refresh before saving.',409);
+            check(old.kind===kind,'Create a new template to change its type.');
+            run('UPDATE templates SET title=?,content=?,version=version+1,archived=?,is_demo=? WHERE id=?',title,content,b.archived?1:0,b.is_demo?1:0,tid);
+          } else run('INSERT INTO templates(id,title,kind,content,is_demo) VALUES(?,?,?,?,?)',tid,title,kind,content,b.is_demo?1:0);
+          audit(user.id,'template.save',tid);return send(200,{id:tid});
+        }
+        if(p==='/api/admin/assignments'&&method==='POST') {
+          const r=get('SELECT * FROM requests WHERE id=?',text(b.request_id,'Request',100)),t=get('SELECT * FROM templates WHERE id=? AND archived=0',text(b.template_id,'Template',100));
+          check(r&&r.active&&r.kind==='coaching','Choose an active coaching request.',409);check(t,'Choose an available template.');
+          const snapshot=planSnapshot(db,t,text(b.customisation||'','Client adjustments',10000,false));
+          const aid=id();transaction(db,()=>{
+            const version=get('SELECT COALESCE(MAX(version),0)+1 n FROM assignments WHERE request_id=? AND kind=?',r.id,t.kind).n;
+            run('INSERT INTO assignments(id,user_id,request_id,template_id,template_version,version,title,kind,snapshot) VALUES(?,?,?,?,?,?,?,?,?)',aid,r.user_id,r.id,t.id,t.version,version,t.title,t.kind,JSON.stringify(snapshot));audit(user.id,'plan.publish',aid);
+          });return send(201,{id:aid});
+        }
         if(p==='/api/admin/invoices'&&method==='POST') {const r=get('SELECT * FROM requests WHERE id=?',text(b.request_id,'Request',100));check(r&&r.status==='approved','Choose an approved request.',409);const amount=integer(b.amount_minor,'Amount',1),cur=currency(b.currency),description=text(b.description,'Description',1000),iid=id();run('INSERT INTO invoices(id,user_id,request_id,description,amount_minor,currency,price_snapshot) VALUES(?,?,?,?,?,?,?)',iid,r.user_id,r.id,description,amount,cur,JSON.stringify({description,amount_minor:amount,currency:cur,package:parse(r.package),proposal:parse(r.proposal)}));audit(user.id,'invoice.create',iid);return send(201,{id:iid});}
         if(p==='/api/admin/payments'&&method==='POST') {const iid=text(b.invoice_id,'Invoice',100),event=text(b.event_key,'Reference key',100),amount=integer(b.amount_minor,'Amount',1),kind=choice(b.kind,['payment','refund'],'entry type'),reference=text(b.reference,'Payment reference',300);const result=transaction(db,()=>{const old=get('SELECT * FROM payments WHERE event_key=?',event);if(old){check(old.invoice_id===iid&&old.amount_minor===amount&&old.kind===kind&&old.reference===reference,'This reference key was used for a different entry.',409);return {id:old.id,duplicate:true};}const invoice=get('SELECT * FROM invoices WHERE id=?',iid);check(invoice,'Invoice not found.',404);const i=decorateInvoice(invoice);check(kind==='payment'?amount<=i.outstanding_minor:amount<=i.paid_minor-i.refunded_minor,kind==='payment'?'Payment exceeds the outstanding balance.':'Refund exceeds the amount paid.',409);const pid=id();run('INSERT INTO payments(id,invoice_id,kind,amount_minor,event_key,reference) VALUES(?,?,?,?,?,?)',pid,iid,kind,amount,event,reference);audit(user.id,'manual.'+kind,pid);return {id:pid};});return send(201,result);}
         if(p==='/api/admin/earnings'&&method==='GET') {const from=date(url.searchParams.get('from'),'start date'),to=date(url.searchParams.get('to'),'end date');check(from<=to,'End date must follow start date.');const rows=all(`SELECT i.currency,s.title service,SUM(CASE WHEN p.kind='payment' THEN p.amount_minor ELSE 0 END) paid_minor,SUM(CASE WHEN p.kind='refund' THEN p.amount_minor ELSE 0 END) refunded_minor FROM payments p JOIN invoices i ON i.id=p.invoice_id JOIN requests r ON r.id=i.request_id JOIN services s ON s.id=r.service_id WHERE date(p.created_at) BETWEEN ? AND ? GROUP BY i.currency,s.id`,from,to);return send(200,{from,to,source:'manual records, not independently verified',rows,outstanding:all('SELECT * FROM invoices').map(decorateInvoice).filter(i=>i.outstanding_minor>0).map(i=>({id:i.id,currency:i.currency,outstanding_minor:i.outstanding_minor})),outstanding_basis:'All-time current balances; refunds reported separately. Proposals excluded.'});}
       }
       throw new HttpError(404,'Not found.');
-    }catch(e:any){send(e instanceof HttpError?e.status:500,{error:e instanceof HttpError?e.message:'Something went wrong. Please try again.'});}
+    }catch(e:any){send(e instanceof HttpError||e instanceof LibraryError?e.status:500,{error:e instanceof HttpError||e instanceof LibraryError?e.message:'Something went wrong. Please try again.'});}
   });
   return {server,db};
 }

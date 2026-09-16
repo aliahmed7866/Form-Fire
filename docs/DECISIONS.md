@@ -34,3 +34,12 @@ Approved brand/name/domain; Alex-approved copy and biography; verified qualifica
 ## Deferred
 
 Realtime chat, complex scheduling, wearables, community, AI meals, referrals and advanced analytics remain outside the essential release.
+
+## Plan library update
+
+- User requested configurable workouts, optional demonstrations, dummy starting content and equivalent meal/recipe support.
+- Added schema migration 002 for exercises and library version/demo metadata; a separate local-test starter pack installs once and preserves edits across restarts.
+- Workout templates store ordered sessions/exercise prescriptions. Meal templates store scheduled recipe selections and serving notes. Assignment publishing resolves full exercise/media/recipe snapshots.
+- Demonstration links use validated public HTTPS URLs and open only on explicit action. No uploads, iframe embeds or remote-media fetching were added. External hosts can still change their video content.
+- Original SVG/CSS two-pose illustrations provide optional local motion examples, with explicit controls and reduced-motion support. No stock footage is represented as Alex.
+- Shopping lists remain authored text; automatic ingredient scaling, nutritional calculations, exercise tracking and client video uploads remain out of scope.

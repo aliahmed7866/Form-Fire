@@ -38,3 +38,11 @@ The cloud browser returned `net::ERR_BLOCKED_BY_CLIENT` for the loopback preview
 - Check manual report date range and separate currency/refund amounts. Use fictional figures only.
 - Restart the service and confirm persistence. Back up, stop, restore into a test copy and check records.
 - Detach from hub and verify the app and data remain usable; reattach and check there is one tile.
+
+## Plan library update verification
+
+`npm test`: 23 reported tests passed (including two suite parents), plus the existing two Python hub tests. Syntax and whitespace checks passed.
+
+Added checks for upgrading a populated schema-1 database, preserving old template content/client records, installing starter examples only once, preserving edited/archived examples after reopening, and creating no automatic assignments. API tests exercise admin-only library mutations, structured exercise prescriptions and ordering, changed media/cues, stale edit rejection, validation of sets/rest/references, day/meal recipe snapshots, shopping lists, archive publication gates, stable historical assignments, client isolation and exports. URL validation rejects executable schemes, credentials, local addresses and iframe snippets. Markup tests verify escaping, explicit video links without automatic media loading, inactive default animation controls and old-plan rendering compatibility. Shared-script tests also render every admin studio view and both sample plan editors.
+
+The prior local-preview browser restriction remains: these are HTTP/database and markup tests, not a new claim of rendered visual or physical Android verification. On the phone, check the four Plan studio tabs, adding/removing/reordering rows, animation Play/Pause/Next pose, reduced-motion mode, video links, and a sample plan in a separate client session.

@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readFileSync, chmodSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { installStarterContent } from './starter-content.ts';
 export const id = () => randomUUID();
 export function openDb(dir: string) {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
@@ -10,11 +11,16 @@ export function openDb(dir: string) {
   chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY)');
-  if (!db.prepare('SELECT version FROM migrations WHERE version=1').get()) {
-    db.exec('BEGIN');
-    try { db.exec(readFileSync(new URL('../migrations/001_initial.sql', import.meta.url), 'utf8')); db.exec('INSERT INTO migrations VALUES(1); COMMIT'); }
-    catch(e) { db.exec('ROLLBACK'); throw e; }
+  for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql']] as const) {
+    if (db.prepare('SELECT version FROM migrations WHERE version=?').get(version)) continue;
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
+      db.prepare('INSERT INTO migrations VALUES(?)').run(version);
+      db.exec('COMMIT');
+    } catch(e) { db.exec('ROLLBACK'); throw e; }
   }
+  if ((process.env.FF_MODE || 'local-test') === 'local-test') installStarterContent(db);
   // Confirmed service categories; no fabricated prices or client/financial seed data.
   const services = [
     ['train','Online personal training','train','Build strength at your pace, with support that fits your life.','Online coaching · A programme built around you · Weekly check-ins'],
