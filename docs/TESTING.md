@@ -62,3 +62,11 @@ On the phone, publish the starter workout and meal plans to a verified fictional
 - Review the client’s logs in Alex’s Client progress, including date filtering and the note. Confirm a second client cannot see them.
 - Publish a replacement version. Confirm the previous logs remain in weekly history and export, and new actions use the replacement plan.
 - Check mobile layout, keyboard navigation, animation controls and reduced-motion behaviour within expanded daily cards.
+
+## Visual identity update verification
+
+The existing 41 application tests passed. A separate smoke check rendered 20 public/client/admin view templates, found no error notices or unbalanced HTML tags, and verified that every referenced illustration exists. All five new SVG assets return HTTP 200 with the correct SVG content type.
+
+The original and companion illustrations were rasterised with Sharp and visually inspected; the logo was checked at 24, 48 and 128 pixels. Source review covered the 390px and 768px breakpoint rules, navigation, form layouts and artwork sizing. The artwork renderer is a development convenience, not an app dependency.
+
+The cloud browser again blocked the loopback preview with `net::ERR_BLOCKED_BY_CLIENT`. These checks do not constitute a rendered full-page mobile/desktop review. After updating on the phone, check the new header/footer mark, all three Train/Eat/Both states, service and sign-in layouts, client plan covers, Today, check-ins and Plan studio. Confirm the form actions and tabs remain convenient at the device’s text size.

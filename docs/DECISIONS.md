@@ -51,3 +51,10 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Show an explicit date and named time zone. Exact weekdays recur weekly; Daily/Every day recur daily. Other schedule labels remain flexible. Allow recording from publication through today, up to 90 days back; future dates are previews.
 - Ended services and replaced plan versions remain readable but cannot receive activity edits. Historical records stay tied to their original version and are included in exports and deletion.
 - Admin progress reports use recorded local dates over ranges of up to 90 days. Counts describe logs, not adherence, outcomes or unique sessions across replacement versions. Admins cannot impersonate client completion.
+
+## Visual identity update
+
+- Retain the original textured dumbbell-and-food hero. Extend its sage, charcoal, citrus and terracotta palette through four original SVG still-life illustrations: training equipment, nourishing food, a dining place setting and a notebook with everyday essentials.
+- Introduce a compact F/flame mark for the header, footer and SVG favicon. Keep the provisional FORM & FIRE name replaceable.
+- Use illustrations on services, enquiries, sign-in, client overview/plans/check-ins, Today and the plan studio. These are general brand illustrations, not pictures of Alex or client-specific meals, and are not exercise technique instructions.
+- Refine responsive typography, navigation, cards and form controls while retaining existing routes and workflows. Keep SVG assets local and explicitly allowlisted by the server; no image service, font CDN, extra runtime package or database migration is required.

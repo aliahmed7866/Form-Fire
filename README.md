@@ -59,6 +59,12 @@ The week view shows recorded activity, with no streaks or adherence scores. Exac
 
 **Alex’s admin → Client progress** shows client-reported counts and notes for a selected range of up to 90 days. Logs remain attached to the exact published plan version. Publishing a replacement or ending a service keeps previous logs in history and export, but those older items can no longer be edited. Clients can access only their own activity; Alex can review it but cannot record on their behalf. Client exports and account deletion include activity records.
 
+## Artwork and interface
+
+The original training-and-food hero is joined by four matching illustrations for training, meals, private dining and everyday check-ins. A new F/flame mark appears in the header, footer and browser tab. The artwork is bundled as small SVG files, with no external image service or font dependency.
+
+Services, sign-in, client plans, Today and Alex’s plan studio share the same visual identity, with responsive layouts, labelled navigation and larger form controls. Illustrations are general brand artwork, not photographs of Alex, clients or a particular assigned recipe. Update with `~/.local/bin/form-fire update` and refresh the browser.
+
 ## Detach later
 
 ```bash

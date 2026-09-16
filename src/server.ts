@@ -42,7 +42,7 @@ export function createApp(options:{dataDir?:string,origin?:string}={}) {
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
-        const files:Record<string,[string,string]>={'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
+        const files:Record<string,[string,string]>={'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
         const [file,type]=files[p]||['index.html','text/html'];
         res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});return res.end(readFileSync(new URL('../public/'+file,import.meta.url)));
       }
