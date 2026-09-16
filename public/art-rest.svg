@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>A comfortable reading chair beside a moonlit window</title>
+  <defs><pattern id="rest-grain" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="2" r=".65" fill="#253622" opacity=".1"/><circle cx="7" cy="7" r=".5" fill="#fff" opacity=".3"/></pattern></defs>
+  <path fill="#c5cbb0" d="M0 0h800v600H0z"/><path fill="#d7d8bd" d="M0 450h800v150H0z"/>
+  <rect x="478" y="47" width="220" height="304" rx="104" fill="#e9e5cc"/>
+  <path d="M492 342V157a96 96 0 0 1 192 0v185z" fill="#435540"/>
+  <path d="M626 96a39 39 0 1 0 29 58 31 31 0 0 1-29-58" fill="#e0e899"/>
+  <g class="art-glow" fill="#e8e4c5"><circle cx="539" cy="177" r="3"/><circle cx="650" cy="211" r="3"/><path d="m580 113 2 8 8 2-8 2-2 8-2-8-8-2 8-2zM617 254l2 8 8 2-8 2-2 8-2-8-8-2 8-2z"/></g>
+  <path d="M493 301q65-61 110-11t81 2v50H493" fill="#63764e"/>
+  <path d="M588 72v270M493 221h191" stroke="#d3d1b4" stroke-width="9"/>
+  <path d="M466 75h31v291q-31 8-45 1zM688 75h32l22 292q-28 0-45-5z" fill="#acb68d"/><path d="M476 98 465 350m242-251 19 251" stroke="#d0d4b0" stroke-width="3"/>
+  <ellipse cx="324" cy="520" rx="243" ry="39" fill="#aeb793"/>
+  <path d="m174 458-18 68h20l31-68m228 0 29 68h20l-17-68" fill="#3c4b36"/>
+  <path d="M149 420V231q0-82 92-82h138q90 0 90 85v186z" fill="#8e9c72"/>
+  <path d="M172 411V235q0-60 66-60h137q68 0 68 63v174z" fill="#a0ad83"/>
+  <path d="M183 422q125-36 251 0v44H183z" fill="#bec7a0"/>
+  <rect x="128" y="328" width="66" height="147" rx="29" fill="#83936a"/><rect x="425" y="328" width="66" height="147" rx="29" fill="#87976c"/>
+  <path d="M155 345v98m298-98v98" stroke="#bcc6a0" stroke-width="4" opacity=".45"/>
+  <rect x="186" y="421" width="249" height="64" rx="24" fill="#83946b"/><path d="M202 436h214" stroke="#b4c09a" stroke-width="3"/>
+  <g transform="rotate(-9 292 285)"><rect x="228" y="225" width="123" height="121" rx="19" fill="#bd7658"/><path d="M241 237q50 10 97 0M241 331q50-9 97 0M242 240q9 44 0 88m93-88q-8 44 0 88" fill="none" stroke="#e1a17a" stroke-width="2"/><circle cx="290" cy="285" r="6" fill="#d7956e"/></g>
+  <path d="M335 380q36-18 65 0l2 107-75 17z" fill="#e7dfbf"/><path d="m345 384-9 113m21-116-7 112m22-114-7 111m22-108-4 105" stroke="#c4bc9a" stroke-width="2"/><path d="m327 503-2 10m15-12-2 10m15-12-2 10m15-12-2 10m15-12-2 10m15-12-2 10" stroke="#e7dfbf" stroke-width="4"/>
+  <path d="M542 412v115m135-115v115" stroke="#48583d" stroke-width="13" stroke-linecap="round"/><ellipse cx="609" cy="410" rx="87" ry="24" fill="#6c7c55"/><ellipse cx="609" cy="404" rx="87" ry="22" fill="#8e9c70"/>
+  <path d="m537 392 48-38 50 24-10 33-40-15-43 7z" fill="#a8553e"/><path d="m540 385 45-32 43 18-8 33-35-14-41 8z" fill="#f4eed4"/><path d="m585 355-1 34m-33-4 26-17m-24 24 25-15m18-13 22 9m-24 0 23 8m-25 0 23 8" fill="none" stroke="#cfcbb0" stroke-width="2"/>
+  <path d="M632 359h32v25q0 14-16 14t-16-14z" fill="#dce880"/><path d="M664 364q20 0 18 13t-18 10" fill="none" stroke="#dce880" stroke-width="8"/><ellipse cx="648" cy="359" rx="16" ry="5" fill="#52643c"/>
+  <g class="art-steam" fill="none" stroke="#f1ecd3" stroke-width="4" stroke-linecap="round"><path d="M641 343c-12-13 10-16 0-30M655 344c-9-11 11-18 2-29"/></g>
+  <path fill="url(#rest-grain)" d="M0 0h800v600H0z"/>
+</svg>

@@ -2,6 +2,16 @@
 
 Use fictional data while the local-test banner is displayed. Create a unique admin with the terminal command in the README; there are no shared default credentials. Sign in with your password and TOTP authenticator code. Ordinary signup cannot create administrators.
 
+## Try the panel with examples
+
+Run `~/.local/bin/form-fire admin setup-admin-test` in Termux, then choose **Alex’s admin sign-in** on the sign-in page. The dedicated email is `admin-test@form-fire.example`; its unique password and authenticator key are printed only on first creation. `~/.local/bin/form-fire admin read-test-otp` gives a current local test code. Normal password + TOTP checks remain mandatory.
+
+The command explicitly adds Example · Jamie with a pending request and Example · Sam with an active service and welcome check-in. Unedited starter plans are copied into Sam’s assignments when available; archived or changed starter content is left alone. There are no sample payments or invented progress results. Repeating setup preserves all credentials and edits, and does not recreate deleted examples.
+
+For recovery, `~/.local/bin/form-fire admin recover-admin-test` creates a one-use, hour-long password reset code. Enter it on Reset password; this changes the password only when submitted and keeps the existing authenticator. Commands refuse to repurpose an unrelated account with a reserved example email.
+
+Open **Setup & testing** for the admin walkthrough and optional Google connection guide. Google sign-in is for clients; it cannot create or enter an admin account.
+
 ## Coaching
 
 - Open Requests. Move a submitted request to **under review**.

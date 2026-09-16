@@ -58,3 +58,10 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Introduce a compact F/flame mark for the header, footer and SVG favicon. Keep the provisional FORM & FIRE name replaceable.
 - Use illustrations on services, enquiries, sign-in, client overview/plans/check-ins, Today and the plan studio. These are general brand illustrations, not pictures of Alex or client-specific meals, and are not exercise technique instructions.
 - Refine responsive typography, navigation, cards and form controls while retaining existing routes and workflows. Keep SVG assets local and explicitly allowlisted by the server; no image service, font CDN, extra runtime package or database migration is required.
+
+## Google sign-in, lifestyle and admin testing
+
+- Added opt-in Google client identity through an authorisation-code flow with PKCE, browser-bound single-use state, nonce and signature/claim verification. Migration 004 stores stable identity mappings and short-lived transactions. Email collisions never silently link accounts; Google cannot bypass admin password/TOTP. Credentials and real provider verification remain owner setup tasks.
+- Added a dedicated admin-test CLI setup, current-code and recovery commands. Fictional examples are explicit, marked, idempotent and never installed on normal startup. Existing credentials and edited starter content are preserved.
+- Added distinct original outdoors, rest, kitchen and movement drawings. Only small decorative details animate, on request, for 4.8 seconds; reduced motion keeps them still. No playback or lifestyle browsing becomes health/adherence data.
+- Added Feel-good ideas, a gentle daily invitation, focused client/admin sign-in and in-app setup guides. Copy centres enjoyable food, accessible movement, rest and personal choice without weight targets, streaks or promised outcomes.

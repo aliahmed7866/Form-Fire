@@ -6,6 +6,7 @@ import { openDb, id, transaction } from './db.ts';
 import { token, digest, passwordHash, passwordOK, totpOK } from './auth.ts';
 import { LibraryError, exerciseInput, planContent, planSnapshot } from './plan-library.ts';
 import { ActivityError, activityRange, clientActivity, saveActivity, adminActivity } from './activity.ts';
+import { createGoogleAuth, GoogleAuthError, type GoogleConfig } from './google-auth.ts';
 
 class HttpError extends Error { status: number; constructor(status:number,message:string){super(message);this.status=status;} }
 function check(ok:any, message:string, status=400): asserts ok { if(!ok) throw new HttpError(status,message); }
@@ -17,10 +18,11 @@ function date(v:any,name:string) {const valid=typeof v==='string'&&/^\d{4}-\d{2}
 const parse=(v:any)=>v ? JSON.parse(v) : null;
 const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified:!!u.verified,profile:parse(u.profile)});
 const transitions:Record<string,string[]>={submitted:['under_review','withdrawn'],under_review:['awaiting_client_response','approved','declined','withdrawn'],awaiting_client_response:['under_review','withdrawn'],approved:['withdrawn'],declined:[],withdrawn:[]};
-export function createApp(options:{dataDir?:string,origin?:string}={}) {
+export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch}={}) {
   check((process.env.FF_MODE||'local-test')==='local-test','Only local-test mode is implemented; do not use real client data.');
   const db=openDb(options.dataDir||process.env.FF_DATA_DIR||'data');
   const origin=options.origin||process.env.FF_ORIGIN||`http://127.0.0.1:${process.env.FF_PORT||8085}`;
+  const google=createGoogleAuth(db,origin,options.google,options.googleFetch);
   const rate=new Map<string,{count:number,until:number}>();
   const dummyHash=passwordHash(token());
   const get=(sql:string,...args:any[])=>db.prepare(sql).get(...args) as any;
@@ -42,7 +44,7 @@ export function createApp(options:{dataDir?:string,origin?:string}={}) {
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
-        const files:Record<string,[string,string]>={'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
+        const files:Record<string,[string,string]>={'/experience.js':['experience.js','text/javascript'],'/lifestyle-art.js':['lifestyle-art.js','text/javascript'],'/google-mark.svg':['google-mark.svg','image/svg+xml'],'/art-outdoors.svg':['art-outdoors.svg','image/svg+xml'],'/art-rest.svg':['art-rest.svg','image/svg+xml'],'/art-kitchen.svg':['art-kitchen.svg','image/svg+xml'],'/art-stretch.svg':['art-stretch.svg','image/svg+xml'],'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
         const [file,type]=files[p]||['index.html','text/html'];
         res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});return res.end(readFileSync(new URL('../public/'+file,import.meta.url)));
       }
@@ -61,7 +63,25 @@ export function createApp(options:{dataDir?:string,origin?:string}={}) {
       const ownedRequest=(requestId:string)=>{signed();const r=get('SELECT * FROM requests WHERE id=?',requestId);check(r&&(r.user_id===user.id||user.role==='admin'),'Request not found.',404);return r;};
       function limit(bucket:string,max:number) { const now=Date.now(),key=`${req.socket.remoteAddress}:${bucket}`; if(rate.size>10000)for(const [k,v]of rate)if(v.until<now)rate.delete(k);const r=rate.get(key);if(!r||r.until<now)rate.set(key,{count:1,until:now+900000});else{r.count++;check(r.count<=max,'Too many attempts. Please wait 15 minutes.',429);} }
       const b=method!=='GET'?await body(req):{};
-      if(p==='/api/session'&&method==='GET')return send(200,{user:user?safeUser(user):null,csrf:session?.csrf,mode:'local-test',connections:{email:false,managedAuth:false,payments:false,uploads:false}});
+      if(p==='/api/session'&&method==='GET')return send(200,{user:user?safeUser(user):null,csrf:session?.csrf,mode:'local-test',connections:{email:false,managedAuth:false,payments:false,uploads:false,google:google.enabled}});
+      if(p==='/api/auth/google/status'&&method==='GET')return send(200,{enabled:google.enabled,redirect_uri:google.redirectUri});
+      if(['/api/auth/google/start','/api/auth/google/callback'].includes(p)&&method==='GET') {
+        const browser=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('ff_google='))?.slice(10);
+        const redirect=(location:string)=>{res.writeHead(303,{Location:location});res.end();};
+        try {
+          if(p.endsWith('/start')) {
+            check(!req.headers.origin||req.headers.origin===origin,'Start Google sign-in from this app.',403);
+            check(!req.headers['sec-fetch-site']||['same-origin','none'].includes(String(req.headers['sec-fetch-site'])),'Start Google sign-in from this app.',403);
+            limit('google',20);
+            const flow=google.begin(url.searchParams.get('next'),browser);res.setHeader('Set-Cookie',flow.cookie);return redirect(flow.location);
+          }
+          res.setHeader('Set-Cookie',google.clearCookie());
+          const result=await google.complete(url.searchParams,browser);
+          const t=token(),csrf=token();
+          transaction(db,()=>{if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',digest(t),result.userId,csrf,Date.now()+8*3600000);});
+          res.setHeader('Set-Cookie',[google.clearCookie(),`ff_session=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${origin.startsWith('https:')?'; Secure':''}`]);return redirect('/#'+result.next);
+        }catch(error){if(error instanceof HttpError)throw error;res.setHeader('Set-Cookie',google.clearCookie());return redirect('/#/login?google_error='+(error instanceof GoogleAuthError?error.code:'unavailable'));}
+      }
       if(p==='/api/services'&&method==='GET')return send(200,all('SELECT * FROM services WHERE published=1 AND archived=0'));
       if(p==='/api/auth/register'&&method==='POST') {
         limit('auth',20);const email=text(b.email,'Email',254).toLowerCase();check(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),'Enter a valid email.');const name=text(b.name,'Name',100),pw=text(b.password,'Password',128);check(pw.length>=12,'Use at least 12 characters for your password.');

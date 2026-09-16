@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>Colourful vegetables and a pot ready for a relaxed cooking session</title>
+  <defs><pattern id="kitchen-grain" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="2" r=".65" fill="#253622" opacity=".1"/><circle cx="7" cy="7" r=".5" fill="#fff" opacity=".3"/></pattern><pattern id="kitchen-tile" width="100" height="100" patternUnits="userSpaceOnUse"><path fill="#dce0c3" d="M0 0h100v100H0z"/><path d="M0 100V0h100" fill="none" stroke="#bec7a1" stroke-width="3"/></pattern></defs>
+  <path fill="url(#kitchen-tile)" d="M0 0h800v600H0z"/><path d="M0 307h800v293H0z" fill="#b0bc95"/><path d="M0 323h800v12H0z" fill="#8f9f77"/>
+  <path d="m495 59 203 2-51 184-205-2z" fill="#ecedd2" opacity=".35"/>
+  <rect x="86" y="330" width="320" height="44" rx="10" fill="#526344"/><path d="M103 330h286" stroke="#7d8e60" stroke-width="5"/>
+  <ellipse cx="244" cy="322" rx="107" ry="21" fill="#354e35"/>
+  <path d="M139 214h210v96q0 24-104 24t-106-24z" fill="#ad634b"/><path d="M155 220h14v89" stroke="#d98e67" stroke-width="5" opacity=".65"/>
+  <path d="M137 230h-27q-20 0-20 20t20 20h27m214-40h27q20 0 20 20t-20 20h-27" fill="none" stroke="#47573c" stroke-width="14"/>
+  <ellipse cx="244" cy="213" rx="107" ry="26" fill="#e1a27a"/><ellipse cx="244" cy="212" rx="94" ry="18" fill="#c17b4e"/>
+  <g fill="#d9b66f"><ellipse cx="204" cy="210" rx="17" ry="6"/><ellipse cx="272" cy="217" rx="14" ry="5"/></g><g fill="#748a4b"><path d="m236 205 22-4 9 7-28 4zM296 208l17-5 11 5-18 5zM173 212l14-5 8 5-15 4z"/></g>
+  <g class="art-steam" fill="none" stroke="#f5f0d8" stroke-width="7" stroke-linecap="round"><path d="M208 182c-24-23 25-41 4-65M243 169c-25-25 28-49 5-79M281 181c-20-20 27-37 6-61"/></g>
+  <g transform="rotate(-9 518 437)"><rect x="321" y="364" width="387" height="179" rx="29" fill="#8b8057" opacity=".25" transform="translate(10 13)"/><rect x="311" y="354" width="387" height="179" rx="29" fill="#dab77f"/><path d="M335 370h338v147H335z" fill="none" stroke="#bc995f" stroke-width="2"/><path d="M339 392h139m-139 15h114m68 88h139m-85 8h82" stroke="#efd09a" stroke-width="2" opacity=".7"/>
+    <g fill="#bc5538"><path d="M387 404c-36-33-75 1-51 30 27 30 64 30 85 9 26-25-4-53-34-39"/><path d="M482 437c-33-23-62 4-43 28 18 22 56 24 74 1 15-24-10-43-31-29"/></g>
+    <path d="m380 406 7-19 3 17 18-7-11 14 13 8-21-4-15 8 5-15-12-8z" fill="#617844"/><path d="m479 441 3-15 6 12 15-5-10 12 9 7-16-5-13 4 3-10z" fill="#738b4b"/>
+    <path d="M534 394q12-16 27-1l-22 105q-7 7-12-1z" fill="#d58a48"/><path d="m535 412 15 4m-19 15 15 4m-18 15 12 4m-16 14 12 4" stroke="#f2b575" stroke-width="3"/>
+    <path d="m548 394-12-25m15 22 13-28m-17 23 2-30" stroke="#688044" stroke-width="7" stroke-linecap="round"/>
+    <g fill="#a9b878" stroke="#d9e2a7" stroke-width="4"><ellipse cx="610" cy="437" rx="25" ry="23"/><ellipse cx="646" cy="459" rx="25" ry="23"/><ellipse cx="601" cy="484" rx="25" ry="23"/></g><g fill="#e7ecc2"><path d="m610 422 5 13-10 2zM595 442l13-4 2 10zM618 448l-5-10 12-1zM646 444l5 13-10 2zM631 464l13-4 2 10zM654 470l-5-10 12-1zM601 469l5 13-10 2zM586 489l13-4 2 10zM609 495l-5-10 12-1z"/></g>
+  </g>
+  <g class="art-sway"><path d="M591 204q-5-73 16-125m0 119q41-44 65-76m-77 85q-37-48-42-76" fill="none" stroke="#617d43" stroke-width="6"/><g fill="#79924f"><path d="M600 142c-40-3-45-27-23-45 26 2 29 20 23 45M607 116c-2-40 23-48 41-28-2 29-20 31-41 28M627 176c-12-39 5-62 32-50 9 25-8 46-32 50M567 165c-39 7-54-13-38-35 24-2 37 8 38 35M658 143c0-38 18-46 43-30-1 25-16 33-43 30"/></g></g>
+  <path d="M555 204h97l-13 105q-33 17-71 0z" fill="#e6e3c7"/><ellipse cx="603" cy="204" rx="48" ry="10" fill="#73885a"/><path d="m568 220 8 77m16-76 2 80m18-80-1 80m20-81-6 77" stroke="#c7caaa" stroke-width="3"/>
+  <g transform="rotate(-28 181 481)"><path d="M164 407h23v114q0 17-11 17t-12-17z" fill="#475b3b"/><ellipse cx="175" cy="392" rx="28" ry="44" fill="#ccaa70"/><ellipse cx="175" cy="389" rx="18" ry="30" fill="#b7925d"/></g>
+  <path fill="url(#kitchen-grain)" d="M0 0h800v600H0z"/>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>A sunlit path through gentle green hills</title>
+  <defs>
+    <pattern id="outdoors-grain" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="2" r=".65" fill="#253622" opacity=".1"/><circle cx="7" cy="7" r=".5" fill="#fff" opacity=".3"/></pattern>
+    <linearGradient id="outdoors-sky" x2="0" y2="1"><stop stop-color="#e9e7cc"/><stop offset="1" stop-color="#d7ddb4"/></linearGradient>
+  </defs>
+  <path fill="url(#outdoors-sky)" d="M0 0h800v600H0z"/>
+  <g class="art-glow" fill="#d6e867"><circle cx="578" cy="157" r="104" opacity=".21"/><circle cx="578" cy="157" r="82" opacity=".24"/></g><circle cx="578" cy="157" r="64" fill="#dce780"/>
+  <path d="M-70 346Q111 149 287 274T654 226Q737 207 820 244v356H-70z" fill="#aeb990"/>
+  <path d="M-52 361Q159 255 379 351T850 313v287H-52z" fill="#87986c"/>
+  <path d="M-29 433Q207 346 420 460T836 399v201H-29z" fill="#657c52"/>
+  <path d="M474 278c-66 34-116 44-93 82s91 45 78 88S366 514 295 600H550c4-66-30-93-44-139s-37-48-76-84-10-53 55-99z" fill="#e6d7b1"/>
+  <path d="M475 282c-40 28-114 47-77 85s91 48 82 83-70 82-105 137" fill="none" stroke="#f3e8ca" stroke-width="5" opacity=".55"/>
+  <path d="M81 382c10-76 48-125 66-207M718 418c-8-89-17-138-63-219" fill="none" stroke="#4d653e" stroke-width="9" stroke-linecap="round"/>
+  <g class="art-sway" fill="#566f40">
+    <path d="M117 296c-53-3-67-34-57-76 49 9 60 40 57 76M133 251c-5-51 15-85 64-96 0 50-23 79-64 96M97 347c-48 2-69-19-76-55 46-3 72 14 76 55M113 319c5-47 32-67 75-61-9 43-34 62-75 61"/>
+    <path d="M696 305c-4-48 12-71 55-79 5 42-13 70-55 79M671 264c-46-2-68-27-67-68 43 3 67 25 67 68M712 372c5-54 31-76 76-70-9 48-31 70-76 70M704 334c-44 4-70-15-78-53 44-1 68 13 78 53"/>
+  </g>
+  <g stroke="#a8b17e" stroke-width="2" fill="none" opacity=".6"><path d="m116 295-39-53m59 7 40-73m-79 170-58-39m666 65 62-51m-93-58-51-45"/></g>
+  <path d="M56 601V476m3 84-26-50m28 62 35-39M663 600V482m-1 62-25-27m27 52 26-36" stroke="#384f32" stroke-width="5" stroke-linecap="round"/>
+  <g transform="translate(82 472) rotate(-10 100 35)"><ellipse cx="108" cy="62" rx="107" ry="24" fill="#344930" opacity=".25"/><path d="M7 44 24 2l50 9 22 24 83 7q31 2 33 21H0z" fill="#ece8cf"/><path d="M11 45 25 5l47 9 26 25 82 8q17 2 23 10H6z" fill="#bf7554"/><path d="m32 21 26 8-8 16-31-7z" fill="#dadbaf"/><path d="m77 27 20-6m-11 16 20-5m-10 15 20-5" stroke="#f4edd5" stroke-width="5" stroke-linecap="round"/><path d="M4 59h201" stroke="#c5c5a0" stroke-width="3"/></g>
+  <g fill="#d6e867"><circle cx="220" cy="462" r="5"/><circle cx="236" cy="469" r="4"/><circle cx="618" cy="454" r="4"/><circle cx="630" cy="445" r="5"/></g>
+  <path fill="url(#outdoors-grain)" d="M0 0h800v600H0z"/>
+</svg>

@@ -2,7 +2,7 @@
 
 A working local-test app for online coaching, chef-created meal plans and private dining. Warm charcoal, bone and citrus; copy based only on the confirmed brief. FORM & FIRE is a provisional name, not a cleared brand.
 
-**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Managed authentication, email delivery, hosted checkout and private file uploads are not connected. Local authentication includes password hashing, verification/recovery through a private terminal outbox, server sessions and administrator TOTP. The server deliberately binds only to loopback.
+**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; it is disabled until configured. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication includes password hashing, verification/recovery through a private terminal outbox, server sessions and administrator TOTP. The server deliberately binds only to loopback.
 
 ## Termux: install beside AYCF and Admin Hub
 
@@ -21,6 +21,28 @@ Open **http://127.0.0.1:8085** on that Android device. The existing Admin Hub (n
 The admin command prints a unique password and authenticator setup key once. Store them privately and add the key to an authenticator app. For fictional local tests only, `~/.local/bin/form-fire admin test-otp alex@example.test` shows the current code. This terminal convenience is not a production MFA recovery mechanism.
 
 If AYCF/Admin Hub is not installed, use `bash termux/install.sh` without `--with-hub`. You can attach later. A custom registry path is supported via `AYCF_ADMIN_REGISTRY`; custom port via `FF_PORT` on first install.
+
+## Try Alex’s admin panel
+
+After updating, run:
+
+```bash
+~/.local/bin/form-fire admin setup-admin-test
+```
+
+Open **Your space → Alex’s admin sign-in**. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
+
+```bash
+~/.local/bin/form-fire admin read-test-otp
+```
+
+Setup adds two clearly labelled fictional Example clients, pending/active requests, untouched starter plan copies where available, and a sample check-in. It never adds payment figures or progress outcomes. Run it again safely: existing credentials, edits and deleted examples are preserved. Lost password? `form-fire admin recover-admin-test` prints a one-use code for the normal reset page. The in-app **Try admin** guide walks through everything; no public bypass or shared password exists.
+
+## Google sign-in and everyday ideas
+
+**Continue with Google** appears on client sign-in and registration. Configure your Google Cloud web OAuth client and private device credentials using [the setup guide](docs/GOOGLE_SIGN_IN.md) or the app’s **Connection setup** screen. Admin sign-in continues to require its password and authenticator. Existing password accounts are not automatically linked by email.
+
+**Feel-good ideas** brings together movement, enjoyable food, fresh air and rest through four distinct new illustrated scenes. Choose Play for a short, gentle animation; Pause and reduced-motion support keep you in control. The ideas are optional, with no streaks, health scores or pressure. Today includes a small invitation alongside your own plan.
 
 ## Test the complete coaching journey
 
@@ -103,7 +125,7 @@ Open http://127.0.0.1:8085. Read local verification/recovery codes with `npm run
 - Server-enforced roles and ownership, host/origin checks, CSRF, rate limits, safe JSON handling and escaped rendering.
 - Immutable assigned plan snapshots, request transitions/history and metadata-only admin audit events.
 - Integer minor-unit money records, per-currency reporting, payment/refund separation and idempotent manual event keys.
-- Local testing includes a clearly labelled starter library: four exercises with optional motion examples, three recipes, one workout plan and one meal plan. Nothing is assigned automatically. No client, testimonial, price or earnings fixtures are seeded.
+- Local testing includes a clearly labelled starter library: four exercises with optional motion examples, three recipes, one workout plan and one meal plan. Nothing is assigned automatically. No clients are seeded at startup. The explicit admin-test command adds labelled fictional examples; no testimonial, price or earnings fixtures are created.
 
 ## Verification and limitations
 

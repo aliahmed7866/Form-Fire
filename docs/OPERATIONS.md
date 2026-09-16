@@ -58,3 +58,7 @@ The registry utility preserves other apps and unrelated top-level fields, writes
 ## Network boundary
 
 Local-test mode permits loopback binding only, validates Host/Origin and uses an HttpOnly SameSite=Strict session cookie plus CSRF checks. Open the exact configured origin (default `127.0.0.1`, not `localhost`). Do not publish this mode through a tunnel or reverse proxy. Production requires managed identity, administrator MFA, secure HTTPS sessions, reviewed policies and the other launch gates in DECISIONS.md.
+
+## Optional Google connection
+
+Add `FF_GOOGLE_CLIENT_ID` and `FF_GOOGLE_CLIENT_SECRET` as private exports in the existing Termux environment file, then restart. The configuration file is outside the checkout and survives updates. See [Google sign-in setup](GOOGLE_SIGN_IN.md). A separate short-lived HttpOnly SameSite=Lax cookie supports the provider callback; the main app session remains SameSite=Strict. Google identity mappings are included in database backups and cascade on client deletion; transient authorisation records expire after ten minutes. No provider access/refresh/ID tokens are retained.

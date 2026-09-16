@@ -70,3 +70,13 @@ The existing 41 application tests passed. A separate smoke check rendered 20 pub
 The original and companion illustrations were rasterised with Sharp and visually inspected; the logo was checked at 24, 48 and 128 pixels. Source review covered the 390px and 768px breakpoint rules, navigation, form layouts and artwork sizing. The artwork renderer is a development convenience, not an app dependency.
 
 The cloud browser again blocked the loopback preview with `net::ERR_BLOCKED_BY_CLIENT`. These checks do not constitute a rendered full-page mobile/desktop review. After updating on the phone, check the new header/footer mark, all three Train/Eat/Both states, service and sign-in layouts, client plan covers, Today, check-ins and Plan studio. Confirm the form actions and tabs remain convenient at the device’s text size.
+
+## Google, lifestyle and admin test release
+
+`npm test`: 91 reported tests passed, plus the two existing Python hub tests. Syntax, shell and whitespace checks passed. A 26-view template smoke check covers public pages, Google/admin setup, both sign-in modes, client lifestyle/daily pages and admin setup; HTML tags are balanced, IDs unique and no error notices rendered. The new illustration/Google assets return the expected SVG responses.
+
+The Google tests use generated signing keys and a simulated provider transport: they cover valid sessions, signature and claim rejection, fixed endpoints, state/cookie binding, expiry/replay/concurrency, PKCE, cancellation, oversized/provider failures, stable subject identity, existing-account collisions and admin MFA protection. They do not prove the owner’s Google Cloud consent/credential configuration; a real Google round trip remains to be tested after setup.
+
+Admin tests cover explicit setup, unique hashed credentials, normal TOTP login, repeat-run preservation, reserved-address collisions, edited/archived starter handling, one-use recovery and session invalidation. Frontend tests cover enabled/disabled Google options, safe error messages, admin sign-in controls, optional animation playback/pause/time limit, cleanup and reduced motion.
+
+The four new lifestyle assets were rendered and visually inspected as a contact sheet. Full interactive mobile/desktop rendering remains unverified because the cloud browser blocks loopback access. On the phone, try each Play/Pause button, reduced-motion mode, the Feel-good ideas page, Today’s invitation, client versus admin sign-in, admin test setup and Google consent/callback after configuring credentials.

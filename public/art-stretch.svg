@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <title>A relaxed seated stretch in a light, leafy room</title>
+  <defs><pattern id="stretch-grain" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="2" r=".65" fill="#253622" opacity=".1"/><circle cx="7" cy="7" r=".5" fill="#fff" opacity=".3"/></pattern></defs>
+  <path fill="#e8e4cd" d="M0 0h800v600H0z"/><path d="M97 420V185a151 151 0 0 1 302 0v235z" fill="#c8d0a8"/><path d="M117 416V188a131 131 0 0 1 262 0v228z" fill="#dce2bf"/><path d="M248 62v354M117 258h262" stroke="#bdc69d" stroke-width="6"/>
+  <g class="art-glow"><circle cx="290" cy="179" r="70" fill="#dce783" opacity=".55"/><circle cx="290" cy="179" r="45" fill="#e7eda0"/></g>
+  <path d="M0 417h800v183H0z" fill="#b7c29c"/><path d="M0 431h800" stroke="#a3b187" stroke-width="5"/><path d="m172 417-53 183m476-183 78 183" stroke="#cdd4b2" stroke-width="2"/>
+  <ellipse cx="411" cy="508" rx="251" ry="35" fill="#829367" opacity=".25"/><path d="M171 451h437q10 0 17 8l40 65q7 13-11 13H136q-19 0-10-14l34-62q6-10 11-10z" fill="#72865b"/><path d="M150 514h489M165 491h459" stroke="#a1b17f" stroke-width="2" opacity=".6"/>
+  <g class="art-sway"><path d="M668 411q-20-81 12-164m-17 95-50-62m49 89 64-47" fill="none" stroke="#627b47" stroke-width="7"/><g fill="#7b9457"><path d="M671 284c-40-31-36-66-1-89 35 29 31 60 1 89M663 326c8-52 36-76 76-61-12 48-38 67-76 61M634 310c-53 1-74-26-61-63 48 2 67 26 61 63M692 358c1-40 24-61 60-52-4 38-25 56-60 52"/></g><path d="m670 214 1 67m-80-20 39 44m85-24-49 41" stroke="#aec084" stroke-width="2" fill="none"/></g>
+  <path d="M628 392h85l-13 101q-30 15-60 0z" fill="#bf7756"/><ellipse cx="670" cy="392" rx="42" ry="9" fill="#536c3f"/><path d="m642 412 8 69m39-69-7 70" stroke="#df9d73" stroke-width="3"/>
+  <path d="M354 407q-30 5-61 27l-56 31q-21 14-8 31 8 11 30 6l123-41 86 27q31 8 39-12 8-17-14-31l-81-44z" fill="#b86a4e"/>
+  <path d="m359 446-86 37m98-24 89 17" stroke="#d99169" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M267 479q-21-7-37 3-9 7-4 14 3 7 18 7l31-7zM459 473l29 2q21 4 20 15-1 10-15 9l-39-11z" fill="#b98360"/>
+  <path d="M349 249q37-18 60 7 12 47 24 142 2 19-23 26h-56q-25-3-21-23l13-100z" fill="#536b46"/>
+  <path d="M356 277q-8 64-9 116m65-75 8 80" stroke="#859568" stroke-width="4" opacity=".5" fill="none"/>
+  <path d="M344 265q-13 4-15 22l-15 78-28 76q-5 13 7 19 13 5 19-9l30-75 20-86q3-21-18-25" fill="#b98360"/>
+  <path d="M289 438q-10 5-17 18l-10 8q-9 8-2 13 6 4 15-1l26-18z" fill="#b98360"/>
+  <path d="M402 269q14-3 19-18l20-89q3-17-13-23l-68-29q-11-4-16 7-4 11 8 17l61 28-25 88q-4 16 14 19" fill="#b98360"/>
+  <path d="m357 110-20-10q-11-4-18-1l-14 8q-6 5-1 9 5 3 12 0l8-3 22 18z" fill="#b98360"/>
+  <path d="M367 244v-26h29v28q-11 16-29-2" fill="#b98360"/>
+  <g transform="rotate(-10 379 204)"><ellipse cx="378" cy="205" rx="30" ry="37" fill="#b98360"/><path d="M348 205v-17q0-40 33-40 37 0 33 41l-7 26-4-28q-26 5-45-6l-4 30z" fill="#33422f"/><circle cx="412" cy="159" r="18" fill="#33422f"/><path d="M376 211q5 3 10 0" stroke="#734d39" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M385 226q6 4 12-1" stroke="#82513c" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="351" cy="211" rx="6" ry="9" fill="#b98360"/></g>
+  <g transform="translate(111 388)"><path d="M0 8q0-8 12-13v-14h24v14Q48 0 48 8v74q0 11-24 11T0 82z" fill="#ece7cd"/><rect x="10" y="-26" width="29" height="19" rx="4" fill="#485e3d"/><path d="M1 41h46v22H1z" fill="#d6e77f"/><path d="M9 12v66" stroke="#fff6dd" stroke-width="3"/></g>
+  <path fill="url(#stretch-grain)" d="M0 0h800v600H0z"/>
+</svg>
