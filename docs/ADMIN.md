@@ -31,7 +31,9 @@ The **Plans**, **Exercise library**, **Recipes** and **Publish to clients** tabs
 
 Create an exercise with a name, category, equipment and coaching cues. Attach a complete HTTPS video URL and a written summary. Share only videos you own or have permission to use. YouTube/Vimeo pages and hosted video-file links open in a new tab; file uploads and embedded playback are not implemented. Video changes on the remote host remain outside the app’s control.
 
-Optionally choose a built-in squat, wall press-up, hinge or row illustration. Preview from **Edit & preview**. These are two-pose starter illustrations, off by default, with Play/Pause and Show next pose controls. A reduced-motion preference keeps them static. They are not videos of Alex and are not professional technique assessments. Keep the selected illustration consistent with the exercise, or choose No animation.
+Choose from 40 built-in movement illustrations across nine body-part groups, or choose No animation. The exercise editor updates its preview immediately as you change the movement. Use Play/Pause, half- or quarter-speed, Show next pose, and the position slider to inspect any point in the movement. Dragging the slider pauses playback; Play continues from the selected position. Reduced-motion preferences keep motion still while preserving manual pose changes. These are stylised illustrations for your review; keep the selected movement consistent with the exercise and written cues. They are not videos of Alex or professional technique assessments.
+
+Use the **Body part** filter and name/equipment search together to find an exercise. The library shows an illustrated preview for every supported movement. You can also preview an exercise inside a workout session before saving the template. Clients see the selected animation in published plans and Today. New client versions still require explicit publication.
 
 ### Configuring a workout plan
 
@@ -52,7 +54,7 @@ To prescribe different sets or exercises for one client, duplicate and customise
 
 ### Starter examples and stable client versions
 
-The update installs four exercises, three recipes and two sample plans once, only in local-test mode. All are marked Starter example. They are fictional starting points for editing, not client-ready prescriptions or confirmed Alex recipes. They are never automatically assigned. Existing client plans remain unchanged by the upgrade.
+The update installs 40 exercises, three recipes and two sample plans once, only in local-test mode. All are marked Starter example. They are fictional starting points for editing, not client-ready prescriptions or confirmed Alex recipes. They are never automatically assigned. Existing client plans remain unchanged by the upgrade.
 
 The starter label propagates into published snapshots if a template or any included exercise/recipe remains marked. Once you have replaced/reviewed an item, you can clear its label in its editor. Archiving examples is safe: restarting does not restore them. An archived exercise or recipe must be removed/replaced in a template before a new client version can be published.
 

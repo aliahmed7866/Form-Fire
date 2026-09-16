@@ -134,7 +134,7 @@ test('Daily plan activity persists with verified owner access and immutable assi
       app=createApp({dataDir:dir,origin});await listen();
       assert.deepEqual((await call(uid,'/export')).data.activity,exported.data.activity);
       assert.equal((await call(uid,'/activity')).data.entries.length,2);
-      assert.equal((app.db.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,4);
+      assert.equal((app.db.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,6);
     });
     await t.test('Requested account deletion removes activity before deleting assignments',async()=>{
       assert.equal((await call(uid,'/account/deletion','POST',{})).status,201);

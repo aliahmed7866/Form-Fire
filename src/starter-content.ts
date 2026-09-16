@@ -1,8 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { additionalStarterExercises, expandedStarterExercises } from './exercise-catalog.ts';
 
 // Original, fictional examples. No clients, assignments or financial data are created.
 // The marker prevents restarts or upgrades from restoring examples Alex has edited/archived.
-export function installStarterContent(db: DatabaseSync) {
+function installPlanLibraryStarterContent(db: DatabaseSync) {
   if (db.prepare('SELECT id FROM content_packs WHERE id=?').get('plan-library-v1')) return;
   const exercises = [
     ['starter-squat','Chair squat','Lower body','A stable chair','Example cues: stand in front of a stable chair, sit back with control, then stand. Alex should adapt the range and support to the client.','squat'],
@@ -37,4 +38,23 @@ export function installStarterContent(db: DatabaseSync) {
     db.prepare('INSERT INTO content_packs(id) VALUES(?)').run('plan-library-v1');
     db.exec('COMMIT');
   } catch(e) { db.exec('ROLLBACK'); throw e; }
+}
+
+function installExerciseContentPack(db: DatabaseSync, pack: string, exercises: ReadonlyArray<readonly [string,string,string,string,string,string]>) {
+  if (db.prepare('SELECT id FROM content_packs WHERE id=?').get(pack)) return;
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const insert=db.prepare('INSERT INTO exercises(id,title,category,equipment,instructions,animation,is_demo) VALUES(?,?,?,?,?,?,1) ON CONFLICT(id) DO NOTHING');
+    for (const exercise of exercises) insert.run(...exercise);
+    db.prepare('INSERT INTO content_packs(id) VALUES(?)').run(pack);
+    db.exec('COMMIT');
+  } catch(e) { db.exec('ROLLBACK'); throw e; }
+}
+
+export function installStarterContent(db: DatabaseSync) {
+  installPlanLibraryStarterContent(db);
+  // Each marker prevents future restarts and upgrades from restoring deleted
+  // entries or overwriting Alex's edits, even when another pack is introduced.
+  installExerciseContentPack(db,'exercise-motions-v2',additionalStarterExercises);
+  installExerciseContentPack(db,'exercise-expansion-v3',expandedStarterExercises);
 }

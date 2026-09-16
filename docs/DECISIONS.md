@@ -59,6 +59,15 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Use illustrations on services, enquiries, sign-in, client overview/plans/check-ins, Today and the plan studio. These are general brand illustrations, not pictures of Alex or client-specific meals, and are not exercise technique instructions.
 - Refine responsive typography, navigation, cards and form controls while retaining existing routes and workflows. Keep SVG assets local and explicitly allowlisted by the server; no image service, font CDN, extra runtime package or database migration is required.
 
+
+## Exercise illustrations (v0.6)
+
+- Extend the existing original SVG identity with 24 stylised movement illustrations, keeping the app dependency-free for Termux. Use explicit playback controls and manual poses, not autoplay.
+- Group catalogue browsing by the selected movement’s primary body part. Preserve the editable category field and all existing records; unsupported/custom selections appear under Other / custom.
+- Keep all new starter records labelled as examples. Alex reviews technique cues and exercise choice before client use. Technique reference checks: [NHS strength exercises](https://www.nhs.uk/live-well/exercise/strength-exercises/) and [ACE bird dog](https://www.acefitness.org/resources/everyone/exercise-library/14/bird-dog/).
+- Animation IDs are saved in plan snapshots. This release deliberately refreshes the renderer of the four legacy IDs; saved exercise selection, instructions and prescription stay intact. Future technique changes should introduce a new animation ID to preserve existing selections.
+- Rebuild the exercise table transactionally in migration 005 to expand its CHECK constraint while copying every existing column. A separate idempotent content pack adds 20 new examples without changing the original four.
+
 ## Google sign-in, lifestyle and admin testing
 
 - Added opt-in Google client identity through an authorisation-code flow with PKCE, browser-bound single-use state, nonce and signature/claim verification. Migration 004 stores stable identity mappings and short-lived transactions. Email collisions never silently link accounts; Google cannot bypass admin password/TOTP. Credentials and real provider verification remain owner setup tasks.
@@ -74,3 +83,12 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Keep default loopback HTTP testing on 8085. Add native verified HTTPS with owner-configured trusted certificates, strict origin/binding configuration and no silent HTTP fallback. No public deployment mode is added.
 - Tighten directory/sidecar permissions, exact JSON types, request time/header limits and response policy headers. Retain parameterized SQL, MFA, CSRF, role/ownership checks and existing rate limits; add explicit attack regression tests.
 - A phone fetch failure was reported but not reproduced. Add actionable connection feedback and read-only retry; do not claim that network connectivity was repaired on a device we cannot inspect.
+
+## Expanded exercise library (v0.7, feature branch)
+
+- Increase the catalogue to 40 movements with 16 additional starter examples, retaining existing exercise IDs and selection snapshots. Keep migration 005 immutable and add migration 006 for the larger animation CHECK constraint.
+- Use separate content-pack markers so upgrades preserve existing edits, archives, removed examples and client assignments. Exercise examples still require Alex’s review before client use.
+- Separate the original catalogue, expansion catalogue and renderer into local scripts. The application remains dependency-free; no external animation service is used.
+- Add manual movement-position controls and quarter-speed playback, accessible status messages for intentional actions, and a single active guide to reduce competing motion and phone rendering work. Reduced motion keeps manual inspection available.
+- Refine grounded foot pivots, equipment contact, joint paths and viewing labels in the existing artwork. Catalogue geometry and the visual renderer are illustrative; written prescription and technique review remain with Alex.
+- Published on a feature branch at the user’s request; default-branch changes require a later explicit merge decision.

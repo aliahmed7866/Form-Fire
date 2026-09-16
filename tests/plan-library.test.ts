@@ -23,15 +23,15 @@ test('Existing database migrates without replacing client records or repeating s
     const db=openDb(dir);
     assert.equal((db.prepare('SELECT name FROM users WHERE id=?').get('existing') as any).name,'Existing client');
     assert.equal((db.prepare('SELECT content FROM templates WHERE id=?').get('old-plan') as any).content,JSON.stringify({schedule:'Original',guidance:'Original',recipe_ids:[]}));
-    assert.equal((db.prepare('SELECT COUNT(*) n FROM exercises WHERE is_demo=1').get() as any).n,4);
+    assert.equal((db.prepare('SELECT COUNT(*) n FROM exercises WHERE is_demo=1').get() as any).n,40);
     assert.equal((db.prepare('SELECT COUNT(*) n FROM recipes WHERE is_demo=1').get() as any).n,3);
     assert.equal((db.prepare('SELECT COUNT(*) n FROM templates WHERE is_demo=1').get() as any).n,2);
     assert.equal((db.prepare('SELECT COUNT(*) n FROM assignments').get() as any).n,0);
     db.prepare('UPDATE exercises SET title=?,archived=1 WHERE id=?').run('Alex edited this','starter-squat');db.close();
     const again=openDb(dir);
     assert.equal((again.prepare('SELECT title FROM exercises WHERE id=?').get('starter-squat') as any).title,'Alex edited this');
-    assert.equal((again.prepare('SELECT COUNT(*) n FROM exercises').get() as any).n,4);
-    assert.equal((again.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,4);again.close();
+    assert.equal((again.prepare('SELECT COUNT(*) n FROM exercises').get() as any).n,40);
+    assert.equal((again.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,6);again.close();
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
 
@@ -124,6 +124,7 @@ test('Structured workout and meal journeys retain snapshots and enforce admin/ow
 
 test('Client plan markup escapes text and video URLs, does not load external media, and supports old plans',()=>{
   const context=createContext({document:{addEventListener(){}},esc:(v:any)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] as string))});
+  for(const file of ['exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),context);
   runInContext(readFileSync(new URL('../public/plan-studio.js',import.meta.url),'utf8'),context);
   const media=runInContext(`exerciseMedia({title:'<img src=x onerror=alert(1)>',animation:'squat',video_url:'https://videos.example.org/watch?q=" onclick="bad',video_caption:'<script>bad</script>'})`,context);
   assert.ok(media.includes('&lt;img'));assert.ok(media.includes('&quot;'));assert.ok(media.includes('rel="noopener noreferrer"'));assert.ok(media.includes('aria-pressed="false"'));
@@ -137,7 +138,8 @@ test('Admin studio renders all library views using the shared app helpers',()=>{
   try {
     const fixtureData={exercises:db.prepare('SELECT * FROM exercises').all(),recipes:db.prepare('SELECT * FROM recipes').all(),templates:db.prepare('SELECT * FROM templates').all().map((t:any)=>({...t,content:JSON.parse(t.content)})),assignments:[],requests:[]};
     const context=createContext({fixtureData,document:{addEventListener(){}},window:{addEventListener(){}},location:{hash:'#/admin/plans'},URLSearchParams,crypto:{randomUUID:id}});
-    runInContext(readFileSync(new URL('../public/plan-studio.js',import.meta.url),'utf8'),context);
+    for(const file of ['exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),context);
+  runInContext(readFileSync(new URL('../public/plan-studio.js',import.meta.url),'utf8'),context);
     runInContext(readFileSync(new URL('../public/app.js',import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),context);
     runInContext('adminData=fixtureData',context);
     for(const view of ['templates','exercises','recipes','publish']) {

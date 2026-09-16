@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { exerciseAnimationKeys } from './exercise-catalog.ts';
 
 export class LibraryError extends Error { status: number; constructor(message:string,status=400) {super(message);this.status=status;} }
 function requireValue(ok:any,message:string,status=400):asserts ok {if(!ok)throw new LibraryError(message,status);}
@@ -6,7 +7,7 @@ function string(v:any,name:string,max=4000,optional=false) {requireValue(typeof 
 function whole(v:any,name:string,min:number,max:number) {requireValue(Number.isSafeInteger(v)&&v>=min&&v<=max,`${name} must be a whole number from ${min} to ${max}.`);return v;}
 function list(v:any,name:string,max:number){requireValue(Array.isArray(v)&&v.length<=max,`${name} must contain at most ${max} items.`);return v;}
 function object(v:any,name:string){requireValue(v&&typeof v==='object'&&!Array.isArray(v),`${name} must be an object.`);return v;}
-export const animations=['','squat','wall-push','hinge','row'];
+export const animations: readonly string[]=['',...exerciseAnimationKeys];
 export function videoURL(value:any) {
   const v=string(value??'','Video URL',2000,true);if(!v)return '';
   let url:URL;try{url=new URL(v);}catch{throw new LibraryError('Enter a complete https:// video URL.');}

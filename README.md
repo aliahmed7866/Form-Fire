@@ -65,9 +65,9 @@ Open **Alex’s admin → Plan studio**:
 - **Recipes:** create, edit, duplicate or archive recipes with ingredients, quantities, yield, preparation and substitutions.
 - **Publish to clients:** select an active client request and explicitly publish a new customised version.
 
-Four dummy exercises, three recipes and two sample plans are added once when this update starts in local-test mode. They are labelled **Starter example**, editable, and never assigned automatically. Updating/restarting does not overwrite your changes. Remove the starter label only after replacing/reviewing that record; archive examples you do not want.
+Forty demo exercises, three recipes and two sample plans are added once when this update starts in local-test mode. They are labelled **Starter example**, editable, and never assigned automatically. Updating/restarting does not overwrite your changes. Remove the starter label only after replacing/reviewing that record; archive examples you do not want.
 
-Video links open the provider in a new tab; no videos load automatically, and file uploads/video hosting are not connected. Built-in motion illustrations have play/pause and static-pose controls, respect reduced-motion settings and are not a substitute for Alex’s exercise coaching. No third-party videos or fabricated footage of Alex are bundled.
+Video links open the provider in a new tab; no videos load automatically, and file uploads/video hosting are not connected. Built-in motion illustrations have play/pause, speed and static-pose controls, respect reduced-motion settings and are not a substitute for Alex’s exercise coaching. No third-party videos or fabricated footage of Alex are bundled.
 
 Published client plans snapshot exercise instructions, prescriptions, media URLs, recipes, serving notes and shopping lists. Editing or archiving library content never rewrites an existing assignment. Archiving a referenced item blocks new publication until the template is updated. External video files remain controlled by their host; a URL snapshot cannot preserve a removed or changed remote video.
 
@@ -140,3 +140,15 @@ Automated tests cover the complete request → review → activation → assignm
 The implementation has been executed and tested on Linux/Node 24. The cloud browser blocked the local preview, so desktop/mobile visual inspection and a physical Android/Termux installation remain to be checked. This is not a WCAG conformance or production-security claim. See [test report](docs/TESTING.md) and [launch backlog](docs/DECISIONS.md).
 
 [Admin guide](docs/ADMIN.md) · [Operations](docs/OPERATIONS.md) · [Decisions and launch checklist](docs/DECISIONS.md)
+
+## Exercise art and motion library
+
+The exercise library includes 40 original vector movement illustrations across chest, back, shoulders, biceps, triceps, core, glutes, legs and calves. In **Alex’s admin → Plan studio → Exercise library**, filter by body part or search by name/equipment, preview a movement, and edit its written cues. The exercise editor previews changes to the selected animation immediately; the workout builder also previews the chosen exercise.
+
+Clients see the same movement controls inside their published plan and Today’s exercise details. Motion starts only when requested. Play/pause, half-speed, quarter-speed, a position slider and a next-pose control make demonstrations easier to inspect. Starting one guide pauses the previous guide. Reduced-motion preferences keep illustrations still, with manual pose changes available.
+
+The artwork is a stylised movement guide for Alex to review, not a recording of Alex or a technique assessment. The 40 starter records remain demo examples until reviewed. Custom video links remain available. There is no external animation service, upload requirement or added npm dependency.
+
+Migrations 005 and 006 preserve exercise records while expanding the allowed animation IDs. Upgrades add missing examples from separate starter packs; administrator edits, archived items and published plan selections remain intact. Existing animations receive the refined artwork while retaining their saved selection, cues and prescription.
+
+See [the exercise library guide](docs/EXERCISE_LIBRARY.md) for the additions, visual reference and feature-branch testing instructions.

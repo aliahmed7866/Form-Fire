@@ -133,7 +133,7 @@ document.addEventListener('click',async e=>{const button=e.target.closest('[data
  if(['edit-template','duplicate-template','new-template','edit-recipe','duplicate-recipe','new-recipe','edit-exercise','duplicate-exercise','new-exercise','edit-service'].includes(action)){
    let html;
    if(action.includes('template')){const t=action==='new-template'?{kind:value||'training'}:structuredClone(adminData.templates.find(t=>t.id===id));if(action==='duplicate-template'){delete t.id;t.title+=' — copy';t.version=1;t.archived=0;}html='<h3>'+(t.id?'Edit plan':'New plan')+'</h3>'+templateForm(t);}
-   else if(action.includes('exercise')){const x=structuredClone(adminData.exercises.find(x=>x.id===id)||{});if(action==='duplicate-exercise'){delete x.id;x.title+=' — copy';x.version=1;x.archived=0;}html='<h3>Exercise editor</h3>'+exerciseForm(x)+(x.title?'<hr><h3>Demonstration preview</h3>'+exerciseMedia(x):'');}
+   else if(action.includes('exercise')){const x=structuredClone(adminData.exercises.find(x=>x.id===id)||{});if(action==='duplicate-exercise'){delete x.id;x.title+=' — copy';x.version=1;x.archived=0;}html='<h3>Exercise editor</h3>'+exerciseForm(x);}
    else if(action.includes('recipe')){const r=structuredClone(adminData.recipes.find(r=>r.id===id)||{});if(action==='duplicate-recipe'){delete r.id;r.title+=' — copy';r.version=1;r.archived=0;}html='<h3>Recipe editor</h3>'+recipeForm(r);}
    else html='<h3>Edit service</h3>'+serviceForm(adminData.services.find(s=>s.id===id));
    $('#editor').innerHTML=html;$('#editor').scrollIntoView({block:'start'});$('#editor input:not([type=hidden])').focus();return;

@@ -95,6 +95,17 @@ Admin tests cover explicit setup, unique hashed credentials, normal TOTP login, 
 
 The four new lifestyle assets were rendered and visually inspected as a contact sheet. Full interactive mobile/desktop rendering remains unverified because the cloud browser blocks loopback access. On the phone, try each Play/Pause button, reduced-motion mode, the Feel-good ideas page, Today’s invitation, client versus admin sign-in, admin test setup and Google consent/callback after configuring credentials.
 
+## Exercise art and animation library (v0.6)
+
+- Full Node test suite: **102 tests passed** after integrating the Google sign-in/lifestyle update. Syntax checks passed; two Admin Hub registry tests and Termux shell syntax checks also passed.
+- Added catalogue/database validation for all 24 keys, upgrade from the Google-enabled v4 database, preservation of Google identity mappings, administrator edits and published snapshots, repeat-seed behaviour, CSRF and client ownership checks.
+- Added delegated UI-event tests for combined body-part/search filtering, live editor and workout previews, all catalogue selections, playback/half speed/pause/next-pose controls, reduced-motion changes, and cleanup when hidden, collapsed, offscreen or removed.
+- Confirmed the new JS/CSS are served with the correct content types and loaded before the plan studio. No animation service or external media request is required.
+- Rendered all exercise endpoint illustrations as PNG contact sheets for visual inspection; checked intermediate frames for the complex movements. These remain stylised starter guides requiring Alex’s coaching review.
+- Browser layout testing could not run in this workspace: Chromium was unavailable and its download timed out. Actual mobile layout, keyboard navigation in a browser and physical Android playback remain a phone acceptance check. No claim of professional technique certification or WCAG conformance is made.
+
+On the phone, open **Alex’s admin → Plan studio → Exercise library**, combine a body-part filter and equipment search, play/slow/step a movement, change the editor’s illustration, save it and refresh. Publish a sample client version, then check the movement in **Plans** and **Today**. With reduced motion enabled, Next pose should remain available and Play should explain why movement stays still.
+
 ## Administrator sign-in fix (0.5.1)
 
 `npm test`: all 93 reported tests passed. `npm run check` and `git diff --check` passed. The local run uses a writable workspace `TMPDIR` because this execution environment has no `/tmp` directory.
@@ -104,3 +115,12 @@ HTTP regressions verify that only a correct administrator password produces the 
 The real browser-script submit handler is exercised with a simulated form and HTTP responses: the client sign-in form reveals one required code field, keeps the same email/password fields and values, focuses the code after announcing the error, handles an invalid-code retry, then submits the code and opens admin. Ordinary credential errors add no code field. Markup checks cover the visible sign-in options above the form.
 
 Rendered phone behaviour remains to be checked on the device. After updating and refreshing, try administrator credentials from Client sign-in, enter a fresh code, and confirm the admin panel opens. Also check Alex’s admin sign-in directly and a normal client login.
+## Exercise expansion feature branch (v0.7)
+
+The combined branch passes **135 Node tests**, **four Python Admin Hub tests**, application syntax checks, Termux shell syntax checks and Git whitespace checks. It includes upstream sign-in, transport and encrypted-backup changes through `9d89143`. Tests use a writable workspace `TMPDIR`; no real client records are used.
+
+The exercise checks cover all 40 saved animation IDs, 200 rendered poses, editor and assigned-plan integration, position seeking/resume, quarter-speed playback, reduced motion, single-guide playback and lifecycle cleanup. Upgrade checks preserve edited, archived and deleted examples, Google identity records and immutable client snapshots across migrations 005 and 006. HTTP smoke checks confirm the four exercise scripts/styles are served with the expected types and the scripts load in dependency order.
+
+All 40 illustrations were rasterised and visually reviewed at endpoints and intermediate positions. Corrections include grounded support contact, forward curl paths, calf toe pivots, the side-lying clamshell projection, the mountain-climber knee path and the step-up finish. See [the visual reference](exercise-preview.png) and [feature-branch test instructions](EXERCISE_LIBRARY.md).
+
+A browser executable is unavailable in this workspace, so full-page browser rendering and physical Android playback remain unverified. On the phone, check the body-part filters, exercise editor previews, Plans and Today, keyboard/range controls, quarter speed and reduced motion. Alex’s review of the illustrative technique remains part of selecting exercises for a client.
