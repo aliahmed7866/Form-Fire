@@ -91,7 +91,7 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       if(p==='/api/auth/login'&&method==='POST') {
         limit('auth',20);const email=text(b.email,'Email',254).toLowerCase(),pw=text(b.password,'Password',128),u=get('SELECT * FROM users WHERE email=?',email);
         const valid=passwordOK(pw,u?.password||dummyHash);check(u&&valid,'Email or password is incorrect.',401);
-        if(u.role==='admin')check(u.totp_secret&&totpOK(u.totp_secret,String(b.otp||'')),'Enter the current six-digit authenticator code.',401);
+        if(u.role==='admin'&&!(u.totp_secret&&totpOK(u.totp_secret,String(b.otp||''))))return send(401,{error:'Enter the current six-digit authenticator code.',code:'authenticator_required'});
         const t=token(),csrf=token();if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',digest(t),u.id,csrf,Date.now()+8*3600000);
         res.setHeader('Set-Cookie',`ff_session=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${origin.startsWith('https:')?'; Secure':''}`);return send(200,{user:safeUser(u),csrf});
       }

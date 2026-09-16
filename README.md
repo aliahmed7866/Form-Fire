@@ -30,7 +30,7 @@ After updating, run:
 ~/.local/bin/form-fire admin setup-admin-test
 ```
 
-Open **Your space → Alex’s admin sign-in**. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
+Open **Your space → Alex’s admin sign-in** above the sign-in form. If you enter admin credentials on the client form, it also reveals the authenticator field without clearing your email or password. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
 
 ```bash
 ~/.local/bin/form-fire admin read-test-otp

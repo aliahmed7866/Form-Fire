@@ -80,3 +80,13 @@ The Google tests use generated signing keys and a simulated provider transport: 
 Admin tests cover explicit setup, unique hashed credentials, normal TOTP login, repeat-run preservation, reserved-address collisions, edited/archived starter handling, one-use recovery and session invalidation. Frontend tests cover enabled/disabled Google options, safe error messages, admin sign-in controls, optional animation playback/pause/time limit, cleanup and reduced motion.
 
 The four new lifestyle assets were rendered and visually inspected as a contact sheet. Full interactive mobile/desktop rendering remains unverified because the cloud browser blocks loopback access. On the phone, try each Play/Pause button, reduced-motion mode, the Feel-good ideas page, Today’s invitation, client versus admin sign-in, admin test setup and Google consent/callback after configuring credentials.
+
+## Administrator sign-in fix (0.5.1)
+
+`npm test`: all 93 reported tests passed. `npm run check` and `git diff --check` passed. The local run uses a writable workspace `TMPDIR` because this execution environment has no `/tmp` directory.
+
+HTTP regressions verify that only a correct administrator password produces the structured authenticator challenge. Missing or invalid OTP codes create no session or cookie; wrong passwords and unknown accounts remain generic errors. A correct OTP still creates the normal administrator session.
+
+The real browser-script submit handler is exercised with a simulated form and HTTP responses: the client sign-in form reveals one required code field, keeps the same email/password fields and values, focuses the code after announcing the error, handles an invalid-code retry, then submits the code and opens admin. Ordinary credential errors add no code field. Markup checks cover the visible sign-in options above the form.
+
+Rendered phone behaviour remains to be checked on the device. After updating and refreshing, try administrator credentials from Client sign-in, enter a fresh code, and confirm the admin panel opens. Also check Alex’s admin sign-in directly and a normal client login.

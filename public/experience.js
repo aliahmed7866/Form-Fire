@@ -15,6 +15,19 @@ function lifestylePage(){return shell(`${intro('A little space for living','Good
 function everydayPreview(){return `<section class="wrap everyday-preview"><div class="section-top"><div><span class="eyebrow">A life with a little room in it</span><h2>More than a plan.<br><span class="serif">A little everyday joy.</span></h2></div>${link('/feel-good','Explore the little things ↗','secondary small')}</div><div class="lifestyle-grid preview-grid">${[lifestyleIdeas[0],lifestyleIdeas[2]].map(i=>lifestyleCard(i,true)).join('')}</div></section>`;}
 function dailyInvitation(date){const index=new Date(date+'T12:00:00Z').getUTCDay()%lifestyleIdeas.length,item=lifestyleIdeas[index];return `<aside class="daily-invitation"><div><span class="eyebrow">Something for you</span><h3>${item.title}</h3><p>${item.copy}</p><a href="#/feel-good">Explore at your own pace ↗</a></div>${animatedArtwork(item.key)}</aside>`;}
 const googleMessages={disabled:'Google sign-in is not connected yet. You can use email and password below.',cancelled:'No problem — you cancelled Google sign-in. Choose how you’d like to continue.',expired:'That Google sign-in attempt has expired. Please start again.',invalid:'We couldn’t verify that Google sign-in. Please start again.',unavailable:'Google sign-in is unavailable just now. Try again, or use your email and password.',local_signin:'This email already has a password account. Please sign in with that password; accounts are not linked automatically.',admin_google:'Alex’s admin uses a password and authenticator code. Please use admin sign-in.'};
+function authenticatorField(){return `<div class="authenticator-step">${field('otp','Authenticator code','','text','required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" aria-describedby="authenticator-help"')}<p class="micro" id="authenticator-help">Enter the current six-digit code from your authenticator app. For the local test account, run <code>~/.local/bin/form-fire admin read-test-otp</code> in Termux.</p></div>`;}
+function showAuthenticatorStep(form){
+  const submit=form.querySelector('[type=submit]');
+  let otp=form.querySelector('[name="otp"]');
+  if(!otp){submit.insertAdjacentHTML('beforebegin',authenticatorField());otp=form.querySelector('[name="otp"]');}
+  submit.textContent='Verify & sign in ↗';
+  otp.focus();otp.select();otp.scrollIntoView({block:'center'});
+}
+function signinModes(adminLogin,next){
+  const clientNext=next==='/admin'||next.startsWith('/admin/')?'/portal':next;
+  const adminNext=next==='/admin'||next.startsWith('/admin/')?next:'/admin';
+  return `<nav class="signin-modes" aria-label="Sign-in options"><a href="#/login?next=${encodeURIComponent(clientNext)}"${adminLogin?'':' aria-current="page"'}>Client sign-in</a><a href="#/login?admin=1&next=${encodeURIComponent(adminNext)}"${adminLogin?' aria-current="page"':''}>Alex’s admin sign-in</a></nav>`;
+}
 function googleSignin(next) {
   const enabled=session.connections?.google===true;
   return `<div class="google-signin">${enabled?`<a class="google-button" href="/api/auth/google/start?next=${encodeURIComponent(next)}"><img src="/google-mark.svg" width="20" height="20" alt="">Continue with Google</a>`:'<button type="button" class="google-button" disabled><img src="/google-mark.svg" width="20" height="20" alt="">Continue with Google</button>'}<p class="micro">${enabled?'For client accounts. Google shares your verified email and basic profile to sign you in.':'Google isn’t connected in this test yet. Use email below, or <a href="#/google-setup">view setup</a>.'}</p><div class="auth-divider"><span>or use your email</span></div></div>`;

@@ -119,14 +119,39 @@ test('Dedicated admin follows normal password plus TOTP login and one-use reset 
   const port = (app.server.address() as any).port;
   const call = (path: string, body: any) => new Promise<any>((resolve, reject) => {
     const req = request({ hostname: '127.0.0.1', port, path: '/api' + path, method: 'POST', headers: { Host: '127.0.0.1:8085', Origin: origin, 'Content-Type': 'application/json' } }, res => {
-      let text = ''; res.on('data', chunk => text += chunk); res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(text) }));
+      let text = ''; res.on('data', chunk => text += chunk); res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(text), cookies: res.headers['set-cookie'] }));
     });
     req.on('error', reject); req.end(JSON.stringify(body));
   });
   try {
     const created = setupAdminTest(app.db);
-    assert.equal((await call('/auth/login', { email: adminTestEmail, password: created.password })).status, 401);
-    assert.equal((await call('/auth/login', { email: adminTestEmail, password: created.password, otp: readAdminTestOTP(app.db) })).status, 200);
+    for (const credentials of [
+      { email: adminTestEmail, password: 'incorrect password' },
+      { email: 'missing-account@example.test', password: created.password },
+    ]) {
+      const rejected = await call('/auth/login', credentials);
+      assert.equal(rejected.status, 401);
+      assert.equal(rejected.data.error, 'Email or password is incorrect.');
+      assert.equal(rejected.data.code, undefined, 'invalid credentials do not reveal the administrator challenge');
+      assert.equal(rejected.cookies, undefined);
+      assert.equal(count(app.db, 'sessions'), 0);
+    }
+    const testAdmin = app.db.prepare('SELECT totp_secret FROM users WHERE email=?').get(adminTestEmail) as any;
+    let invalidOTP = '000000';
+    while (totpOK(testAdmin.totp_secret, invalidOTP)) invalidOTP = String(Number(invalidOTP) + 1).padStart(6, '0');
+    for (const otp of [undefined, invalidOTP]) {
+      const challenged = await call('/auth/login', { email: adminTestEmail, password: created.password, otp });
+      assert.equal(challenged.status, 401);
+      assert.equal(challenged.data.code, 'authenticator_required');
+      assert.equal(challenged.cookies, undefined, 'a password alone never issues a session cookie');
+      assert.equal(count(app.db, 'sessions'), 0, 'administrator access waits for a valid authenticator code');
+    }
+    const signedIn = await call('/auth/login', { email: adminTestEmail, password: created.password, otp: readAdminTestOTP(app.db) });
+    assert.equal(signedIn.status, 200);
+    assert.equal(signedIn.data.user.role, 'admin');
+    assert.equal(signedIn.cookies.length, 1);
+    assert.match(signedIn.cookies[0], /^ff_session=/);
+    assert.equal(count(app.db, 'sessions'), 1);
     const before = app.db.prepare('SELECT * FROM users WHERE email=?').get(adminTestEmail) as any;
     const reset = recoverAdminTest(app.db);
     assert.deepEqual(app.db.prepare('SELECT * FROM users WHERE email=?').get(adminTestEmail), before, 'issuing recovery does not change credentials');
