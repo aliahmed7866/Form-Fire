@@ -1,5 +1,19 @@
 # Test report — 16 September 2026
 
+## Current release: unified sign-in and security (0.6.0)
+
+`npm test`: all 117 reported tests passed. The four Python Admin Hub tests passed; syntax, shell and whitespace checks passed. Earlier sections below describe the historical releases, including their former public admin-link UI.
+
+Added regressions cover one public login, server-role destinations, no public setup links, delayed OTP challenge, preservation of credentials during retry, and clear network/non-JSON errors with manual read-only retry. No phone network failure was reproduced; these are simulated frontend responses plus real local HTTP/TLS tests.
+
+Security tests submit SQL-shaped login/profile/identifier values and attempted role/verification overrides, test cross-client isolation and admin denial, and verify CSRF, exact media types, payload limits, Host checks (including health), response policies and private database/WAL permissions. Native HTTPS tests verify a dedicated test certificate using an explicit CA, inspect Secure/HttpOnly/SameSite cookies, confirm hashed session tokens and exercise both health-check transports. Misconfigured/mismatched origin, port, address family or TLS settings fail closed.
+
+Password tests check stronger salted scrypt, malformed hash rejection, legacy compatibility and upgrades only after complete password/TOTP success. Backup tests cover committed WAL data and multi-chunk streaming, nonces, key persistence/permissions, altered header/ciphertext/tag/version, wrong/lost/replaced/symlinked keys, no overwrite, cleanup and offline decrypt without opening the live DB. The existing activity/deletion integration also passed with encrypted pre-deletion backups.
+
+The committed TLS fixtures are public test keys only and must never be used for hosting. Browser rendering, physical Android/Termux operation, Android certificate trust, a real Google round trip and a full device restore drill remain unverified. Live SQLite content is not app-encrypted; the local default remains loopback HTTP. See [security scope](SECURITY.md) for exact encryption coverage and limits.
+
+On the phone after updating: refresh the regular sign-in screen, confirm no admin link, sign in with the existing admin password, enter a fresh authenticator code, and verify admin tools appear. Then test a separate client session. Check status/restart if a connection error persists. Create an encrypted backup, preserve its separate key securely and test restoration into a private temporary destination before relying on it.
+
 Environment: Linux, Node 24.19.0, Python 3.12.14. Integration tests use temporary SQLite databases and actual HTTP requests to the server. No real customer or money records were used.
 
 ## Executed successfully

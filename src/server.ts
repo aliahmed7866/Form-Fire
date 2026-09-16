@@ -1,12 +1,14 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createSecureServer } from 'node:https';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { openDb, id, transaction } from './db.ts';
-import { token, digest, passwordHash, passwordOK, totpOK } from './auth.ts';
+import { token, digest, passwordHash, passwordOK, passwordNeedsUpgrade, totpOK } from './auth.ts';
 import { LibraryError, exerciseInput, planContent, planSnapshot } from './plan-library.ts';
 import { ActivityError, activityRange, clientActivity, saveActivity, adminActivity } from './activity.ts';
 import { createGoogleAuth, GoogleAuthError, type GoogleConfig } from './google-auth.ts';
+import { transportConfig } from './transport.ts';
 
 class HttpError extends Error { status: number; constructor(status:number,message:string){super(message);this.status=status;} }
 function check(ok:any, message:string, status=400): asserts ok { if(!ok) throw new HttpError(status,message); }
@@ -20,8 +22,8 @@ const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified
 const transitions:Record<string,string[]>={submitted:['under_review','withdrawn'],under_review:['awaiting_client_response','approved','declined','withdrawn'],awaiting_client_response:['under_review','withdrawn'],approved:['withdrawn'],declined:[],withdrawn:[]};
 export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch}={}) {
   check((process.env.FF_MODE||'local-test')==='local-test','Only local-test mode is implemented; do not use real client data.');
+  const transport=transportConfig(process.env,options.origin),{origin}=transport;
   const db=openDb(options.dataDir||process.env.FF_DATA_DIR||'data');
-  const origin=options.origin||process.env.FF_ORIGIN||`http://127.0.0.1:${process.env.FF_PORT||8085}`;
   const google=createGoogleAuth(db,origin,options.google,options.googleFetch);
   const rate=new Map<string,{count:number,until:number}>();
   const dummyHash=passwordHash(token());
@@ -33,15 +35,17 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
   function decorateRequest(r:any) {return {...r,details:parse(r.details),package:parse(r.package),proposal:parse(r.proposal),replies:all('SELECT r.id,r.body,r.created_at,u.name,u.role FROM replies r JOIN users u ON u.id=r.author_id WHERE request_id=? ORDER BY r.created_at,r.rowid',r.id),history:all('SELECT status,created_at FROM request_events WHERE request_id=? ORDER BY created_at,rowid',r.id)};}
   function decorateInvoice(i:any) { const p=all('SELECT id,kind,amount_minor,source,reference,created_at FROM payments WHERE invoice_id=? ORDER BY created_at',i.id); const paid=p.filter(x=>x.kind==='payment').reduce((s,x)=>s+x.amount_minor,0), refunded=p.filter(x=>x.kind==='refund').reduce((s,x)=>s+x.amount_minor,0); return {...i,price_snapshot:parse(i.price_snapshot),payments:p,paid_minor:paid,refunded_minor:refunded,outstanding_minor:Math.max(0,i.amount_minor-paid)}; }
   async function body(req:IncomingMessage) { let chunks:Buffer[]=[];let size=0;for await(const c of req) {size+=c.length;check(size<=65536,'Request is too large.',413);chunks.push(c);}try {const v=JSON.parse(Buffer.concat(chunks).toString()||'{}');check(v&&typeof v==='object'&&!Array.isArray(v),'Expected an object.');return v;}catch(e){if(e instanceof HttpError)throw e;throw new HttpError(400,'Send valid JSON.');} }
-  const server=createServer(async(req,res)=>{
+  const handle=async(req:IncomingMessage,res:ServerResponse)=>{
     const send=(status:number,value:any)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(value));};
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');
+    res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()');
+    res.setHeader('Cross-Origin-Resource-Policy','same-origin');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     try {
       const url=new URL(req.url||'/',origin), p=url.pathname, method=req.method||'GET';
-      if(p==='/health'&&method==='GET') { get('SELECT 1');return send(200,{ok:true,app:'form-fire',mode:'local-test'}); }
       // Restrict Host as well as Origin to prevent DNS rebinding against this local app.
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
+      if(p==='/health'&&method==='GET') { get('SELECT 1');return send(200,{ok:true,app:'form-fire',mode:'local-test'}); }
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
         const files:Record<string,[string,string]>={'/experience.js':['experience.js','text/javascript'],'/lifestyle-art.js':['lifestyle-art.js','text/javascript'],'/google-mark.svg':['google-mark.svg','image/svg+xml'],'/art-outdoors.svg':['art-outdoors.svg','image/svg+xml'],'/art-rest.svg':['art-rest.svg','image/svg+xml'],'/art-kitchen.svg':['art-kitchen.svg','image/svg+xml'],'/art-stretch.svg':['art-stretch.svg','image/svg+xml'],'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
@@ -50,7 +54,8 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       }
       if(method!=='GET') {
         check(req.headers.origin===origin,'Refresh this page and try again (origin mismatch).',403);
-        check((req.headers['content-type']||'').startsWith('application/json'),'Use JSON requests.',415);
+        check((req.headers['content-type']||'').split(';')[0].trim().toLowerCase()==='application/json','Use JSON requests.',415);
+        check(!req.headers['content-encoding']||req.headers['content-encoding']==='identity','Compressed requests are not supported.',415);
       }
       const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('ff_session='))?.slice(11);
       const session=cookie?get('SELECT * FROM sessions WHERE id=? AND expires>?',digest(cookie),Date.now()):null;
@@ -91,7 +96,8 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       if(p==='/api/auth/login'&&method==='POST') {
         limit('auth',20);const email=text(b.email,'Email',254).toLowerCase(),pw=text(b.password,'Password',128),u=get('SELECT * FROM users WHERE email=?',email);
         const valid=passwordOK(pw,u?.password||dummyHash);check(u&&valid,'Email or password is incorrect.',401);
-        if(u.role==='admin'&&!(u.totp_secret&&totpOK(u.totp_secret,String(b.otp||''))))return send(401,{error:'Enter the current six-digit authenticator code.',code:'authenticator_required'});
+        if(u.role==='admin'&&!(u.totp_secret&&totpOK(u.totp_secret,typeof b.otp==='string'?b.otp:'')))return send(401,{error:'Enter the current six-digit authenticator code.',code:'authenticator_required'});
+        if(passwordNeedsUpgrade(u.password))run('UPDATE users SET password=? WHERE id=?',passwordHash(pw),u.id);
         const t=token(),csrf=token();if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',digest(t),u.id,csrf,Date.now()+8*3600000);
         res.setHeader('Set-Cookie',`ff_session=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${origin.startsWith('https:')?'; Secure':''}`);return send(200,{user:safeUser(u),csrf});
       }
@@ -183,10 +189,14 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       }
       throw new HttpError(404,'Not found.');
     }catch(e:any){send(e instanceof HttpError||e instanceof LibraryError||e instanceof ActivityError?e.status:500,{error:e instanceof HttpError||e instanceof LibraryError||e instanceof ActivityError?e.message:'Something went wrong. Please try again.'});}
-  });
-  return {server,db};
+  };
+  const serverOptions={headersTimeout:10000,requestTimeout:15000,maxHeaderSize:8192};
+  let server;
+  try{server=transport.tls?createSecureServer({...serverOptions,...transport.tls},handle):createServer(serverOptions,handle);}catch(error){db.close();throw error;}
+  server.setTimeout(15000,socket=>socket.destroy());
+  server.maxHeadersCount=50;
+  return {server,db,origin};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
-  const host=process.env.FF_HOST||'127.0.0.1';check(['127.0.0.1','::1'].includes(host),'Local-test mode must bind to loopback.');
-  const port=Number(process.env.FF_PORT||8085);const {server}=createApp();server.listen(port,host,()=>console.log(`FORM & FIRE local test: http://${host}:${port} — no real client data`));
+  const {host,port}=transportConfig();const {server,origin}=createApp();server.listen(port,host,()=>console.log(`FORM & FIRE local test: ${origin} — no real client data`));
 }

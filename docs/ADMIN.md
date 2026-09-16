@@ -4,7 +4,7 @@ Use fictional data while the local-test banner is displayed. Create a unique adm
 
 ## Try the panel with examples
 
-Run `~/.local/bin/form-fire admin setup-admin-test` in Termux, then choose **Alex’s admin sign-in** on the sign-in page. The dedicated email is `admin-test@form-fire.example`; its unique password and authenticator key are printed only on first creation. `~/.local/bin/form-fire admin read-test-otp` gives a current local test code. Normal password + TOTP checks remain mandatory.
+Run `~/.local/bin/form-fire admin setup-admin-test` in Termux, then use the regular **Your space → Sign in** form. After the server verifies your admin password it shows the authenticator field, and successful verification opens your admin tools. There is no separate public admin link. The dedicated email is `admin-test@form-fire.example`; its unique password and authenticator key are printed only on first creation. `~/.local/bin/form-fire admin read-test-otp` gives a current local test code. Normal password + TOTP checks remain mandatory.
 
 The command explicitly adds Example · Jamie with a pending request and Example · Sam with an active service and welcome check-in. Unedited starter plans are copied into Sam’s assignments when available; archived or changed starter content is left alone. There are no sample payments or invented progress results. Repeating setup preserves all credentials and edits, and does not recreate deleted examples.
 

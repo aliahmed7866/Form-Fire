@@ -65,3 +65,12 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Added a dedicated admin-test CLI setup, current-code and recovery commands. Fictional examples are explicit, marked, idempotent and never installed on normal startup. Existing credentials and edited starter content are preserved.
 - Added distinct original outdoors, rest, kitchen and movement drawings. Only small decorative details animate, on request, for 4.8 seconds; reduced motion keeps them still. No playback or lifestyle browsing becomes health/adherence data.
 - Added Feel-good ideas, a gentle daily invitation, focused client/admin sign-in and in-app setup guides. Copy centres enjoyable food, accessible movement, rest and personal choice without weight targets, streaks or promised outcomes.
+
+## Unified sign-in and security update (0.6.0)
+
+- One public sign-in; server-verified roles choose the destination. Admin TOTP appears only after a valid admin password. Public admin/testing/setup links are removed; server authorization remains mandatory for every private operation.
+- Preserve client/admin accounts and existing passwords. New password hashes use the OWASP 16 MiB scrypt profile (N16384/r8/p5); legacy hashes migrate only after complete successful authentication.
+- Add AES-256-GCM backups with a separate private key, authenticated restore and no overwrite. Existing plaintext backups are not deleted automatically. Live SQLite encryption is still a production gap; file permissions and backup encryption are not a substitute.
+- Keep default loopback HTTP testing on 8085. Add native verified HTTPS with owner-configured trusted certificates, strict origin/binding configuration and no silent HTTP fallback. No public deployment mode is added.
+- Tighten directory/sidecar permissions, exact JSON types, request time/header limits and response policy headers. Retain parameterized SQL, MFA, CSRF, role/ownership checks and existing rate limits; add explicit attack regression tests.
+- A phone fetch failure was reported but not reproduced. Add actionable connection feedback and read-only retry; do not claim that network connectivity was repaired on a device we cannot inspect.

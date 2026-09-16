@@ -12,6 +12,7 @@ fi
 pkg install -y nodejs-lts python git curl termux-services
 node -e 'if(Number(process.versions.node.split(".")[0])<24) {console.error("Node 24+ required. Update Termux packages first."); process.exit(1)}; require("node:sqlite")'
 mkdir -p "$FF_CONFIG_DIR" "$FF_DATA_DIR" "$HOME/.local/bin"
+chmod 700 "$FF_CONFIG_DIR" "$FF_DATA_DIR"
 if [ ! -f "$FF_CONFIG_DIR/env" ]; then
   # Quote paths safely for the shell; never overwrite an existing environment.
   python - "$FF_CONFIG_DIR/env" "$FF_DATA_DIR" "$FF_PORT" <<'PY'
@@ -23,6 +24,7 @@ Path(sys.argv[1]).write_text('\n'.join('export '+k+'='+shlex.quote(v) for k,v in
 }.items())+'\n')
 PY
 fi
+chmod 600 "$FF_CONFIG_DIR/env"
 . "$FF_CONFIG_DIR/env"
 cd "$FF_APP_DIR"
 node src/manage.ts backup
@@ -66,8 +68,8 @@ for attempt in 1 2 3 4 5; do
 done
 if [ "${1:-}" = '--with-hub' ]; then python termux/hub-registry.py; fi
 for attempt in 1 2 3 4 5; do
-  if curl --fail --silent --max-time 3 "http://127.0.0.1:$FF_PORT/health" | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>{try{const x=JSON.parse(s);process.exit(x.ok&&x.app==="form-fire"?0:1)}catch{process.exit(1)}})'; then
-    echo "FORM & FIRE: http://127.0.0.1:$FF_PORT"
+  if node src/healthcheck.ts; then
+    echo "FORM & FIRE: $FF_ORIGIN"
     echo 'Create your admin: ~/.local/bin/form-fire admin create-admin alex@example.test'
     echo 'Use fictional data. Email, managed identity and hosted payments are not connected.'
     exit 0

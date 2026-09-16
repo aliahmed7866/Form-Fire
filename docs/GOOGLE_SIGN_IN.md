@@ -1,6 +1,6 @@
 # Optional Google sign-in
 
-Google client sign-in is implemented, but stays disabled until you configure your own OAuth credentials. Email/password sign-in remains available. Alex’s admin always uses password plus TOTP; Google cannot grant or bypass administrator access.
+Google client sign-in is implemented, but its button stays hidden until you configure your own OAuth credentials. Email/password sign-in remains available. Alex’s admin always uses password plus TOTP; Google cannot grant or bypass administrator access.
 
 ## Connect it on Termux
 

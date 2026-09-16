@@ -1,8 +1,17 @@
 node_modules/
 data/
 .env
+.env.*
+!.env.example
 *.sqlite*
 *.log
 test-results/
 __pycache__/
 *.pyc
+*.ffbackup
+backup.key
+backup-key-id
+*.key
+*.pem
+!tests/fixtures/loopback-test-key.pem
+!tests/fixtures/loopback-test-cert.pem

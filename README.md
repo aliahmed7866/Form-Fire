@@ -2,7 +2,7 @@
 
 A working local-test app for online coaching, chef-created meal plans and private dining. Warm charcoal, bone and citrus; copy based only on the confirmed brief. FORM & FIRE is a provisional name, not a cleared brand.
 
-**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; it is disabled until configured. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication includes password hashing, verification/recovery through a private terminal outbox, server sessions and administrator TOTP. The server deliberately binds only to loopback.
+**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; its button appears only after configuration. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication includes password hashing, verification/recovery through a private terminal outbox, server sessions and administrator TOTP. The server deliberately binds only to loopback.
 
 ## Termux: install beside AYCF and Admin Hub
 
@@ -30,17 +30,17 @@ After updating, run:
 ~/.local/bin/form-fire admin setup-admin-test
 ```
 
-Open **Your space → Alex’s admin sign-in** above the sign-in form. If you enter admin credentials on the client form, it also reveals the authenticator field without clearing your email or password. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
+Open the regular **Your space → Sign in** page. Everyone uses this same form; there is no public admin entry. The server requests an authenticator code only after validating an admin password, then opens admin tools after the code is verified. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
 
 ```bash
 ~/.local/bin/form-fire admin read-test-otp
 ```
 
-Setup adds two clearly labelled fictional Example clients, pending/active requests, untouched starter plan copies where available, and a sample check-in. It never adds payment figures or progress outcomes. Run it again safely: existing credentials, edits and deleted examples are preserved. Lost password? `form-fire admin recover-admin-test` prints a one-use code for the normal reset page. The in-app **Try admin** guide walks through everything; no public bypass or shared password exists.
+Setup adds two clearly labelled fictional Example clients, pending/active requests, untouched starter plan copies where available, and a sample check-in. It never adds payment figures or progress outcomes. Run it again safely: existing credentials, edits and deleted examples are preserved. Lost password? `form-fire admin recover-admin-test` prints a one-use code for the normal reset page. After admin sign-in, **Setup & testing** has the walkthrough. There is no public bypass or shared password.
 
 ## Google sign-in and everyday ideas
 
-**Continue with Google** appears on client sign-in and registration. Configure your Google Cloud web OAuth client and private device credentials using [the setup guide](docs/GOOGLE_SIGN_IN.md) or the app’s **Connection setup** screen. Admin sign-in continues to require its password and authenticator. Existing password accounts are not automatically linked by email.
+**Continue with Google** appears on sign-in and registration only after configuration. Configure your Google Cloud web OAuth client and private device credentials using [the setup guide](docs/GOOGLE_SIGN_IN.md) or the signed-in administrator’s **Connection setup** screen. Admin sign-in continues to require its password and authenticator. Existing password accounts are not automatically linked by email.
 
 **Feel-good ideas** brings together movement, enjoyable food, fresh air and rest through four distinct new illustrated scenes. Choose Play for a short, gentle animation; Pause and reduced-motion support keep you in control. The ideas are optional, with no streaks, health scores or pressure. Today includes a small invitation alongside your own plan.
 
@@ -86,6 +86,12 @@ The week view shows recorded activity, with no streaks or adherence scores. Exac
 The original training-and-food hero is joined by four matching illustrations for training, meals, private dining and everyday check-ins. A new F/flame mark appears in the header, footer and browser tab. The artwork is bundled as small SVG files, with no external image service or font dependency.
 
 Services, sign-in, client plans, Today and Alex’s plan studio share the same visual identity, with responsive layouts, labelled navigation and larger form controls. Illustrations are general brand artwork, not photographs of Alex, clients or a particular assigned recipe. Update with `~/.local/bin/form-fire update` and refresh the browser.
+
+## Security and recovery
+
+One public sign-in, server-checked roles, administrator MFA, parameterized SQL, stronger scrypt password hashes, private files and encrypted `.ffbackup` backups protect the local test workflow. Existing passwords keep working and upgrade on successful sign-in. Connection failures preserve the form and offer a manual retry/recovery message.
+
+Default access remains loopback HTTP on port 8085. Native HTTPS requires trusted certificates and fails closed if misconfigured. The live SQLite database is not app-encrypted; encrypted backup archives are a separate protection. See [security scope and HTTPS setup](docs/SECURITY.md) and [encrypted backup/restore](docs/OPERATIONS.md). Do not expose this local test through a tunnel.
 
 ## Detach later
 

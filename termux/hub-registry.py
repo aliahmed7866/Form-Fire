@@ -5,9 +5,10 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
+from urllib.parse import urlsplit
 
 
-def update(path, app_dir, port=8085, detach=False):
+def update(path, app_dir, port=8085, detach=False, origin=None):
     path = Path(path).expanduser()
     if not path.exists() and detach:
         return
@@ -16,6 +17,17 @@ def update(path, app_dir, port=8085, detach=False):
     data = json.loads(path.read_text())
     if not isinstance(data, dict) or not isinstance(data.get('apps'), list):
         raise SystemExit('Invalid Admin Hub registry; nothing changed.')
+    if not detach:
+        origin = origin or f'http://127.0.0.1:{port}'
+        try:
+            parsed = urlsplit(origin)
+            if (parsed.scheme not in ('http', 'https') or
+                parsed.hostname not in ('127.0.0.1', 'localhost', '::1') or
+                parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment or
+                (parsed.port or (443 if parsed.scheme == 'https' else 80)) != port):
+                raise ValueError()
+        except ValueError:
+            raise SystemExit('Use the exact configured loopback origin and port; registry unchanged.')
     apps = data['apps']
     if not detach and any(x.get('id') != 'form-fire' and x.get('port') == port for x in apps):
         raise SystemExit(f'Port {port} is already registered to another app.')
@@ -25,8 +37,8 @@ def update(path, app_dir, port=8085, detach=False):
             'id': 'form-fire', 'name': 'FORM & FIRE', 'icon': '🔥', 'accent': 'amber',
             'description': 'Alex’s coaching, meal plans and private dining · local test',
             'service': 'form-fire', 'port': port,
-            'health_url': f'http://127.0.0.1:{port}/health',
-            'open_url': f'http://127.0.0.1:{port}',
+            'health_url': origin + '/health',
+            'open_url': origin,
             'install_command': ['bash', str(Path(app_dir).resolve() / 'termux/install.sh')]
         })
     shutil.copy2(path, path.with_suffix(path.suffix + '.before-form-fire'))
@@ -49,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--app-dir', default=str(Path(__file__).resolve().parents[1]))
     parser.add_argument('--port', type=int, default=int(os.environ.get('FF_PORT', '8085')))
     parser.add_argument('--detach', action='store_true')
+    parser.add_argument('--origin', default=os.environ.get('FF_ORIGIN'))
     args = parser.parse_args()
-    update(args.registry, args.app_dir, args.port, args.detach)
+    update(args.registry, args.app_dir, args.port, args.detach, args.origin)
     print('FORM & FIRE detached from Admin Hub.' if args.detach else 'FORM & FIRE added to Admin Hub. Refresh the hub to see it.')

@@ -1,10 +1,11 @@
 import { openDb, id, transaction } from './db.ts';
 import { passwordHash, token, totpSecret, totp } from './auth.ts';
-import { backup } from 'node:sqlite';
 import { resolve } from 'node:path';
-import { chmodSync, mkdirSync } from 'node:fs';
+import { createEncryptedBackup, decryptBackup } from './backup.ts';
 import { setupAdminTest, readAdminTestOTP, recoverAdminTest } from './admin-test.ts';
-const dir=process.env.FF_DATA_DIR||'data',db=openDb(dir),[command,arg]=process.argv.slice(2);
+const dir=process.env.FF_DATA_DIR||'data',[command,arg,destinationArg]=process.argv.slice(2);
+// Decryption is an offline export and must never open/create the live database.
+const db=command==='decrypt-backup'?undefined:openDb(dir);
 try {
  if(command==='setup-admin-test') {
    const result=setupAdminTest(db);
@@ -34,12 +35,16 @@ try {
  } else if(command==='test-otp') {
    const u=db.prepare("SELECT totp_secret FROM users WHERE email=? AND role='admin'").get(arg||'') as any;if(!u)throw Error('Administrator not found.');console.log('Local test code: '+totp(u.totp_secret));
  } else if(command==='backup') {
-   const destination=resolve(arg||`${dir}/backups/form-fire-${new Date().toISOString().replaceAll(':','-')}.sqlite`);mkdirSync(resolve(destination,'..'),{recursive:true,mode:0o700});await backup(db,destination);chmodSync(destination,0o600);console.log('Backup saved: '+destination);
+   const destination=await createEncryptedBackup(db!,dir,arg);console.log('Encrypted backup saved: '+destination);console.log('Keep the original backup.key separately and privately; it is required to restore this archive.');
+ } else if(command==='decrypt-backup') {
+   if(!arg||!destinationArg)throw Error('Usage: npm run admin -- decrypt-backup ARCHIVE DESTINATION');
+   console.log('Authenticated backup exported: '+await decryptBackup(dir,arg,destinationArg));
+   console.log('This exported SQLite file is plaintext. Stop FORM & FIRE before a manual restore and remove the export when finished.');
  } else if(command==='delete-requested-account') {
    const u=db.prepare("SELECT * FROM users WHERE email=? AND role='client'").get(arg||'') as any;
    if(!u||!db.prepare("SELECT id FROM account_requests WHERE user_id=? AND status='requested'").get(u.id))throw Error('A pending client deletion request is required.');
-   const destination=resolve(`${dir}/backups/before-deletion-${Date.now()}.sqlite`);mkdirSync(resolve(destination,'..'),{recursive:true,mode:0o700});await backup(db,destination);chmodSync(destination,0o600);
+   const destination=resolve(`${dir}/backups/before-deletion-${Date.now()}.ffbackup`);await createEncryptedBackup(db!,dir,destination);
    transaction(db,()=>{const uid=u.id;for(const table of ['payments'])db.prepare(`DELETE FROM ${table} WHERE invoice_id IN (SELECT id FROM invoices WHERE user_id=?)`).run(uid);db.prepare('DELETE FROM replies WHERE request_id IN (SELECT id FROM requests WHERE user_id=?) OR author_id=?').run(uid,uid);db.prepare('DELETE FROM request_events WHERE request_id IN (SELECT id FROM requests WHERE user_id=?)').run(uid);for(const table of ['sessions','tokens','outbox','plan_activity','assignments','checkins','invoices','account_requests','requests'])db.prepare(`DELETE FROM ${table} WHERE user_id=?`).run(uid);db.prepare('DELETE FROM users WHERE id=?').run(uid);db.prepare('INSERT INTO audit(id,action,entity_id) VALUES(?,?,?)').run(id(),'local.account.deleted',uid);});
    console.log('Local test account deleted. The backup still contains its prior data; remove it when no longer needed. Real retention policy must be agreed before launch.');
- } else console.log('Commands: setup-admin-test | read-test-otp | recover-admin-test | create-admin EMAIL | outbox | test-otp EMAIL | backup [DESTINATION] | delete-requested-account EMAIL');
-} catch(e:any) {console.error(e.message);process.exitCode=1;} finally {db.close();}
+ } else console.log('Commands: setup-admin-test | read-test-otp | recover-admin-test | create-admin EMAIL | outbox | test-otp EMAIL | backup [DESTINATION.ffbackup] | decrypt-backup ARCHIVE DESTINATION | delete-requested-account EMAIL');
+} catch(e:any) {console.error(e.message);process.exitCode=1;} finally {db?.close();}

@@ -1,15 +1,17 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, readFileSync, chmodSync } from 'node:fs';
+import { mkdirSync, readFileSync, chmodSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { installStarterContent } from './starter-content.ts';
 export const id = () => randomUUID();
 export function openDb(dir: string) {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
+  chmodSync(dir,0o700);
   const path = resolve(dir, 'form-fire.sqlite');
   const db = new DatabaseSync(path);
   chmodSync(path, 0o600);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
+  for(const suffix of ['-wal','-shm'])if(existsSync(path+suffix))chmodSync(path+suffix,0o600);
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY)');
   for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql'], [3, '003_plan_activity.sql'], [4, '004_google_auth.sql']] as const) {
     if (db.prepare('SELECT version FROM migrations WHERE version=?').get(version)) continue;
