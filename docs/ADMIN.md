@@ -48,6 +48,16 @@ The starter label propagates into published snapshots if a template or any inclu
 
 Saved exercise/recipe/template editors check versions and reject stale edits from another session. Refresh to load the current version. Published plan content is independent of future library edits; past assignments remain accessible even after an item is archived.
 
+## Today and client progress
+
+The client’s Today tab uses the newest published training and meal version for each active request. Give sessions and meals exact weekday labels such as `Monday` for a weekly recurrence, or `Daily`/`Every day`. Labels such as `Day 1` or `Week 1 Monday` remain flexible; no start date or programme progression is inferred. Clients can deliberately log an item on a different day without changing its plan.
+
+Clients choose the displayed date and IANA time zone, for example `Europe/London`. They can log on or after publication, through the current local day, up to 90 days back. Future days are previews. Workout effort (1–5) and notes are optional. Saving a note also logs the item; Undo removes it. Each item can have one log per calendar day and published version. No wearable or video-playback completion is inferred.
+
+Open **Client progress** and choose a range of up to 90 days to see counts and the clients’ notes, including the recorded dates/time zones. These are self-reported records, not an adherence score. Administrators cannot add or edit client logs. Clients without records still appear with zero counts.
+
+Publishing a new version or ending a service makes previous items read-only for activity tracking; their records remain in history and client export. A replacement version has its own tracking records. Avoid treating multiple version records as unique exercise sessions without reviewing them. Client exports include all retained activity, even beyond the interactive reporting window.
+
 ## Services
 
 Create, edit, publish, unpublish or archive a service. Leave price empty for enquiry-only pricing. Record only confirmed prices. Archive preserves request history. No prices or client success claims are invented.
@@ -84,4 +94,4 @@ For fictional local test data, process a requested deletion:
 ~/.local/bin/form-fire admin delete-requested-account client@example.test
 ```
 
-This requires an existing deletion request, creates a backup, then removes that client's records, including invoices and payments. The backup retains the old data: remove it according to your testing needs. Do not use this test deletion flow for real financial records. Agree legal retention and identity-verification procedures before live use.
+This requires an existing deletion request, creates a backup, then removes that client's records, including activity, invoices and payments. The backup retains the old data: remove it according to your testing needs. Do not use this test deletion flow for real financial records. Agree legal retention and identity-verification procedures before live use.

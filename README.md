@@ -29,7 +29,7 @@ If AYCF/Admin Hub is not installed, use `bash termux/install.sh` without `--with
 3. Choose training, meals or both and submit a request. Drafts remain in the browser tab during sign-in. Duplicate submissions reuse one request.
 4. In a separate browser session, sign in as the administrator. Open Requests → review → ask a question or approve.
 5. After agreeing the package, activate the service. In Plan studio create a training or meal template (and recipes if wanted), then publish a customised client version.
-6. Refresh the client's portal and open the plan. Submit a weekly check-in; review and leave feedback in admin.
+6. Refresh the client's portal and open **Today**. Log a workout or prepared meal, optionally add a note/effort rating, and try Undo. Review **Client progress** in admin. Submit a weekly check-in; review and leave feedback in admin.
 7. Register a second client. They cannot see the first client's requests, plans, check-ins or payments, including through direct API URLs.
 
 Private dining has a separate enquiry, proposal, client acceptance and booking confirmation flow. Where a proposal requires payment, a matching invoice must have its payment recorded before booking confirmation. Manual entries are explicitly labelled; this is not payment-provider verification.
@@ -49,7 +49,15 @@ Video links open the provider in a new tab; no videos load automatically, and fi
 
 Published client plans snapshot exercise instructions, prescriptions, media URLs, recipes, serving notes and shopping lists. Editing or archiving library content never rewrites an existing assignment. Archiving a referenced item blocks new publication until the template is updated. External video files remain controlled by their host; a URL snapshot cannot preserve a removed or changed remote video.
 
-Update an existing Termux installation with `~/.local/bin/form-fire update`, then refresh the browser. Database migration 002 preserves existing clients and plans. No Admin Hub change is required.
+Update an existing Termux installation with `~/.local/bin/form-fire update`, then refresh the browser. Database migrations preserve existing clients and plans. No Admin Hub change is required.
+
+## Today and client progress
+
+Clients can open **Today** for the latest published workout and meal plans attached to their active services. Select a calendar day, review exercises or recipes, and mark a workout done or a meal prepared. Logs persist across refreshes and restarts. Notes and workout effort ratings are optional and visible to Alex; a saved note also marks the item complete. Use Undo to remove a current log.
+
+The week view shows recorded activity, with no streaks or adherence scores. Exact weekday labels recur weekly; `Daily` and `Every day` appear every day. Other labels stay flexible so the app does not guess a start date. The selected date and named time zone are shown explicitly; the default zone comes from the device. Future days are previews. Recording is allowed from publication through today, up to 90 days back.
+
+**Alex’s admin → Client progress** shows client-reported counts and notes for a selected range of up to 90 days. Logs remain attached to the exact published plan version. Publishing a replacement or ending a service keeps previous logs in history and export, but those older items can no longer be edited. Clients can access only their own activity; Alex can review it but cannot record on their behalf. Client exports and account deletion include activity records.
 
 ## Detach later
 

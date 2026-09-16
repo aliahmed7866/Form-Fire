@@ -42,4 +42,12 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Workout templates store ordered sessions/exercise prescriptions. Meal templates store scheduled recipe selections and serving notes. Assignment publishing resolves full exercise/media/recipe snapshots.
 - Demonstration links use validated public HTTPS URLs and open only on explicit action. No uploads, iframe embeds or remote-media fetching were added. External hosts can still change their video content.
 - Original SVG/CSS two-pose illustrations provide optional local motion examples, with explicit controls and reduced-motion support. No stock footage is represented as Alex.
-- Shopping lists remain authored text; automatic ingredient scaling, nutritional calculations, exercise tracking and client video uploads remain out of scope.
+- Shopping lists remain authored text; automatic ingredient scaling, nutritional calculations, per-set exercise tracking and client video uploads remain out of scope.
+
+## Daily activity update
+
+- Added Today for the latest structured workout and meal plans on active client requests, plus Client progress for Alex. Migration 003 stores activity without rewriting existing plans or clients.
+- Clients explicitly record completion, optional notes and workout effort. Records use assignment version, item type/index and local calendar date as their identity, so repeated saves cannot double-count one item. Undo deletes that record.
+- Show an explicit date and named time zone. Exact weekdays recur weekly; Daily/Every day recur daily. Other schedule labels remain flexible. Allow recording from publication through today, up to 90 days back; future dates are previews.
+- Ended services and replaced plan versions remain readable but cannot receive activity edits. Historical records stay tied to their original version and are included in exports and deletion.
+- Admin progress reports use recorded local dates over ranges of up to 90 days. Counts describe logs, not adherence, outcomes or unique sessions across replacement versions. Admins cannot impersonate client completion.

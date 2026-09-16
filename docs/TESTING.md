@@ -46,3 +46,19 @@ The cloud browser returned `net::ERR_BLOCKED_BY_CLIENT` for the loopback preview
 Added checks for upgrading a populated schema-1 database, preserving old template content/client records, installing starter examples only once, preserving edited/archived examples after reopening, and creating no automatic assignments. API tests exercise admin-only library mutations, structured exercise prescriptions and ordering, changed media/cues, stale edit rejection, validation of sets/rest/references, day/meal recipe snapshots, shopping lists, archive publication gates, stable historical assignments, client isolation and exports. URL validation rejects executable schemes, credentials, local addresses and iframe snippets. Markup tests verify escaping, explicit video links without automatic media loading, inactive default animation controls and old-plan rendering compatibility. Shared-script tests also render every admin studio view and both sample plan editors.
 
 The prior local-preview browser restriction remains: these are HTTP/database and markup tests, not a new claim of rendered visual or physical Android verification. On the phone, check the four Plan studio tabs, adding/removing/reordering rows, animation Play/Pause/Next pose, reduced-motion mode, video links, and a sample plan in a separate client session.
+
+## Daily activity update verification
+
+`npm test`: 41 reported tests passed (including three parent tests), plus two Python hub tests. JavaScript/TypeScript syntax, shell syntax and whitespace checks passed.
+
+Added HTTP/database checks for verified owner-only activity, admin read access, CSRF/origin validation, snapshot item validation, local-day boundaries, the publication/backfill window, idempotent completion, note/effort edits, undo, replaced versions, ended services, restart persistence, complete exports and requested deletion. The populated-database upgrade test now verifies migration 003 alongside preservation of existing content.
+
+Browser-script VM/markup tests cover weekday versus flexible labels, latest active versions, date/time-zone controls, future previews, escaped notes, repeated recipes with distinct meal names, helpful restricted-account views and stale-date actions. These do not replace rendered browser or physical Termux checks.
+
+On the phone, publish the starter workout and meal plans to a verified fictional client, then:
+
+- Open Today, review exercises/recipes, log a workout and prepared meal, add a note/effort rating, refresh and try Undo.
+- Change the selected date/time zone and move between weeks. Check future dates have no logging controls and each button records its displayed day.
+- Review the client’s logs in Alex’s Client progress, including date filtering and the note. Confirm a second client cannot see them.
+- Publish a replacement version. Confirm the previous logs remain in weekly history and export, and new actions use the replacement plan.
+- Check mobile layout, keyboard navigation, animation controls and reduced-motion behaviour within expanded daily cards.

@@ -31,7 +31,7 @@ test('Existing database migrates without replacing client records or repeating s
     const again=openDb(dir);
     assert.equal((again.prepare('SELECT title FROM exercises WHERE id=?').get('starter-squat') as any).title,'Alex edited this');
     assert.equal((again.prepare('SELECT COUNT(*) n FROM exercises').get() as any).n,4);
-    assert.equal((again.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,2);again.close();
+    assert.equal((again.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,3);again.close();
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
 
