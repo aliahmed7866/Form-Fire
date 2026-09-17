@@ -43,7 +43,7 @@ test('Video URLs allow HTTPS links and reject executable, embedded or local dest
 });
 
 test('Structured workout and meal journeys retain snapshots and enforce admin/owner access',async t=>{
-  const dir=mkdtempSync(join(tmpdir(),'ff-library-')),app=createApp({dataDir:dir,origin:'http://127.0.0.1:8085'});
+  const dir=mkdtempSync(join(tmpdir(),'ff-library-')),app=createApp({requireVerification:true,dataDir:dir,origin:'http://127.0.0.1:8085'});
   await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));
   const port=(app.server.address() as any).port;
   // Fixture identities, not a production sign-in shortcut. Every request still passes server role/CSRF checks.

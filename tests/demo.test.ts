@@ -38,7 +38,7 @@ assert.equal(db.prepare("SELECT COUNT(*) n FROM outbox WHERE user_id=? AND kind=
 db.close();
 mkdirSync(cwd+'/foreign-demo',{recursive:true});writeFileSync(cwd+'/foreign-demo/form-fire.sqlite','DO NOT CHANGE');result=seed(cwd+'/foreign-demo');assert.notEqual(result.status,0);assert.equal(readFileSync(cwd+'/foreign-demo/form-fire.sqlite','utf8'),'DO NOT CHANGE');
 symlinkSync(root,cwd+'/symlink-demo','dir');result=seed(cwd+'/symlink-demo');assert.notEqual(result.status,0);
-const app=createApp({dataDir:root,origin:'http://127.0.0.1:18086'});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
+const app=createApp({requireVerification:true,dataDir:root,origin:'http://127.0.0.1:18086'});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:18086',address='http://127.0.0.1:'+app.server.address().port;
 function httpFetch(url,options){return new Promise((resolve,reject)=>{const req=request(url,options,res=>{let body='';res.on('data',chunk=>body+=chunk);res.on('end',()=>resolve({status:res.statusCode,headers:{get:()=>res.headers['set-cookie']?.[0]},json:async()=>JSON.parse(body)}));});req.on('error',reject);req.end(options.body);});}
 async function login(key){const u=creds.find(c=>c.key===key);const r=await httpFetch(address+'/api/auth/login',{method:'POST',headers:{Host:'127.0.0.1:18086',Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:u.email,password:u.password,...(u.secret?{otp:totp(u.secret)}:{})})});assert.equal(r.status,200);const data=await r.json();return {cookie:r.headers.get('set-cookie').split(';')[0],csrf:data.csrf,user:data.user};}

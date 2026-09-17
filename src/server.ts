@@ -20,10 +20,12 @@ function integer(v:any,name:string,min=0,max=100000000) { check(Number.isSafeInt
 function currency(v:any) { check(typeof v==='string'&&/^[A-Z]{3}$/.test(v),'Use a three-letter currency code.');return v; }
 function date(v:any,name:string) {const valid=typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v));check(valid&&new Date(v).toISOString().slice(0,10)===v,`Enter a valid ${name}.`);return v;}
 const parse=(v:any)=>v ? JSON.parse(v) : null;
-const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified:!!u.verified,profile:parse(u.profile)});
+
 const transitions:Record<string,string[]>={submitted:['under_review','withdrawn'],under_review:['awaiting_client_response','approved','declined','withdrawn'],awaiting_client_response:['under_review','withdrawn'],approved:['withdrawn'],declined:[],withdrawn:[]};
-export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch}={}) {
+export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch,requireVerification?:boolean}={}) {
   check((process.env.FF_MODE||'local-test')==='local-test','Only local-test mode is implemented; do not use real client data.');
+  const requireVerification=options.requireVerification??process.env.FF_REQUIRE_VERIFICATION==='1';
+  const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified:!requireVerification||!!u.verified,profile:parse(u.profile)});
   const transport=transportConfig(process.env,options.origin),{origin}=transport;
   const dataDir=options.dataDir||process.env.FF_DATA_DIR||'data';
   const db=openDb(dataDir);
@@ -32,6 +34,7 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
   const google=createGoogleAuth(db,origin,options.google,options.googleFetch);
   const rate=new Map<string,{count:number,until:number}>();
   const dummyHash=passwordHash(token());
+  const sessionDigest=(value:string)=>digest(requireVerification?value:'local-password:'+value);
   const get=(sql:string,...args:any[])=>db.prepare(sql).get(...args) as any;
   const all=(sql:string,...args:any[])=>db.prepare(sql).all(...args) as any[];
   const run=(sql:string,...args:any[])=>db.prepare(sql).run(...args);
@@ -50,7 +53,7 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       const url=new URL(req.url||'/',origin), p=url.pathname, method=req.method||'GET';
       // Restrict Host as well as Origin to prevent DNS rebinding against this local app.
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
-      if(p==='/health'&&method==='GET') { get('SELECT 1');return send(200,{ok:true,app:'form-fire',mode:'local-test',instance}); }
+      if(p==='/health'&&method==='GET') { get('SELECT 1');return send(200,{ok:true,app:'form-fire',mode:'local-test',requireVerification,instance}); }
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
         const files:Record<string,[string,string]>={'/exercise-catalog.js':['exercise-catalog.js','text/javascript'],'/exercise-catalog-extra.js':['exercise-catalog-extra.js','text/javascript'],'/exercise-motion.js':['exercise-motion.js','text/javascript'],'/exercise-motion.css':['exercise-motion.css','text/css'],'/experience.js':['experience.js','text/javascript'],'/lifestyle-art.js':['lifestyle-art.js','text/javascript'],'/google-mark.svg':['google-mark.svg','image/svg+xml'],'/art-outdoors.svg':['art-outdoors.svg','image/svg+xml'],'/art-rest.svg':['art-rest.svg','image/svg+xml'],'/art-kitchen.svg':['art-kitchen.svg','image/svg+xml'],'/art-stretch.svg':['art-stretch.svg','image/svg+xml'],'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/navigation.js':['navigation.js','text/javascript'],'/responsive.css':['responsive.css','text/css'],'/enrichment.js':['enrichment.js','text/javascript'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
@@ -63,17 +66,17 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
         check(!req.headers['content-encoding']||req.headers['content-encoding']==='identity','Compressed requests are not supported.',415);
       }
       const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(sessionCookie+'='))?.slice(sessionCookie.length+1);
-      const session=cookie?get('SELECT * FROM sessions WHERE id=? AND expires>?',digest(cookie),Date.now()):null;
+      const session=cookie?get('SELECT * FROM sessions WHERE id=? AND expires>?',sessionDigest(cookie),Date.now()):null;
       const user=session?get('SELECT * FROM users WHERE id=?',session.user_id):null;
       if(session&&method!=='GET'&&req.headers['x-csrf-token']!==session.csrf)return send(403,{error:'Your session changed in another tab. Refresh your session and try again.',code:'session_changed'});
       const signed=()=>{check(user,'Please sign in.',401);return user;};
-      const verified=()=>{signed();check(user.verified,'Verify your email before submitting.',403);return user;};
+      const verified=()=>{signed();check(!requireVerification||user.verified,'Verify your email before submitting.',403);return user;};
       const activityOwner=()=>{verified();check(user.role==='client','Only clients can record their own activity.',403);return user;};
       const admin=()=>{signed();check(user.role==='admin','Administrator access required.',403);return user;};
       const ownedRequest=(requestId:string)=>{signed();const r=get('SELECT * FROM requests WHERE id=?',requestId);check(r&&(r.user_id===user.id||user.role==='admin'),'Request not found.',404);return r;};
       function limit(bucket:string,max:number) { const now=Date.now(),key=`${req.socket.remoteAddress}:${bucket}`; if(rate.size>10000)for(const [k,v]of rate)if(v.until<now)rate.delete(k);const r=rate.get(key);if(!r||r.until<now)rate.set(key,{count:1,until:now+900000});else{r.count++;check(r.count<=max,'Too many attempts. Please wait 15 minutes.',429);} }
       const b=method!=='GET'?await body(req):{};
-      if(p==='/api/session'&&method==='GET')return send(200,{user:user?safeUser(user):null,csrf:session?.csrf,mode:'local-test',instance,connections:{email:false,managedAuth:false,payments:false,uploads:false,google:google.enabled}});
+      if(p==='/api/session'&&method==='GET')return send(200,{user:user?safeUser(user):null,csrf:session?.csrf,mode:'local-test',requireVerification,instance,connections:{email:false,managedAuth:false,payments:false,uploads:false,google:google.enabled}});
       if(p==='/api/auth/google/status'&&method==='GET')return send(200,{enabled:google.enabled,redirect_uri:google.redirectUri});
       if(['/api/auth/google/start','/api/auth/google/callback'].includes(p)&&method==='GET') {
         const browser=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(googleCookie+'='))?.slice(googleCookie.length+1);
@@ -88,25 +91,26 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
           res.setHeader('Set-Cookie',google.clearCookie());
           const result=await google.complete(url.searchParams,browser);
           const t=token(),csrf=token();
-          transaction(db,()=>{if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',digest(t),result.userId,csrf,Date.now()+8*3600000);});
+          transaction(db,()=>{if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',sessionDigest(t),result.userId,csrf,Date.now()+8*3600000);});
           res.setHeader('Set-Cookie',[google.clearCookie(),`${sessionCookie}=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${origin.startsWith('https:')?'; Secure':''}`]);return redirect('/#'+result.next);
         }catch(error){if(error instanceof HttpError)throw error;res.setHeader('Set-Cookie',google.clearCookie());return redirect('/#/login?google_error='+(error instanceof GoogleAuthError?error.code:'unavailable'));}
       }
       if(p==='/api/services'&&method==='GET')return send(200,all('SELECT * FROM services WHERE published=1 AND archived=0'));
       if(p==='/api/auth/register'&&method==='POST') {
         limit('auth',20);const email=text(b.email,'Email',254).toLowerCase();check(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),'Enter a valid email.');const name=text(b.name,'Name',100),pw=text(b.password,'Password',128);check(pw.length>=12,'Use at least 12 characters for your password.');
-        transaction(db,()=>{if(!get('SELECT id FROM users WHERE email=?',email)){const uid=id();run('INSERT INTO users(id,email,name,password) VALUES(?,?,?,?)',uid,email,name,passwordHash(pw));issueToken(uid,'verify');}});
-        return send(201,{message:'If this address is new, a verification message is in the local test outbox. Run npm run admin -- outbox on the server. Email delivery is not connected.'});
+        transaction(db,()=>{if(!get('SELECT id FROM users WHERE email=?',email)){const uid=id();run('INSERT INTO users(id,email,name,password) VALUES(?,?,?,?)',uid,email,name,passwordHash(pw));if(requireVerification)issueToken(uid,'verify');}});
+        return send(201,{requireVerification,message:!requireVerification?'Your local test account is ready. Sign in with your email and password.':'If this address is new, a verification message is in the local test outbox. Run npm run admin -- outbox on the server. Email delivery is not connected.'});
       }
       if(p==='/api/auth/login'&&method==='POST') {
         limit('auth',20);const email=text(b.email,'Email',254).toLowerCase(),pw=text(b.password,'Password',128),u=get('SELECT * FROM users WHERE email=?',email);
         const valid=passwordOK(pw,u?.password||dummyHash);check(u&&valid,'Email or password is incorrect.',401);
-        if(u.role==='admin'&&!(u.totp_secret&&totpOK(u.totp_secret,typeof b.otp==='string'?b.otp:'')))return send(401,{error:'Enter the current six-digit authenticator code.',code:'authenticator_required'});
+        if(requireVerification&&u.role==='admin'&&!(u.totp_secret&&totpOK(u.totp_secret,typeof b.otp==='string'?b.otp:'')))return send(401,{error:'Enter the current six-digit authenticator code.',code:'authenticator_required'});
         if(passwordNeedsUpgrade(u.password))run('UPDATE users SET password=? WHERE id=?',passwordHash(pw),u.id);
-        const t=token(),csrf=token();if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',digest(t),u.id,csrf,Date.now()+8*3600000);
+        const t=token(),csrf=token();if(session)run('DELETE FROM sessions WHERE id=?',session.id);run('DELETE FROM sessions WHERE expires<?',Date.now());run('INSERT INTO sessions VALUES(?,?,?,?)',sessionDigest(t),u.id,csrf,Date.now()+8*3600000);
         res.setHeader('Set-Cookie',`${sessionCookie}=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${origin.startsWith('https:')?'; Secure':''}`);return send(200,{user:safeUser(u),csrf});
       }
       if(p==='/api/auth/logout'&&method==='POST') { if(session)run('DELETE FROM sessions WHERE id=?',session.id);res.setHeader('Set-Cookie',`${sessionCookie}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`);return send(200,{ok:true}); }
+      if(!requireVerification&&['/api/auth/verify','/api/auth/resend'].includes(p)&&method==='POST')return send(200,{message:'Account verification is turned off for local testing. You can sign in.'});
       if(p==='/api/auth/resend'&&method==='POST') {limit('recover',10);const u=get('SELECT * FROM users WHERE email=?',text(b.email,'Email',254).toLowerCase());if(u&&!u.verified)issueToken(u.id,'verify');return send(200,{message:'If the account needs verification, a new code is in the local test outbox.'});}
       if(p==='/api/auth/recover'&&method==='POST') {limit('recover',10);const u=get('SELECT * FROM users WHERE email=?',text(b.email,'Email',254).toLowerCase());if(u)issueToken(u.id,'reset');return send(200,{message:'If that account exists, recovery instructions are in the local test outbox. Email delivery is not connected.'});}
       if(['/api/auth/verify','/api/auth/reset'].includes(p)&&method==='POST') {

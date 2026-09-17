@@ -2,7 +2,7 @@
 
 A working local-test app for online coaching, chef-created meal plans and private dining. Warm charcoal, bone and citrus; copy based only on the confirmed brief. FORM & FIRE is a provisional name, not a cleared brand.
 
-**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; its button appears only after configuration. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication includes password hashing, verification/recovery through a private terminal outbox, server sessions and administrator TOTP. The server deliberately binds only to loopback.
+**This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; its button appears only after configuration. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication uses hashed passwords and server sessions. Email verification and administrator authenticator prompts are turned off for local testing; password recovery still uses the private terminal outbox. The server deliberately binds only to loopback.
 
 ## Termux: install beside AYCF and Admin Hub
 
@@ -18,7 +18,7 @@ bash termux/install.sh --with-hub
 
 Open **http://127.0.0.1:8085** on that Android device. The existing Admin Hub (normally port 8079) gets a FORM & FIRE tile. Your other apps and ports stay intact.
 
-The admin command prints a unique password and authenticator setup key once. Store them privately and add the key to an authenticator app. For fictional local tests only, `~/.local/bin/form-fire admin test-otp alex@example.test` shows the current code. This terminal convenience is not a production MFA recovery mechanism.
+The admin command prints a unique password and authenticator setup key once. Store them privately. Only the email and password are needed in the default local testing mode; the key is retained for optional strict-mode testing. For fictional local tests only, `~/.local/bin/form-fire admin test-otp alex@example.test` shows the current code. This terminal convenience is not a production MFA recovery mechanism.
 
 If AYCF/Admin Hub is not installed, use `bash termux/install.sh` without `--with-hub`. You can attach later. A custom registry path is supported via `AYCF_ADMIN_REGISTRY`; custom port via `FF_PORT` on first install.
 
@@ -30,24 +30,20 @@ After updating, run:
 ~/.local/bin/form-fire admin setup-admin-test
 ```
 
-Open the regular **Your space → Sign in** page. Everyone uses this same form; there is no public admin entry. The server requests an authenticator code only after validating an admin password, then opens admin tools after the code is verified. Use `admin-test@form-fire.example` and the unique password printed in your terminal, plus its authenticator code. For a fresh test code:
-
-```bash
-~/.local/bin/form-fire admin read-test-otp
-```
+Open the regular **Your space → Sign in** page. Everyone uses this same form; there is no public admin entry. Use `admin-test@form-fire.example` and the unique password printed in your terminal. No verification or authenticator code is needed in the default local mode.
 
 Setup adds two clearly labelled fictional Example clients, pending/active requests, untouched starter plan copies where available, and a sample check-in. It never adds payment figures or progress outcomes. Run it again safely: existing credentials, edits and deleted examples are preserved. Lost password? `form-fire admin recover-admin-test` prints a one-use code for the normal reset page. After admin sign-in, **Setup & testing** has the walkthrough. There is no public bypass or shared password.
 
 ## Google sign-in and everyday ideas
 
-**Continue with Google** appears on sign-in and registration only after configuration. Configure your Google Cloud web OAuth client and private device credentials using [the setup guide](docs/GOOGLE_SIGN_IN.md) or the signed-in administrator’s **Connection setup** screen. Admin sign-in continues to require its password and authenticator. Existing password accounts are not automatically linked by email.
+**Continue with Google** appears on sign-in and registration only after configuration. Configure your Google Cloud web OAuth client and private device credentials using [the setup guide](docs/GOOGLE_SIGN_IN.md) or the signed-in administrator’s **Connection setup** screen. Admin sign-in uses its local password; Google cannot grant admin access. Existing password accounts are not automatically linked by email.
 
 **Feel-good ideas** brings together movement, enjoyable food, fresh air and rest through four distinct new illustrated scenes. Choose Play for a short, gentle animation; Pause and reduced-motion support keep you in control. The ideas are optional, with no streaks, health scores or pressure. Today includes a small invitation alongside your own plan.
 
 ## Test the complete coaching journey
 
 1. Create a client account in the app using fictional details. Registration always creates a client, never an admin.
-2. Read the verification code with `~/.local/bin/form-fire admin outbox`; enter it on the verification screen and sign in. Email is not sent. Codes expire in one hour. For an expired verification code, see the recovery instructions in the admin guide.
+2. Sign in with the email and password you just created. Email verification is disabled for this local test edition.
 3. Choose training, meals or both and submit a request. Drafts remain in the browser tab during sign-in. Duplicate submissions reuse one request.
 4. In a separate browser session, sign in as the administrator. Open Requests → review → ask a question or approve.
 5. After agreeing the package, activate the service. In Plan studio create a training or meal template (and recipes if wanted), then publish a customised client version.
@@ -89,7 +85,7 @@ Services, sign-in, client plans, Today and Alex’s plan studio share the same v
 
 ## Security and recovery
 
-One public sign-in, server-checked roles, administrator MFA, parameterized SQL, stronger scrypt password hashes, private files and encrypted `.ffbackup` backups protect the local test workflow. Existing passwords keep working and upgrade on successful sign-in. Connection failures preserve the form and offer a manual retry/recovery message.
+One public sign-in, server-checked roles, optional administrator MFA, parameterized SQL, stronger scrypt password hashes, private files and encrypted `.ffbackup` backups protect the local test workflow. Existing passwords keep working and upgrade on successful sign-in. Connection failures preserve the form and offer a manual retry/recovery message.
 
 Default access remains loopback HTTP on port 8085. Native HTTPS requires trusted certificates and fails closed if misconfigured. The live SQLite database is not app-encrypted; encrypted backup archives are a separate protection. See [security scope and HTTPS setup](docs/SECURITY.md) and [encrypted backup/restore](docs/OPERATIONS.md). Do not expose this local test through a tunnel.
 
@@ -166,3 +162,5 @@ Migration 007 adds checklist progress without changing assigned plans. The app s
 ## Demo login reliability and responsive navigation
 
 The complete fictional demo now has a dedicated launcher, checked passwords, targeted account recovery and supervised startup on Termux. Main/demo browser sessions are isolated by port. Phone navigation uses a collapsible public menu and workspace section picker; larger screens use a workspace sidebar. See [demo setup, recovery and validation](docs/DEMO_AND_NAVIGATION.md) for commands, update steps and test limits.
+
+Local verification can be re-enabled explicitly with `FF_REQUIRE_VERIFICATION=1` in the server environment. Existing verification state and authenticator secrets are preserved; sessions issued in password-only mode cannot enter strict mode. The complete demo launcher always chooses password-only testing. See [demo repair](docs/DEMO_AND_NAVIGATION.md).

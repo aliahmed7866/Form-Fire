@@ -17,7 +17,7 @@ test('Shopping keeps quantities, duplicates and unusual characters exactly as pu
 
 test('Shopping lists persist, isolate owners, detect concurrent edits and follow immutable plan versions',async t=>{
   const dir=mkdtempSync(join(tmpdir(),'ff-shopping-')),origin='http://127.0.0.1:8085';
-  let app=createApp({dataDir:dir,origin}),port=0;
+  let app=createApp({requireVerification:true,dataDir:dir,origin}),port=0;
   const listen=async()=>{await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));port=(app.server.address() as any).port;};
   const close=async()=>{await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();};
   await listen();
@@ -56,7 +56,7 @@ test('Shopping lists persist, isolate owners, detect concurrent edits and follow
       r=await save();revision=r.data.revision;
     });
     await t.test('Progress survives restart and exports only to its owner',async()=>{
-      await close();app=createApp({dataDir:dir,origin});await listen();
+      await close();app=createApp({requireVerification:true,dataDir:dir,origin});await listen();
       const list=(await call(owner,'/shopping')).data.lists[0];assert.deepEqual(list.purchased,[0]);assert.equal(list.revision,revision);
       const exported=(await call(owner,'/export')).data;assert.deepEqual(exported.shopping[0].purchased,[0]);assert.equal(exported.shopping[0].assignment_id,meal);
       assert.deepEqual((await call(other,'/export')).data.shopping,[]);

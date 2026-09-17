@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # FORM & FIRE: complete fictional test data, in a separate local-only database.
-# Usage: bash form-fire-demo.sh [start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop] [APP_DIRECTORY] [DEMO_EMAIL]
+# Usage: bash form-fire-demo.sh [fix|start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop] [APP_DIRECTORY] [DEMO_EMAIL]
 # Defaults: app ~/Form-Fire; demo port 8086. No packages or Git changes are made.
 set -euo pipefail
 umask 077
 FF_DEMO_ACTION="${1:-start}"
-case "$FF_DEMO_ACTION" in start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop) ;; *) echo 'Usage: bash form-fire-demo.sh [start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop] [APP_DIRECTORY] [DEMO_EMAIL]' >&2; exit 1;; esac
+case "$FF_DEMO_ACTION" in fix|start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop) ;; *) echo 'Usage: bash form-fire-demo.sh [fix|start|foreground|seed|logins|otp|codes|recover|repair-logins|status|stop] [APP_DIRECTORY] [DEMO_EMAIL]' >&2; exit 1;; esac
 FF_DEMO_APP="${2:-${FF_DEMO_APP:-$HOME/Form-Fire}}"
 if [ ! -f "$FF_DEMO_APP/src/server.ts" ] && [ -f "$PWD/src/server.ts" ]; then FF_DEMO_APP="$PWD"; fi
 if [ ! -f "$FF_DEMO_APP/migrations/007_shopping_progress.sql" ]; then
@@ -23,9 +23,19 @@ export FF_DEMO_ROOT="${FF_DEMO_ROOT:-$HOME/.local/share/form-fire-demo}"
 export FF_DEMO_PORT="${FF_DEMO_PORT:-8086}"
 # Never inherit the installed app's database, OAuth credentials or transport.
 export FF_DATA_DIR="$FF_DEMO_ROOT"
-export FF_MODE=local-test FF_HOST=127.0.0.1 FF_PORT="$FF_DEMO_PORT"
+export FF_MODE=local-test FF_HOST=127.0.0.1 FF_PORT="$FF_DEMO_PORT" FF_REQUIRE_VERIFICATION=0
 export FF_ORIGIN="http://127.0.0.1:$FF_DEMO_PORT"
 unset FF_GOOGLE_CLIENT_ID FF_GOOGLE_CLIENT_SECRET FF_TLS_CERT_FILE FF_TLS_KEY_FILE
+if ! rg -q 'requireVerification' src/server.ts 2>/dev/null && ! grep -q 'requireVerification' src/server.ts; then
+  echo 'Update FORM & FIRE first: ~/.local/bin/form-fire update' >&2; exit 1
+fi
+if [ "$FF_DEMO_ACTION" = fix ]; then
+  echo 'Repairing the two primary demo logins; existing plans and requests will be kept.'
+  bash "$FF_DEMO_SCRIPT" seed "$FF_DEMO_APP" >/dev/null
+  bash "$FF_DEMO_SCRIPT" repair-logins "$FF_DEMO_APP" demo-alex@form-fire.example >/dev/null
+  bash "$FF_DEMO_SCRIPT" repair-logins "$FF_DEMO_APP" demo-sam@form-fire.example >/dev/null
+  exec bash "$FF_DEMO_SCRIPT" start "$FF_DEMO_APP"
+fi
 node --input-type=module <<'JS'
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, lstatSync, chmodSync, realpathSync, renameSync, openSync, closeSync, unlinkSync } from 'node:fs';
@@ -205,7 +215,7 @@ try {
       renameSync(pending,credentials);chmodSync(credentials,0o600);
       console.log('Created a complete FICTIONAL demo. Existing app records were not touched.');
     }else console.log('Demo already populated. Your edits, passwords and deletions have been preserved.');
-    if(existsSync(credentials)){
+    if(existsSync(credentials)&&!['start','foreground'].includes(action)){
       const saved=JSON.parse(readFileSync(credentials,'utf8'));
       console.log('\nPRIVATE DEMO LOGINS (passwords checked against this database):');
       for(const login of saved.logins){
@@ -214,16 +224,16 @@ try {
         if(!process.env.FF_DEMO_EMAIL&&action!=='logins'&&!['alex','sam'].includes(login.key))continue;
         const valid=account.email===login.email&&passwordOK(login.password,account.password);
         console.log(`\n${login.name}\n  Email: ${login.email}\n  ${valid?'Verified password: '+login.password:'Password changed — the old password will not be printed. Use form-fire-demo recover '+login.email}\n  Try: ${login.journey}`);
-        if(login.role==='admin'){console.log('  Current authenticator code: '+totp(account.totp_secret)+' (30 seconds)');console.log('  For a fresh code: form-fire-demo otp');}
+        console.log('  Email and password only — no verification code required.');
       }
-    }else console.log('Private login file is missing. Existing passwords have not been reset. Use the demo app’s password recovery and the codes command.');
+    }else if(!existsSync(credentials))console.log('Private login file is missing. Existing passwords have not been reset. Use the demo app’s password recovery and the codes command.');
     console.log('\nDEMO SUMMARY:');
     for(const table of ['users','services','requests','replies','exercises','recipes','templates','assignments','plan_activity','shopping_progress','checkins','invoices','payments','account_requests'])console.log(`  ${table}: ${get('SELECT COUNT(*) n FROM '+table).n}`);
     console.log('\nAll people, prices, payments, bookings and activity in this separate database are FICTIONAL.');
     console.log('No emails are sent, Google sign-in is disconnected, and no money moves. Media uploads are not connected.');
     console.log('Demo URL: '+process.env.FF_ORIGIN+'/#/login');
     console.log('Data stays in: '+realpathSync(root));
-    console.log('Use form-fire-demo logins to see all accounts; form-fire-demo otp for an admin code; form-fire-demo codes for recovery/verification.');
+    console.log('Use form-fire-demo logins to see all accounts; form-fire-demo fix to repair the primary logins; form-fire-demo codes for recovery.');
   }
 }finally{
   if(db)db.close();
@@ -246,15 +256,70 @@ mv "$FF_DEMO_ROOT/demo-launcher.sh.tmp" "$FF_DEMO_ROOT/demo-launcher.sh"
 } > "$FF_DEMO_BIN/form-fire-demo.tmp"
 chmod 700 "$FF_DEMO_BIN/form-fire-demo.tmp"
 mv "$FF_DEMO_BIN/form-fire-demo.tmp" "$FF_DEMO_BIN/form-fire-demo"
+verify_demo() {
+  node --input-type=module <<'VERIFY'
+import {readFileSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import {passwordOK,totp,digest} from './src/auth.ts';
+const origin=process.env.FF_ORIGIN,root=process.env.FF_DEMO_ROOT;
+let health;
+for(let attempt=0;attempt<20;attempt++){
+  try{const response=await fetch(origin+'/health',{signal:AbortSignal.timeout(2000)});if(response.ok){health=await response.json();break;}}catch{}
+  await new Promise(r=>setTimeout(r,500));
+}
+if(!health?.ok||health.app!=='form-fire')throw Error('Demo is not responding. Run form-fire-demo status and check the demo logs. If an older foreground demo is open, stop it with Ctrl+C first.');
+if(!health.instance||health.instance.id!==digest(resolve(root)).slice(0,16))throw Error('This port is serving a different database. No credentials were sent. Stop the other instance or select another demo port.');
+if(health.requireVerification!==false)throw Error('This server still requires verification. Update the checkout and restart the demo.');
+const db=new DatabaseSync(join(root,'form-fire.sqlite'),{readOnly:true});
+try{
+  const saved=['start','foreground'].includes(process.env.FF_DEMO_ACTION)?JSON.parse(readFileSync(join(root,'demo-logins.json'),'utf8')):{logins:[]};
+  const checked=[];
+  for(const login of saved.logins.filter(l=>['alex','sam'].includes(l.key))){
+    const user=db.prepare('SELECT * FROM users WHERE id=? AND email=?').get(login.id,login.email);
+    if(!user||!passwordOK(login.password,user.password))throw Error('Saved login no longer matches '+login.email+'. Run form-fire-demo fix to repair the primary accounts.');
+    const response=await fetch(origin+'/api/auth/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:login.email,password:login.password}),signal:AbortSignal.timeout(10000)});
+    const result=await response.json();
+    if(!response.ok||result.user?.id!==login.id)throw Error('Actual demo login failed for '+login.email+': '+(result.error||'workspace mismatch')+'. Check that the intended demo owns this port.');
+    const cookie=response.headers.get('set-cookie')?.split(';')[0];
+    if(!cookie)throw Error('Sign-in did not set a session cookie.');
+    const sessionResponse=await fetch(origin+'/api/session',{headers:{Cookie:cookie},signal:AbortSignal.timeout(3000)});
+    const session=await sessionResponse.json();if(session.user?.id!==login.id)throw Error('Demo session verification failed.');
+    await fetch(origin+'/api/auth/logout',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-CSRF-Token':result.csrf,Cookie:cookie},body:'{}',signal:AbortSignal.timeout(3000)});
+    checked.push(login);
+  }
+  if(['start','foreground'].includes(process.env.FF_DEMO_ACTION)&&checked.length!==2)throw Error('Primary demo accounts are missing. Existing deletions were preserved.');
+  for(const login of checked)console.log('\n'+login.name+'\nEmail: '+login.email+'\nPassword: '+login.password+'\nLive login checked. No verification or authenticator code needed.');
+}finally{db.close();}
+console.log('Demo ready: '+origin+'/#/login');
+console.log('Open this address in your normal browser. Do not reuse main-app account details.');
+console.log('Useful commands: form-fire-demo logins | form-fire-demo fix | form-fire-demo status | form-fire-demo stop');
+VERIFY
+}
+run_foreground() {
+  mkdir -p "$FF_DEMO_ROOT/logs"
+  node src/server.ts >"$FF_DEMO_ROOT/logs/foreground.log" 2>&1 &
+  FF_DEMO_CHILD=$!
+  trap 'kill "$FF_DEMO_CHILD" 2>/dev/null || true' EXIT
+  trap 'exit 130' INT TERM
+  if ! verify_demo; then
+    tail -n 20 "$FF_DEMO_ROOT/logs/foreground.log" >&2
+    exit 1
+  fi
+  echo 'Keep this Termux session open. Ctrl+C stops this foreground demo.'
+  wait "$FF_DEMO_CHILD"
+}
 if [ "$FF_DEMO_ACTION" = foreground ]; then
   printf '\nKeep this session running. Ctrl+C stops the demo. Open %s/#/login\n' "$FF_ORIGIN"
-  exec node src/server.ts
+  run_foreground
+  exit $?
 fi
 if [ "$FF_DEMO_ACTION" = start ] || [ "$FF_DEMO_ACTION" = status ] || [ "$FF_DEMO_ACTION" = stop ]; then
   if [ -z "${PREFIX:-}" ] || ! command -v sv >/dev/null 2>&1; then
     if [ "$FF_DEMO_ACTION" = start ]; then
       printf '\nNo Termux supervisor found. Running in the foreground; keep this session open.\n'
-      exec node src/server.ts
+      run_foreground
+      exit $?
     fi
     echo 'No Termux supervisor found. A foreground demo is stopped with Ctrl+C.' >&2; exit 1
   fi
@@ -263,7 +328,7 @@ if [ "$FF_DEMO_ACTION" = start ] || [ "$FF_DEMO_ACTION" = status ] || [ "$FF_DEM
     echo 'Refusing to replace an unrelated demo service.' >&2; exit 1
   fi
   if [ "$FF_DEMO_ACTION" = start ]; then
-    if [ -f "$FF_DEMO_SERVICE/run" ]; then sv -w 10 down "$FF_DEMO_SERVICE"; fi
+    if [ -f "$FF_DEMO_SERVICE/run" ] && sv status "$FF_DEMO_SERVICE" >/dev/null 2>&1; then sv -w 10 down "$FF_DEMO_SERVICE"; fi
     node --input-type=module <<'PORT'
 import {createServer} from 'node:net';
 await new Promise((ok,no)=>{const server=createServer();server.once('error',()=>no(Error('Demo port is occupied. Stop the old foreground demo with Ctrl+C before starting this managed demo.')));server.listen(Number(process.env.FF_DEMO_PORT),'127.0.0.1',()=>server.close(ok));});
@@ -274,58 +339,33 @@ PORT
     {
       printf '#!%s/bin/bash\n# FORM-FIRE-DEMO-SERVICE\nset -euo pipefail\nexec 2>&1\n' "$PREFIX"
       printf 'cd %q\nexport FF_DATA_DIR=%q\nexport FF_PORT=%q\nexport FF_ORIGIN=%q\n' "$FF_DEMO_APP" "$FF_DEMO_ROOT" "$FF_DEMO_PORT" "$FF_ORIGIN"
-      printf 'export FF_MODE=local-test FF_HOST=127.0.0.1\nunset FF_GOOGLE_CLIENT_ID FF_GOOGLE_CLIENT_SECRET FF_TLS_CERT_FILE FF_TLS_KEY_FILE\nexec node src/server.ts\n'
+      printf 'export FF_MODE=local-test FF_HOST=127.0.0.1 FF_REQUIRE_VERIFICATION=0\nunset FF_GOOGLE_CLIENT_ID FF_GOOGLE_CLIENT_SECRET FF_TLS_CERT_FILE FF_TLS_KEY_FILE\nexec node src/server.ts\n'
     } > "$FF_DEMO_SERVICE/run.tmp"
     chmod 700 "$FF_DEMO_SERVICE/run.tmp"; mv "$FF_DEMO_SERVICE/run.tmp" "$FF_DEMO_SERVICE/run"
     printf '#!%s/bin/sh\nexec svlogd -tt "%s"\n' "$PREFIX" "$FF_DEMO_ROOT/logs" > "$FF_DEMO_SERVICE/log/run"
     chmod 700 "$FF_DEMO_SERVICE/log/run"
     if [ -f "$PREFIX/etc/profile.d/start-services.sh" ]; then . "$PREFIX/etc/profile.d/start-services.sh"; fi
     rm -f "$FF_DEMO_SERVICE/down"
-    sv -w 10 up "$FF_DEMO_SERVICE"
+    echo 'Waiting for the Termux demo service…'
+    FF_DEMO_STARTED=0
+    for FF_DEMO_ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+      if sv -w 1 up "$FF_DEMO_SERVICE" >/dev/null 2>&1; then FF_DEMO_STARTED=1; break; fi
+      sleep 0.3
+    done
+    if [ "$FF_DEMO_STARTED" != 1 ]; then
+      echo 'Termux supervisor did not start the demo. Close and reopen Termux, then run form-fire-demo start. For immediate foreground testing: form-fire-demo foreground' >&2
+      exit 1
+    fi
   elif [ "$FF_DEMO_ACTION" = stop ]; then
     sv -w 10 down "$FF_DEMO_SERVICE"
     echo 'Demo stopped. Your data is preserved.'; exit 0
   else
     sv status "$FF_DEMO_SERVICE" || true
   fi
-  # Verify the running server and an actual password login, not just its port.
-  if ! node --input-type=module <<'VERIFY'
-import {readFileSync} from 'node:fs';
-import {join,resolve} from 'node:path';
-import {DatabaseSync} from 'node:sqlite';
-import {passwordOK,totp,digest} from './src/auth.ts';
-const origin=process.env.FF_ORIGIN,root=process.env.FF_DEMO_ROOT;
-let health;
-for(let attempt=0;attempt<5;attempt++){
-  try{const response=await fetch(origin+'/health',{signal:AbortSignal.timeout(2000)});if(response.ok){health=await response.json();break;}}catch{}
-  await new Promise(r=>setTimeout(r,500));
-}
-if(!health?.ok||health.app!=='form-fire')throw Error('Demo is not responding. Run form-fire-demo status and check the demo logs. If an older foreground demo is open, stop it with Ctrl+C first.');
-if(health.instance&&health.instance.id!==digest(resolve(root)).slice(0,16))throw Error('This port is serving a different database. No credentials were sent. Stop the other instance or select another demo port.');
-const db=new DatabaseSync(join(root,'form-fire.sqlite'),{readOnly:true});
-try{
-  const saved=process.env.FF_DEMO_ACTION==='start'?JSON.parse(readFileSync(join(root,'demo-logins.json'),'utf8')):{logins:[]};
-  for(const login of saved.logins.filter(l=>['alex','sam'].includes(l.key))){
-    const user=db.prepare('SELECT * FROM users WHERE id=? AND email=?').get(login.id,login.email);
-    if(!user||!passwordOK(login.password,user.password)){console.log(login.email+': stored password has changed; use your new password or form-fire-demo recover '+login.email);continue;}
-    const response=await fetch(origin+'/api/auth/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:login.email,password:login.password,...(user.role==='admin'?{otp:totp(user.totp_secret)}:{})}),signal:AbortSignal.timeout(10000)});
-    const result=await response.json();
-    if(!response.ok||result.user?.id!==login.id)throw Error('Actual demo login failed for '+login.email+': '+(result.error||'workspace mismatch')+'. Check that the intended demo owns this port.');
-    const cookie=response.headers.get('set-cookie')?.split(';')[0];
-    if(!cookie)throw Error('Sign-in did not set a session cookie.');
-    const sessionResponse=await fetch(origin+'/api/session',{headers:{Cookie:cookie},signal:AbortSignal.timeout(3000)});
-    const session=await sessionResponse.json();if(session.user?.id!==login.id)throw Error('Demo session verification failed.');
-    await fetch(origin+'/api/auth/logout',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-CSRF-Token':result.csrf,Cookie:cookie},body:'{}',signal:AbortSignal.timeout(3000)});
-    console.log('Verified live sign-in and session: '+login.email);
-  }
-}finally{db.close();}
-console.log('Demo ready: '+origin+'/#/login');
-console.log('Open this address in your normal browser. Do not reuse main-app account details.');
-console.log('Useful commands: form-fire-demo logins | form-fire-demo otp | form-fire-demo status | form-fire-demo stop');
-VERIFY
-  then
+  if ! verify_demo; then
     if [ "$FF_DEMO_ACTION" = start ]; then sv -w 10 down "$FF_DEMO_SERVICE" || true; fi
-    echo 'Demo checks failed; resolve the error above before signing in.' >&2
+    echo 'Demo checks failed. Recent startup logs:' >&2
+    tail -n 20 "$FF_DEMO_ROOT/logs/current" >&2 2>/dev/null || true
     exit 1
   fi
 fi

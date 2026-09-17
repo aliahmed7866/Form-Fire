@@ -10,7 +10,7 @@ import {instanceCookie} from '../src/instance.ts';
 
 test('Main and demo sessions coexist in a real shared cookie jar; logout and stale CSRF stay isolated',async()=>{
  const root=mkdtempSync(join(tmpdir(),'ff-instances-')),jar=new Map<string,string>();
- const apps=[8085,8086].map(port=>createApp({dataDir:join(root,String(port)),origin:`http://127.0.0.1:${port}`}));
+ const apps=[8085,8086].map(port=>createApp({requireVerification:true,dataDir:join(root,String(port)),origin:`http://127.0.0.1:${port}`}));
  const password='a private test password';
  for(const [i,app] of apps.entries()){
   app.db.prepare("INSERT INTO users(id,email,name,password,role,verified) VALUES(?,?,?,?,'client',1)").run('user-'+i,'same@example.test','Person '+i,passwordHash(password));

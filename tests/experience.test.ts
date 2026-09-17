@@ -14,6 +14,11 @@ test('Google appears only when configured and preserves the enquiry return route
  assert.equal(runInContext("googleSignin('/enquire?service=both')",c),'');
  runInContext('session={connections:{google:true}}',c);const html=runInContext("googleSignin('/enquire?service=both')",c);assert.ok(html.includes('/api/auth/google/start?next=%2Fenquire%3Fservice%3Dboth'));assert.ok(!html.includes('disabled'));assert.ok(!html.includes('#/google-setup'));
 });
+test('Password-only local sign-in hides verification links and redirects old verification screens to sign-in',()=>{
+ const {c}=ui();runInContext('session={requireVerification:false}',c);
+ for(const expression of ['authPage()',"authPage('verify')"]){const html=runInContext(expression,c);assert.ok(html.includes('data-form="login"'));assert.ok(!html.includes('Verify your account'));assert.ok(!html.includes('name="token"'));assert.ok(!html.includes('name="otp"'));}
+ runInContext('session={requireVerification:true}',c);assert.ok(runInContext('authPage()',c).includes('Verify your account'));assert.ok(runInContext("authPage('verify')",c).includes('name="token"'));
+});
 test('Google errors are allowlisted and never echo provider or URL text or advertise admin access',()=>{
  const {c}=ui();for(const code of ['<script>alert(1)</script>','constructor','__proto__']){c.location.hash='#/login?google_error='+encodeURIComponent(code);const html=runInContext('googleNotice()',c);assert.ok(html.includes('could not be completed'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('function Object'));}
  c.location.hash='#/login?google_error=admin_google';const html=runInContext('googleNotice()',c);assert.ok(html.includes('email and password'));assert.ok(!html.includes('admin'));assert.ok(!html.includes('<a'));

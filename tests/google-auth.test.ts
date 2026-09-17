@@ -37,7 +37,7 @@ async function fixture(google=config) {
     }
     assert.equal(String(input),'https://www.googleapis.com/oauth2/v3/certs');return new Response(JSON.stringify({keys:[jwk]}));
   };
-  let app=createApp({dataDir:dir,origin,google,googleFetch:googleFetch as typeof fetch});
+  let app=createApp({requireVerification:true,dataDir:dir,origin,google,googleFetch:googleFetch as typeof fetch});
   const listen=async()=>{await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));port=(app.server.address() as any).port;};await listen();
   const call=(path:string,cookie='',headers:any={},method='GET',body?:any)=>new Promise<any>((done,reject)=>{
     const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:'127.0.0.1:8085',Cookie:cookie,...headers}},res=>{
@@ -59,7 +59,7 @@ async function fixture(google=config) {
   const callback=(flow:any,extra='code=valid-code')=>call('/api/auth/google/callback?state='+flow.state+'&'+extra,flow.cookie);
   const attempt=async(patch:any={},header?:any,key?:any)=>{const flow=await begin();issued=jwt(claims(patch),header,key);return callback(flow);};
   const close=async()=>{await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();rmSync(dir,{recursive:true,force:true});};
-  const restart=async()=>{await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();app=createApp({dataDir:dir,origin,google,googleFetch:googleFetch as typeof fetch});await listen();};
+  const restart=async()=>{await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();app=createApp({requireVerification:true,dataDir:dir,origin,google,googleFetch:googleFetch as typeof fetch});await listen();};
   return {get app(){return app;},call,begin,claims,callback,attempt,close,restart,get calls(){return calls;},issue(value:string){issued=value;},upstream(value:string){upstream=value;}};
 }
 const error=(response:any,code:string)=>{assert.equal(response.status,303);assert.equal(response.headers.location,'/#/login?google_error='+code);assert.ok(!response.text.includes('UPSTREAM-SECRET'));assert.ok(response.headers['set-cookie'].every((value:string)=>!value.startsWith('ff_session=')));};
