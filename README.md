@@ -131,7 +131,7 @@ Open http://127.0.0.1:8085. Read local verification/recovery codes with `npm run
 - Server-enforced roles and ownership, host/origin checks, CSRF, rate limits, safe JSON handling and escaped rendering.
 - Immutable assigned plan snapshots, request transitions/history and metadata-only admin audit events.
 - Integer minor-unit money records, per-currency reporting, payment/refund separation and idempotent manual event keys.
-- Local testing includes a clearly labelled starter library: four exercises with optional motion examples, three recipes, one workout plan and one meal plan. Nothing is assigned automatically. No clients are seeded at startup. The explicit admin-test command adds labelled fictional examples; no testimonial, price or earnings fixtures are created.
+- Local testing includes a clearly labelled starter library: 40 exercises with optional motion examples, three recipes, one workout plan and one meal plan. Nothing is assigned automatically. No clients are seeded at startup. The explicit admin-test command adds labelled fictional examples; no testimonial, price or earnings fixtures are created.
 
 ## Verification and limitations
 

@@ -1,5 +1,23 @@
 # Test report — updated 17 September 2026
 
+## Independent branch and application revalidation — 17 September 2026
+
+Validated repository revision `ad8dc0b8524eab4a080198b040340f737c9d4a9a` against the project brief. The exercise branch points to `b940f94`, which is already an ancestor of `main`; it has zero unmerged commits and is one documentation commit behind. No conflicting changes or open pull requests were found. Retain the branch and fast-forward it to the validated main revision with this documentation update. No force push or branch deletion is needed.
+
+Fresh checks on Linux with Node 24.19.0 and Python 3.12.14:
+
+- `npm test`: **135 passed, 0 failed, 0 skipped**.
+- `npm run check`: passed.
+- `python -m unittest discover -s tests -p '*_test.py'`: **4 passed**.
+- `bash -n termux/install.sh termux/update.sh`: passed.
+- `git diff --check`: passed.
+
+The executed suite covers registration/verification/recovery, admin password plus TOTP, server role and ownership checks, request review/activation, immutable plan publication, check-ins and daily activity, chef booking gates, manual payment/refund arithmetic and idempotency, database reopening, migrations, all 40 exercise IDs, animation controls, TLS, and encrypted backup tamper/restore handling. API tests use temporary fictional data. Browser-script tests run simulated DOM/VM interactions; they are not rendered browser end-to-end tests.
+
+Rendered browser validation remains blocked: Playwright is installed, but its Chromium executable is absent, and the browser download timed out. No new mobile/desktop screenshots, physical Android checks, real Google OAuth round trip or device restore drill were completed. No installed phone instance was updated or inspected.
+
+**Result:** automated validation passes for the local test release. Production acceptance remains incomplete: managed identity, email delivery, hosted checkout and private uploads are disconnected; live SQLite is not app-encrypted; owner content/policy approval and device/accessibility checks remain open. Google client sign-in is optional and needs credentials; the ledger records explicitly manual payments. See the launch backlog and security scope for the remaining work.
+
 ## Current release: exercise library integrated into main (0.7.0)
 
 Merged the 40-exercise animation feature onto the security release without conflicts. The combined code passed all **135 Node tests**, **four Python Admin Hub tests**, syntax checks, Termux shell syntax checks and Git whitespace checks on 17 September 2026. This includes the existing authentication, authorization, TLS, encrypted-backup and client data-isolation regressions, plus exercise catalogue, migration and playback controls.

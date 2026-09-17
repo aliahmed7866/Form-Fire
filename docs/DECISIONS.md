@@ -84,11 +84,11 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Tighten directory/sidecar permissions, exact JSON types, request time/header limits and response policy headers. Retain parameterized SQL, MFA, CSRF, role/ownership checks and existing rate limits; add explicit attack regression tests.
 - A phone fetch failure was reported but not reproduced. Add actionable connection feedback and read-only retry; do not claim that network connectivity was repaired on a device we cannot inspect.
 
-## Expanded exercise library (v0.7, feature branch)
+## Expanded exercise library (v0.7, integrated into main)
 
 - Increase the catalogue to 40 movements with 16 additional starter examples, retaining existing exercise IDs and selection snapshots. Keep migration 005 immutable and add migration 006 for the larger animation CHECK constraint.
 - Use separate content-pack markers so upgrades preserve existing edits, archives, removed examples and client assignments. Exercise examples still require Alex’s review before client use.
 - Separate the original catalogue, expansion catalogue and renderer into local scripts. The application remains dependency-free; no external animation service is used.
 - Add manual movement-position controls and quarter-speed playback, accessible status messages for intentional actions, and a single active guide to reduce competing motion and phone rendering work. Reduced motion keeps manual inspection available.
 - Refine grounded foot pivots, equipment contact, joint paths and viewing labels in the existing artwork. Catalogue geometry and the visual renderer are illustrative; written prescription and technique review remain with Alex.
-- Published on a feature branch at the user’s request; default-branch changes require a later explicit merge decision.
+- Initially published on `codex/exercise-animation-library` at the user’s request. Commit `b940f94` is already included in `main`; the 17 September branch review confirmed no unmerged feature changes or conflicts. The retained feature branch is synchronised forward after validation, without rewriting history.
