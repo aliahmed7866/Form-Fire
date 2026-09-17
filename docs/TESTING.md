@@ -1,6 +1,12 @@
-# Test report — 16 September 2026
+# Test report — updated 17 September 2026
 
-## Current release: unified sign-in and security (0.6.0)
+## Current release: exercise library integrated into main (0.7.0)
+
+Merged the 40-exercise animation feature onto the security release without conflicts. The combined code passed all **135 Node tests**, **four Python Admin Hub tests**, syntax checks, Termux shell syntax checks and Git whitespace checks on 17 September 2026. This includes the existing authentication, authorization, TLS, encrypted-backup and client data-isolation regressions, plus exercise catalogue, migration and playback controls.
+
+The updated installation guide follows `main`. Migrations 005/006 retain existing exercise records and published client snapshots; starter-pack markers preserve previous edits/removals. No new browser or physical Android visual verification was performed for the merge. Existing visual/technique-review limits below still apply.
+
+## Previous release: unified sign-in and security (0.6.0)
 
 `npm test`: all 117 reported tests passed. The four Python Admin Hub tests passed; syntax, shell and whitespace checks passed. Earlier sections below describe the historical releases, including their former public admin-link UI.
 

@@ -20,20 +20,23 @@ Every guide supports Play/Pause, half- and quarter-speed, manual next-pose chang
 
 All examples are labelled starter content. Alex can edit the instructions and select a different animation, add a demonstration-video link, then explicitly publish a client version. The controls show illustrative movement, not a prescribed tempo or a timer. Some guides demonstrate one side; follow the written cues for switching sides.
 
-## Test the feature branch in Termux
+## Update from main in Termux
 
-From the existing clone, with no uncommitted changes:
+The exercise library is included in `main` from v0.7.0. On a normal main installation:
+
+```bash
+~/.local/bin/form-fire update
+```
+
+If you previously switched to the feature branch, return to main first with a clean checkout:
 
 ```bash
 cd "$HOME/Form-Fire"
-~/.local/bin/form-fire admin backup
-git fetch origin
-git switch codex/exercise-animation-library
-npm test
-~/.local/bin/form-fire restart
+git switch main
+~/.local/bin/form-fire update
 ```
 
-Refresh the browser on the device. The usual `form-fire update` command follows `main`; it will not fetch newer feature-branch commits. For this branch, use `git pull --ff-only` in its checkout, run tests and restart. Keep the normal database backup procedure before testing upgrades.
+The update command backs up the database, fetches and fast-forwards `main`, runs tests, and restarts the app. Refresh the browser at the configured origin (normally `http://127.0.0.1:8085`). The feature branch remains available as a record of the work; no branch switch is needed for new installations.
 
 Migrations 005 and 006 extend valid animation IDs while retaining exercise rows and existing client snapshots. New content packs add missing new examples once and preserve earlier customisations and removals. Returning to code older than these migrations should use a separate test database or the matching pre-upgrade backup.
 

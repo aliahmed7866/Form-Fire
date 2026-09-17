@@ -151,4 +151,4 @@ The artwork is a stylised movement guide for Alex to review, not a recording of 
 
 Migrations 005 and 006 preserve exercise records while expanding the allowed animation IDs. Upgrades add missing examples from separate starter packs; administrator edits, archived items and published plan selections remain intact. Existing animations receive the refined artwork while retaining their saved selection, cues and prescription.
 
-See [the exercise library guide](docs/EXERCISE_LIBRARY.md) for the additions, visual reference and feature-branch testing instructions.
+See [the exercise library guide](docs/EXERCISE_LIBRARY.md) for the additions, visual reference and main-branch update instructions.
