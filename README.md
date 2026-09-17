@@ -152,3 +152,13 @@ The artwork is a stylised movement guide for Alex to review, not a recording of 
 Migrations 005 and 006 preserve exercise records while expanding the allowed animation IDs. Upgrades add missing examples from separate starter packs; administrator edits, archived items and published plan selections remain intact. Existing animations receive the refined artwork while retaining their saved selection, cues and prescription.
 
 See [the exercise library guide](docs/EXERCISE_LIBRARY.md) for the additions, visual reference and main-branch update instructions.
+
+## Shop & prepare and the coaching inbox (0.8)
+
+Clients now have **Your space → Shop & prepare**: a saved shopping checklist beside their assigned recipes, serving notes and substitutions. Ticks persist across reloads and server restarts. **Start a fresh shop** clears that list’s ticks after confirmation; **Download list** saves a text copy. The checklist follows Alex’s published shopping list, one non-empty line per item. It does not calculate quantities or combine ingredients. New client plan versions start with fresh ticks, while previous records remain in the client’s data export.
+
+The client overview now counts only the latest plans for active services, directs pending requests back to their conversation, and provides quick routes to Today, food preparation and check-ins. **My plans** separates current plans from older versions and paused services.
+
+Alex’s **Requests** page now has client/service search, status and service-type filters, and links to requests ready for review, requests waiting on clients and check-ins without feedback. Search stays within the signed-in page.
+
+Migration 007 adds checklist progress without changing assigned plans. The app still has no npm runtime dependencies and uses the same port and Termux setup. See [the enhancement test report](docs/ENRICHMENT.md) for validation and remaining visual checks. These changes must be merged into `main` before the normal Termux update command will install them.

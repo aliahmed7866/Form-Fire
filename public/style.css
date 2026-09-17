@@ -44,3 +44,21 @@ body{font-size:15px;line-height:1.5}img{max-width:100%}button,.button{border-rad
 @media(max-width:600px){.site-header nav{font-size:.72rem;gap:5px 15px}.site-header .nav-account{margin-left:0}.lifestyle-copy{padding:25px}.lifestyle-copy h3{font-size:1.75rem}.lifestyle-grid{margin-bottom:30px}.preview-grid .lifestyle-card>.artwork{aspect-ratio:4/3}.auth-art>.lifestyle-art{height:100%;min-height:205px}.auth-art .scene-control{display:none}.auth-art .scene-picture>svg{height:100%;width:auto;min-width:100%}.setup-steps>li{padding-left:35px}.setup-steps h3{font-size:1.12rem}.command{font-size:.77rem;padding:14px}.admin-test-art .artwork{height:255px}.admin-test-art .scene-picture>svg{height:100%;width:100%}.lifestyle-note{gap:13px}.lifestyle-note p{font-size:.83rem}.daily-invitation{grid-template-columns:minmax(0,1fr) 125px}.daily-invitation .scene-control{font-size:.59rem}.daily-invitation .eyebrow:before{display:none}}
 
 .authenticator-step{margin:20px 0}.authenticator-step .micro{margin:10px 0 20px}.authenticator-step code{overflow-wrap:anywhere}.authenticator-step input{font-variant-numeric:tabular-nums;letter-spacing:.16em}
+
+/* Shopping, preparation and coaching inbox */
+.everyday-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line,#d6d6cb);border:1px solid var(--line,#d6d6cb);border-radius:18px;overflow:hidden;margin:24px 0 48px}
+.everyday-links>a{display:block;padding:28px;color:inherit;text-decoration:none;background:#f2f0e7}
+.everyday-links>a:nth-child(2){background:#e4ebd8}.everyday-links>a:nth-child(3){background:#ece2d8}
+.everyday-links h3{font-size:1.35rem;margin:16px 0 10px}.everyday-links p{font-size:.95rem;line-height:1.6}.everyday-links>a>span:last-child{font-weight:700}
+.shopping-heading{display:grid;grid-template-columns:1.3fr 1fr;align-items:center;gap:36px;margin:24px 0 40px}
+.shopping-heading h2{font-size:clamp(2.3rem,5vw,4rem);line-height:1.06;margin:16px 0}.shopping-heading p{max-width:540px}
+.shopping-art{width:100%;max-height:310px;object-fit:cover;border-radius:24px}.shopping-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(240px,1fr);gap:32px;align-items:start}
+.shopping-card{min-width:0}.shopping-card h3{overflow-wrap:anywhere}.shopping-items{border-top:1px solid #d6d6cb;margin:20px 0}
+.shopping-item{display:flex;align-items:center;gap:16px;padding:16px 4px;border-bottom:1px solid #d6d6cb;cursor:pointer;min-height:56px;margin:0;font-weight:500}
+.shopping-item input{flex:0 0 24px;width:24px;height:24px;margin:0;accent-color:#354c32}.shopping-item span{overflow-wrap:anywhere;min-width:0}
+.shopping-item.picked-up span{text-decoration:line-through;color:#64665b}.shopping-item:focus-within{outline:2px solid #354c32;outline-offset:2px;border-radius:4px}
+.shopping-card[aria-busy=true]{opacity:.75}.prep-sidebar{background:#e4ebd8;border-radius:20px;padding:30px}.prep-sidebar h3{font-size:1.8rem;line-height:1.15}.prep-sidebar ol{padding-left:20px}.prep-sidebar li{padding:8px 0;line-height:1.6}.prep-sidebar p{line-height:1.6}
+.prep-recipes{margin:48px 0}.prep-recipes>h3{margin-top:32px}.plan-history{margin-top:32px}
+.inbox-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0}.inbox-summary a{background:#e4ebd8;border:1px solid #cbd5c1;border-radius:16px;padding:24px;color:inherit;text-decoration:none;display:flex;flex-direction:column;gap:10px}.inbox-summary strong{font-size:2.6rem;line-height:1}.inbox-summary span{font-size:.95rem}
+.inbox-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:18px;align-items:end}.inbox-filters label{margin:0;min-width:0}.inbox-filters input,.inbox-filters select{width:100%}
+@media(max-width:760px){.shopping-heading{grid-template-columns:1fr;gap:20px}.shopping-art{max-height:220px}.shopping-layout{grid-template-columns:1fr;gap:12px}.everyday-links{grid-template-columns:1fr}.everyday-links>a{padding:22px}.everyday-links h3{margin-top:10px}.inbox-filters{grid-template-columns:1fr}.inbox-summary{gap:8px}.inbox-summary a{padding:16px 10px}.inbox-summary strong{font-size:2rem}.inbox-summary span{font-size:.8rem;line-height:1.4}.shopping-item{padding:16px 0}.shopping-heading h2{font-size:2.7rem}}

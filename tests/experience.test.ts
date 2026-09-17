@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 function ui(reduced=false){
  const timers=new Map<number,()=>void>(),listeners=new Map<string,any[]>();let counter=0;
  const c=createContext({document:{addEventListener(event:string,listener:any){listeners.set(event,[...(listeners.get(event)||[]),listener]);}},window:{addEventListener(){},matchMedia(){return {matches:reduced}}},location:{hash:'#/login'},URLSearchParams,setTimeout(fn:()=>void,ms:number){assert.equal(ms,4800);timers.set(++counter,fn);return counter;},clearTimeout(id:number){timers.delete(id);}});
- for(const file of ['lifestyle-art.js','experience.js','plan-studio.js','daily-plan.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
+ for(const file of ['lifestyle-art.js','experience.js','plan-studio.js','daily-plan.js','enrichment.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
  runInContext("toast=message=>{lastToast=message}",c);return {c,timers,listeners};
 }
 function button(){const attrs=new Map([['aria-pressed','false']]),classes=new Set<string>();const figure={classList:{add(v:string){classes.add(v);},remove(v:string){classes.delete(v);}},querySelector(){return {getAttribute(){return 'A still-life drawing';}}}};return {attrs,classes,closest(){return figure;},setAttribute(k:string,v:string){attrs.set(k,v);},getAttribute(k:string){return attrs.get(k);},innerHTML:''};}

@@ -107,3 +107,9 @@ For fictional local test data, process a requested deletion:
 ```
 
 This requires an existing deletion request, creates a backup, then removes that client's records, including activity, invoices and payments. The backup retains the old data: remove it according to your testing needs. Do not use this test deletion flow for real financial records. Agree legal retention and identity-verification procedures before live use.
+
+## Shopping lists and request triage (0.8)
+
+Write one item per line in a meal template’s shopping list and check quantities against the agreed servings before publishing. Clients can tick items, download a text copy and reset their ticks for a new shop. Published lists stay attached to their exact client plan version; publishing a new version starts a fresh checklist.
+
+Use **Requests** to search client/service names and filter by status or coaching/private dining. The summary shortcuts separate requests ready for review from those awaiting a client response, and show check-ins still needing feedback. Current client plans now exclude paused services; older versions remain accessible under **Previous plans & paused services**.
