@@ -10,7 +10,7 @@ import { passwordHash, totpSecret, totp } from '../src/auth.ts';
 
 const dir=mkdtempSync(join(tmpdir(),'form-fire-test-'));
 const origin='http://127.0.0.1:8085';
-const app=createApp({dataDir:dir,origin});
+const app=createApp({requireVerification:true,dataDir:dir,origin});
 await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));
 const port=(app.server.address() as any).port;
 class Client {
@@ -118,7 +118,7 @@ await test('FORM & FIRE integration journeys',async t=>{
   assert.equal((await anonymous.call('/auth/reset','POST',{token:out.token,password:'another password'})).status,400);
  });
  await t.test('Restart preserves requests, assignments and payments',async()=>{
-  await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();const again=createApp({dataDir:dir,origin});assert.equal((again.db.prepare('SELECT status FROM requests WHERE id=?').get(rid) as any).status,'approved');assert.equal((again.db.prepare('SELECT COUNT(*) n FROM assignments').get() as any).n,2);assert.equal((again.db.prepare('SELECT COUNT(*) n FROM payments').get() as any).n,4);again.db.close();
+  await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();const again=createApp({requireVerification:true,dataDir:dir,origin});assert.equal((again.db.prepare('SELECT status FROM requests WHERE id=?').get(rid) as any).status,'approved');assert.equal((again.db.prepare('SELECT COUNT(*) n FROM assignments').get() as any).n,2);assert.equal((again.db.prepare('SELECT COUNT(*) n FROM payments').get() as any).n,4);again.db.close();
  });
  }finally {try{app.server.close();app.db.close();}catch{}rmSync(dir,{recursive:true,force:true});}
 });

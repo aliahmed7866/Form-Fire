@@ -2,7 +2,7 @@
 
 ## One sign-in, server-owned roles
 
-Everyone uses **Your space → Sign in**. The server validates the account password, then asks for an authenticator code when that account is an administrator. A successful admin session opens the admin tools. Ordinary registration always creates a client, and Google sign-in cannot create or enter an admin account. Public navigation contains no admin or setup links.
+Everyone uses **Your space → Sign in**. The local test server validates the account password. Email verification and administrator TOTP are disabled by default at the owner’s request. Set `FF_REQUIRE_VERIFICATION=1` to test both gates again; stored verification state and authenticator secrets are preserved. Session hashes are scoped to the active policy, so password-only sessions cannot be reused in strict mode. A successful admin session opens the admin tools. Ordinary registration always creates a client, and Google sign-in cannot create or enter an admin account. Public navigation contains no admin or setup links.
 
 A hidden URL is not an access control. Every admin API still checks the authenticated role on the server; client records also check ownership. Changing a URL, form field, role property or browser script cannot grant server access. Setup pages contain instructions only and appear after an admin session; credentials and test-code commands have no public API.
 

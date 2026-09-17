@@ -139,7 +139,7 @@ test('Upgrading the 24-motion v5 library preserves all existing fields, old pack
 
 test('Expanded motion publication retains the assigned copy and keeps client access isolated',async()=>{
   const dir=mkdtempSync(join(tmpdir(),'ff-motion-publish-'));
-  const app=createApp({dataDir:dir,origin:'http://127.0.0.1:8085'});
+  const app=createApp({requireVerification:true,dataDir:dir,origin:'http://127.0.0.1:8085'});
   await new Promise<void>(resolve=>app.server.listen(0,'127.0.0.1',resolve));
   const port=(app.server.address() as any).port;
   const client=id(),admin=id(),other=id(),requestId=id();

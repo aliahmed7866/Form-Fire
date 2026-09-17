@@ -28,7 +28,7 @@ async function fixture(secure = false) {
   try {
     if (secure) Object.assign(process.env, tlsEnv);
     else { delete process.env.FF_TLS_CERT_FILE; delete process.env.FF_TLS_KEY_FILE; }
-    const app = createApp({ dataDir: dir, origin: secure ? origin.replace('http:', 'https:') : origin });
+    const app = createApp({requireVerification:true, dataDir: dir, origin: secure ? origin.replace('http:', 'https:') : origin });
     await new Promise<void>(resolve => app.server.listen(0, '127.0.0.1', resolve));
     const port = (app.server.address() as any).port;
     const call = (path: string, method = 'GET', body?: unknown, headers: Record<string, string> = {}) => new Promise<any>((resolve, reject) => {

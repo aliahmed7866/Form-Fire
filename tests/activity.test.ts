@@ -25,7 +25,7 @@ test('Activity calendar dates follow the selected time zone and bounded inclusiv
 
 test('Daily plan activity persists with verified owner access and immutable assignment history',async t=>{
   const dir=mkdtempSync(join(tmpdir(),'ff-activity-')),origin='http://127.0.0.1:8085';
-  let app=createApp({dataDir:dir,origin});
+  let app=createApp({requireVerification:true,dataDir:dir,origin});
   let port=0;
   async function listen() {await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));port=(app.server.address() as any).port;}
   await listen();
@@ -131,7 +131,7 @@ test('Daily plan activity persists with verified owner access and immutable assi
       assert.equal(exported.data.activity.filter((e:any)=>e.assignment_id===workout).length,1);
       assert.equal((await call(other,'/export')).data.activity.length,0);
       await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();
-      app=createApp({dataDir:dir,origin});await listen();
+      app=createApp({requireVerification:true,dataDir:dir,origin});await listen();
       assert.deepEqual((await call(uid,'/export')).data.activity,exported.data.activity);
       assert.equal((await call(uid,'/activity')).data.entries.length,2);
       assert.equal((app.db.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,7);

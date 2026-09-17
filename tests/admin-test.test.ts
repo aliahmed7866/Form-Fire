@@ -114,7 +114,7 @@ test('Test tooling is local-only and does not resurrect edited or archived start
 
 test('Dedicated admin follows normal password plus TOTP login and one-use reset revokes sessions', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'ff-admin-login-')), origin = 'http://127.0.0.1:8085';
-  const app = createApp({ dataDir: dir, origin });
+  const app = createApp({requireVerification:true, dataDir: dir, origin });
   await new Promise<void>(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const port = (app.server.address() as any).port;
   const call = (path: string, body: any) => new Promise<any>((resolve, reject) => {
