@@ -71,3 +71,22 @@ Add `FF_GOOGLE_CLIENT_ID` and `FF_GOOGLE_CLIENT_SECRET` as private exports in th
 ## Browser cannot connect
 
 If the app reports a connection failure, check `~/.local/bin/form-fire status`, then `~/.local/bin/form-fire restart` and refresh the exact configured URL. The new Retry button repeats only page reads. It never retries sign-in or writes automatically. Android background-process termination, wrong ports, HTTP/HTTPS mismatches and untrusted certificates can cause transport failures; the screenshot alone cannot identify which occurred. Inspect private logs on the device if restart does not resolve it.
+
+## Recover an update blocked by hard-link EACCES
+
+A release before this fix may stop before fetching updates with `EACCES: permission denied, link .../key -> .../backup.key`. The same hard-link restriction can affect archive and restore publication. Do not use chmod 777, remove the key, or disable the pre-update backup.
+
+From the default existing checkout, run:
+
+```bash
+(
+  set -euo pipefail
+  cd "$HOME/Form-Fire"
+  git fetch origin main
+  git show origin/main:termux/recover-backup-update.sh | bash
+)
+```
+
+If you installed elsewhere, change only the `cd` path. The recovery script requires a clean checkout that can fast-forward to `origin/main`. It loads the existing private configuration and uses the fetched, fixed backup module to back up the current database, opened read-only, before changing the checkout. It then fast-forwards and runs the normal updater’s backup, tests, restart and health check. Existing encryption keys are reused, never rotated. A failed backup stops recovery before the checkout update or service restart. No migrations run in the bootstrap backup. The normal updater’s documented failure/recovery behaviour still applies after the handoff.
+
+A missing or invalid original key is a separate problem: stop and preserve the data directory and all existing keys/archives. The script deliberately does not replace a lost key. For a concurrent first backup, wait for that process to finish and retry.

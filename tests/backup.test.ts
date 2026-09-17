@@ -194,3 +194,86 @@ test('Offline decrypt CLI exports without opening or creating the live database'
     assert.match(result.stdout, /plaintext/); noTemporaryFiles(f.dir);
   } finally { f.close(); }
 });
+
+for (const code of ['EACCES', 'EPERM', 'ENOTSUP', 'EXDEV']) {
+  test(`Hard-link ${code} fallback encrypts, restores and preserves the original private key`, async t => {
+    const fs = (await import('node:fs/promises')).default;
+    t.mock.method(fs, 'link', async () => { throw Object.assign(Error('Hard links unavailable'), { code }); });
+    const f = fixture();
+    try {
+      const large = 'Termux fallback content '.repeat(12000);
+      f.db.prepare('INSERT INTO entries(note) VALUES (?)').run(large);
+      const archive = await createEncryptedBackup(f.db, f.dir);
+      const originalKey = readFileSync(join(f.dir, 'backup.key'));
+      await createEncryptedBackup(f.db, f.dir);
+      assert.deepEqual(readFileSync(join(f.dir, 'backup.key')), originalKey);
+      const destination = await decryptBackup(f.dir, archive, join(f.dir, 'fallback.sqlite'));
+      const restored = new DatabaseSync(destination, { readOnly: true });
+      try { assert.equal((restored.prepare('SELECT note FROM entries WHERE id=2').get() as any).note, large); }
+      finally { restored.close(); }
+      for (const path of [archive, destination, join(f.dir, 'backup.key'), join(f.dir, 'backup-key-id')]) {
+        assert.equal(statSync(path).mode & 0o777, 0o600);
+      }
+      const bad = Buffer.from(readFileSync(archive)); bad[bad.length - 1] ^= 1;
+      const damaged = join(f.dir, 'damaged.ffbackup'); writeFileSync(damaged, bad);
+      await assert.rejects(decryptBackup(f.dir, damaged, join(f.dir, 'bad.sqlite')), /authentication failed/);
+      assert.equal(existsSync(join(f.dir, 'bad.sqlite')), false);
+      noTemporaryFiles(f.dir);
+    } finally { f.close(); }
+  });
+}
+
+test('Fallback publication never overwrites a destination created after its initial existence check', async t => {
+  const fs = (await import('node:fs/promises')).default;
+  const f = fixture();
+  try {
+    const archive = await createEncryptedBackup(f.db, f.dir);
+    const destination = join(f.dir, 'raced.sqlite');
+    const target = join(f.dir, 'keep.sqlite'); writeFileSync(target, 'keep this');
+    t.mock.method(fs, 'link', async (_source, path) => {
+      symlinkSync(target, path);
+      throw Object.assign(Error('Hard links unavailable'), { code: 'EACCES' });
+    });
+    await assert.rejects(decryptBackup(f.dir, archive, destination), { code: 'EEXIST' });
+    assert.equal(readFileSync(target, 'utf8'), 'keep this');
+    assert.equal(readFileSync(destination, 'utf8'), 'keep this');
+    noTemporaryFiles(f.dir);
+  } finally { f.close(); }
+});
+
+test('Fallback write failures clean partial destinations and preserve keys for a safe retry', async t => {
+  const fs = (await import('node:fs/promises')).default;
+  const actualOpen = fs.open.bind(fs);
+  const f = fixture();
+  try {
+    const archive = await createEncryptedBackup(f.db, f.dir);
+    const key = readFileSync(join(f.dir, 'backup.key'));
+    t.mock.method(fs, 'link', async () => { throw Object.assign(Error('Hard links unavailable'), { code: 'EACCES' }); });
+    for (const kind of ['archive', 'restore', 'key']) {
+      const destination = join(f.dir, kind === 'archive' ? 'failed.ffbackup' : kind === 'restore' ? 'failed.sqlite' : 'backup.key');
+      // Only the key case starts a separate empty data directory.
+      const fresh = kind === 'key' ? fixture() : f;
+      const failingPath = kind === 'key' ? join(fresh.dir, 'backup.key') : destination;
+      const openMock = t.mock.method(fs, 'open', async (path, flags, mode) => {
+        const handle = await actualOpen(path, flags, mode);
+        if (path === failingPath && flags === 'wx') {
+          const write = handle.write.bind(handle);
+          t.mock.method(handle, 'write', async (...args) => {
+            await write(...args);
+            throw Object.assign(Error('Disk full'), { code: 'ENOSPC' });
+          });
+        }
+        return handle;
+      });
+      try {
+        if (kind === 'restore') await assert.rejects(decryptBackup(f.dir, archive, failingPath), { code: 'ENOSPC' });
+        else await assert.rejects(createEncryptedBackup(fresh.db, fresh.dir, kind === 'archive' ? failingPath : undefined), { code: 'ENOSPC' });
+        assert.equal(existsSync(failingPath), false);
+        assert.deepEqual(readFileSync(join(f.dir, 'backup.key')), key);
+        noTemporaryFiles(fresh.dir);
+      } finally { openMock.mock.restore(); if (fresh !== f) fresh.close(); }
+    }
+    await createEncryptedBackup(f.db, f.dir);
+    noTemporaryFiles(f.dir);
+  } finally { f.close(); }
+});

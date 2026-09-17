@@ -25,6 +25,12 @@ The key defaults to `FF_DATA_DIR/backup.key`, separate from the database and arc
 
 **Default phone traffic stays on loopback HTTP (`127.0.0.1:8085`).** It is not TLS-encrypted. It does not traverse Wi-Fi or the internet, but other software with access to this device remains in the threat model. Public HTTP hosting and reverse-proxy/tunnel deployment are unsupported. HTTPS can be enabled with a certificate trusted by the phone; it uses TLS 1.2 or newer and Secure cookies. Choosing HTTPS without valid certificate/key configuration fails startup, rather than falling back to HTTP.
 
+## Backup publication on Termux
+
+Backup keys, archives and authenticated restore exports first try atomic hard-link publication. If the filesystem denies hard links (`EACCES`, `EPERM`) or does not support them, publication uses an exclusive owner-only copy (`wx`, mode 600), then synchronises the file. Existing files and symlinks are never overwritten. This follows [Node’s exclusive file-open semantics](https://nodejs.org/docs/latest-v24.x/api/fs.html#file-system-flags).
+
+The fallback is not atomic: another process can observe an incomplete file during copying. Invalid keys and unauthenticated archives fail closed; retry after the other backup operation completes. Handled write failures remove only the destination created by that operation. A device crash can leave an incomplete file; do not delete or regenerate encryption keys to work around it. Preserve the original key and investigate before recovery. Restore publication still begins only after the complete archive has authenticated. The encrypted archive format is unchanged.
+
 ## Optional HTTPS on the device
 
 Obtain a certificate and private key for the exact loopback hostname/IP that your browser trusts. Do not use the repository's test fixtures or bypass browser certificate warnings. Store the key privately outside the source checkout, with mode 600. Set these exports in `~/.config/form-fire/env` using the actual certificate paths:

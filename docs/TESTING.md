@@ -1,5 +1,13 @@
 # Test report — updated 17 September 2026
 
+## Termux hard-link compatibility fix — 17 September 2026
+
+The reported phone update failed during backup key publication, before the old updater fetched code. Added a no-overwrite, owner-only copy fallback for denied/unsupported hard links in key, archive and restore publication. Added `termux/recover-backup-update.sh` to obtain the fixed module and complete a pre-update encrypted backup before fast-forwarding the checkout and handing off to the normal updater.
+
+Validation: **144 Node tests and 4 Python tests passed**, along with application syntax, all three Termux shell scripts and Git whitespace checks.
+
+New regressions force `EACCES`, `EPERM`, `ENOTSUP` and `EXDEV`; round-trip multi-chunk SQLite data; preserve key bytes and 600 permissions; reject tampered archives; reject a raced destination symlink; and clean partial writes after simulated disk-full errors. Recovery tests use real temporary Git histories and an existing SQLite database with forced hard-link denial. They verify backup/restore before updater handoff, no update when the original key is missing, and no overwrite of local edits. The service-manager handoff is simulated on Linux; physical Android execution remains to be confirmed on the user’s device.
+
 ## Independent branch and application revalidation — 17 September 2026
 
 Validated repository revision `ad8dc0b8524eab4a080198b040340f737c9d4a9a` against the project brief. The exercise branch points to `b940f94`, which is already an ancestor of `main`; it has zero unmerged commits and is one documentation commit behind. No conflicting changes or open pull requests were found. Retain the branch and fast-forward it to the validated main revision with this documentation update. No force push or branch deletion is needed.

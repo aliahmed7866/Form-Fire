@@ -1,7 +1,7 @@
 import { backup, type DatabaseSync } from 'node:sqlite';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { constants } from 'node:fs';
-import { open, mkdir, mkdtemp, lstat, readdir, link, rm } from 'node:fs/promises';
+import fs, { open, mkdir, mkdtemp, lstat, readdir, rm } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
@@ -44,15 +44,44 @@ async function writeAll(file: FileHandle, bytes: Buffer) {
   }
 }
 
-// link() publishes a complete file atomically and fails if the destination exists.
-// Keeping the temporary file beside its destination also supports external volumes.
+// Prefer atomic publication. Android can deny hard links even in private Termux
+// storage. Fall back to an exclusive, owner-only copy, never an overwriting rename.
+// A fallback destination is visible while copying; readers must fail closed on
+// incomplete keys/archives. Ordinary failures remove only the file we created.
+async function publishPrivate(staging: string, destination: string) {
+  try { await fs.link(staging, destination); return; }
+  catch (error: any) {
+    if (!['EACCES', 'EPERM', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS', 'EXDEV'].includes(error.code)) throw error;
+  }
+  const source = await open(staging, constants.O_RDONLY | NOFOLLOW);
+  let output: FileHandle | undefined;
+  try {
+    output = await fs.open(destination, 'wx', 0o600);
+    const buffer = Buffer.alloc(CHUNK_BYTES);
+    while (true) {
+      const { bytesRead } = await source.read(buffer, 0, buffer.length, null);
+      if (!bytesRead) break;
+      await writeAll(output, buffer.subarray(0, bytesRead));
+    }
+    await output.sync();
+  } catch (error) {
+    if (output) {
+      const own = await output.stat();
+      const current = await lstat(destination).catch((e: any) => { if (e.code !== 'ENOENT') throw e; });
+      if (current && current.dev === own.dev && current.ino === own.ino) await rm(destination);
+    }
+    throw error;
+  } finally { try { await output?.close(); } finally { await source.close(); } }
+}
+
+// Stage complete key material before publishing it beside its destination.
 async function createPrivate(path: string, bytes: Buffer) {
   const temporary = await mkdtemp(join(dirname(path), '.ff-key-'));
   try {
     const staging = join(temporary, 'key');
     const file = await open(staging, 'wx', 0o600);
     try { await writeAll(file, bytes); await file.sync(); } finally { await file.close(); }
-    await link(staging, path);
+    await publishPrivate(staging, path);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 }
 
@@ -134,7 +163,7 @@ export async function createEncryptedBackup(db: DatabaseSync, dataDir: string, d
       await writeAll(output, cipher.getAuthTag());
       await output.sync();
     } finally { await source.close(); await output?.close(); }
-    await link(staging, archive);
+    await publishPrivate(staging, archive);
     return archive;
   } finally {
     key.fill(0);
@@ -178,7 +207,7 @@ export async function decryptBackup(dataDir: string, archive: string, destinatio
       await output.sync();
     } finally { await output.close(); }
     // Plaintext is published only after the entire archive has authenticated.
-    await link(staging, destination);
+    await publishPrivate(staging, destination);
     return destination;
   } finally {
     key.fill(0);
