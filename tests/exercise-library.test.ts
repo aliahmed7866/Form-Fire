@@ -61,7 +61,7 @@ test('Upgrading a v4 library and rerunning seeds preserve edits, flags, versions
     assert.equal((db.prepare('SELECT COUNT(*) n FROM exercises').get() as any).n,40);
     for(const row of before as any[]) assert.deepEqual(db.prepare('SELECT * FROM exercises WHERE id=?').get(row.id),row);
     assert.equal((db.prepare('SELECT COUNT(*) n FROM exercises WHERE is_demo=1').get() as any).n,35);
-    assert.equal((db.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,6);
+    assert.equal((db.prepare('SELECT COUNT(*) n FROM migrations').get() as any).n,7);
     assert.equal(db.prepare('SELECT user_id FROM google_identities WHERE subject=?').get('existing-google-subject')?.user_id,'original-client');
     assert.equal((db.prepare('SELECT COUNT(*) n FROM assignments').get() as any).n,1);
     assert.equal(db.prepare('SELECT snapshot FROM assignments WHERE id=?').get('original-assignment')?.snapshot,previousSnapshot);
@@ -111,7 +111,7 @@ test('Upgrading the 24-motion v5 library preserves all existing fields, old pack
 
     db=openDb(dir);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM exercises').get()?.n,38);
-    assert.equal(db.prepare('SELECT COUNT(*) n FROM migrations').get()?.n,6);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM migrations').get()?.n,7);
     for(const row of before) assert.deepEqual(db.prepare('SELECT * FROM exercises WHERE id=?').get(row.id),row);
     for(const row of oldPacks) assert.deepEqual(db.prepare('SELECT * FROM content_packs WHERE id=?').get(row.id),row);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM content_packs').get()?.n,3);

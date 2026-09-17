@@ -13,7 +13,7 @@ export function openDb(dir: string) {
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   for(const suffix of ['-wal','-shm'])if(existsSync(path+suffix))chmodSync(path+suffix,0o600);
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY)');
-  for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql'], [3, '003_plan_activity.sql'], [4, '004_google_auth.sql'], [5, '005_exercise_motion.sql'], [6, '006_exercise_expansion.sql']] as const) {
+  for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql'], [3, '003_plan_activity.sql'], [4, '004_google_auth.sql'], [5, '005_exercise_motion.sql'], [6, '006_exercise_expansion.sql'], [7, '007_shopping_progress.sql']] as const) {
     if (db.prepare('SELECT version FROM migrations WHERE version=?').get(version)) continue;
     db.exec('BEGIN IMMEDIATE');
     try {

@@ -156,3 +156,7 @@ The exercise checks cover all 40 saved animation IDs, 200 rendered poses, editor
 All 40 illustrations were rasterised and visually reviewed at endpoints and intermediate positions. Corrections include grounded support contact, forward curl paths, calf toe pivots, the side-lying clamshell projection, the mountain-climber knee path and the step-up finish. See [the visual reference](exercise-preview.png) and [feature-branch test instructions](EXERCISE_LIBRARY.md).
 
 A browser executable is unavailable in this workspace, so full-page browser rendering and physical Android playback remain unverified. On the phone, check the body-part filters, exercise editor previews, Plans and Today, keyboard/range controls, quarter speed and reduced motion. Alex’s review of the illustrative technique remains part of selecting exercises for a client.
+
+## 0.8 enrichment pass
+
+Baseline 144/144 Node tests passed; updated suite 156/156 passed on Node 24.19.0. Four Python hub registry tests, syntax checks and whitespace checks also passed. New coverage exercises checklist ownership, role/verification checks, stale-tab conflicts, reset, persistence, plan-version boundaries, export and actual account deletion. UI logic coverage includes shopping escaping, duplicate lines, request filters and next-step selection. Rendered-browser checks remain outstanding due to preview/browser availability; see [ENRICHMENT.md](ENRICHMENT.md).

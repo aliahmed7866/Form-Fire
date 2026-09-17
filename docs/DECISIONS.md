@@ -92,3 +92,12 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Add manual movement-position controls and quarter-speed playback, accessible status messages for intentional actions, and a single active guide to reduce competing motion and phone rendering work. Reduced motion keeps manual inspection available.
 - Refine grounded foot pivots, equipment contact, joint paths and viewing labels in the existing artwork. Catalogue geometry and the visual renderer are illustrative; written prescription and technique review remain with Alex.
 - Initially published on `codex/exercise-animation-library` at the user’s request. Commit `b940f94` is already included in `main`; the 17 September branch review confirmed no unmerged feature changes or conflicts. The retained feature branch is synchronised forward after validation, without rewriting history.
+
+## 0.8 — meal preparation and coaching inbox
+
+- Add account-backed shopping ticks against immutable published meal-plan lines, with optimistic revisions to reject stale edits. Preserve Alex’s quantities exactly; no inferred ingredient aggregation.
+- Keep shopping progress separate from activity logs and plan content. Include it in client exports and account deletion. A new assignment starts fresh, and inactive/superseded assignments reject writes.
+- Separate current active plans from reference history, and route waiting clients to their existing request.
+- Add signed-in client/service search and request filters for Alex. Do not put client search strings in URLs.
+- Reuse the bundled illustration system and existing Node/SQLite architecture. No dependency or port change.
+- Remaining gate: rendered desktop/mobile and physical Termux checks. See ENRICHMENT.md for the executed checks and browser limitation.

@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 
 function ui() {
   const context=createContext({document:{addEventListener(){}},window:{addEventListener(){}},location:{hash:'#/portal/today'},URLSearchParams,crypto:{randomUUID}});
-  for(const file of ['experience.js','exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js','plan-studio.js','daily-plan.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),context);
+  for(const file of ['experience.js','exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js','plan-studio.js','daily-plan.js','enrichment.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),context);
   return context;
 }
 
