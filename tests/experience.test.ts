@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 function ui(reduced=false){
  const timers=new Map<number,()=>void>(),listeners=new Map<string,any[]>();let counter=0;
  const c=createContext({document:{addEventListener(event:string,listener:any){listeners.set(event,[...(listeners.get(event)||[]),listener]);}},window:{addEventListener(){},matchMedia(){return {matches:reduced}}},location:{hash:'#/login'},URLSearchParams,setTimeout(fn:()=>void,ms:number){assert.equal(ms,4800);timers.set(++counter,fn);return counter;},clearTimeout(id:number){timers.delete(id);}});
- for(const file of ['lifestyle-art.js','experience.js','plan-studio.js','daily-plan.js','enrichment.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
+ for(const file of ['lifestyle-art.js','experience.js','plan-studio.js','daily-plan.js','enrichment.js','navigation.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
  runInContext("toast=message=>{lastToast=message}",c);return {c,timers,listeners};
 }
 function button(){const attrs=new Map([['aria-pressed','false']]),classes=new Set<string>();const figure={classList:{add(v:string){classes.add(v);},remove(v:string){classes.delete(v);}},querySelector(){return {getAttribute(){return 'A still-life drawing';}}}};return {attrs,classes,closest(){return figure;},setAttribute(k:string,v:string){attrs.set(k,v);},getAttribute(k:string){return attrs.get(k);},innerHTML:''};}
@@ -94,8 +94,8 @@ test('Unreadable server responses produce a useful error and do not reveal an au
  assert.equal(h.sent.length,1);assert.equal(h.insertions,0);assert.match(h.error.textContent,/unexpected response/);assert.match(h.error.textContent,/try again/);assert.ok(!h.error.textContent.includes('Termux'));assert.ok(!h.error.textContent.includes('Unexpected token'));
 });
 test('Failed page load has a manual GET-only retry that restores the normal sign-in',async()=>{
- const {c,listeners}=ui(),main={innerHTML:''},account={textContent:'',href:''},calls:string[]=[];let first=true;
- c.location.hostname='127.0.0.1';c.document.querySelector=(selector:string)=>selector==='#main'?main:account;c.document.querySelectorAll=()=>[];
+ const {c,listeners}=ui(),main={innerHTML:''},account={textContent:'',href:'',setAttribute(){},removeAttribute(){}},calls:string[]=[];let first=true;
+ c.location.hostname='127.0.0.1';c.document.querySelector=(selector:string)=>selector==='#main'?main:selector==='#account-link'?account:null;c.document.querySelectorAll=()=>[];
  c.fetch=async(url:string,options:any)=>{calls.push(url);assert.equal(options.method,'GET');if(first){first=false;throw TypeError('Failed to fetch');}return {ok:true,json:async()=>url==='/api/session'?{connections:{google:false}}:[]};};
  await runInContext('render()',c);assert.match(main.innerHTML,/data-action="retry-page"/);assert.match(main.innerHTML,/form-fire restart/);assert.equal(calls.length,1);
  const retryButton={dataset:{action:'retry-page'},disabled:false};await listeners.get('click')!.at(-1)({target:{closest(){return retryButton;}}});

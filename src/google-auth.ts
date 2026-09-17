@@ -1,6 +1,7 @@
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { token, digest, passwordHash } from './auth.ts';
+import { instanceCookie } from './instance.ts';
 import { id, transaction } from './db.ts';
 
 // Fixed provider endpoints: neither environment values nor token headers can redirect requests.
@@ -39,7 +40,7 @@ export function createGoogleAuth(db:DatabaseSync,origin:string,config:GoogleConf
   const clientId=config.clientId.trim(),clientSecret=config.clientSecret.trim();
   const enabled=!!clientId&&!!clientSecret;
   const redirectUri=origin+'/api/auth/google/callback';
-  const cookie=(value:string,clear=false)=>`ff_google=${value}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=${clear?0:600}${origin.startsWith('https:')?'; Secure':''}`;
+  const cookie=(value:string,clear=false)=>`${instanceCookie(origin,'ff_google')}=${value}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=${clear?0:600}${origin.startsWith('https:')?'; Secure':''}`;
   const clearCookie=()=>cookie('',true);
   const cleanup=()=>db.prepare('DELETE FROM google_transactions WHERE expires<=?').run(Date.now());
   async function remote(url:string,init:RequestInit={}) {

@@ -4,7 +4,7 @@ import { createContext, runInContext } from 'node:vm';
 import { readFileSync } from 'node:fs';
 function ui() {
   const c=createContext({document:{addEventListener(){}},window:{addEventListener(){}},location:{hash:'#/admin/requests'},URLSearchParams});
-  for(const file of ['plan-studio.js','daily-plan.js','enrichment.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
+  for(const file of ['plan-studio.js','daily-plan.js','enrichment.js','navigation.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
   return c;
 }
 test('Dashboard directs waiting clients to their conversation and excludes paused/old plans',()=>{

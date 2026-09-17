@@ -13,7 +13,7 @@ function ui() {
     querySelectorAll(selector:string) { return nodes.get(selector)||[]; }
   };
   const context=createContext({document,window:{addEventListener(){}},location:{hash:'#/admin/plans?view=exercises'},URLSearchParams});
-  for(const file of ['exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js','plan-studio.js','app.js']) {
+  for(const file of ['exercise-catalog-extra.js','exercise-catalog.js','exercise-motion.js','plan-studio.js','navigation.js','app.js']) {
     runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),context);
   }
   function fire(type:string,target:any) { for(const listener of listeners.get(type)||[])listener({target}); }

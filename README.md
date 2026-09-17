@@ -162,3 +162,7 @@ The client overview now counts only the latest plans for active services, direct
 Alex’s **Requests** page now has client/service search, status and service-type filters, and links to requests ready for review, requests waiting on clients and check-ins without feedback. Search stays within the signed-in page.
 
 Migration 007 adds checklist progress without changing assigned plans. The app still has no npm runtime dependencies and uses the same port and Termux setup. See [the enhancement test report](docs/ENRICHMENT.md) for validation and remaining visual checks. These changes must be merged into `main` before the normal Termux update command will install them.
+
+## Demo login reliability and responsive navigation
+
+The complete fictional demo now has a dedicated launcher, checked passwords, targeted account recovery and supervised startup on Termux. Main/demo browser sessions are isolated by port. Phone navigation uses a collapsible public menu and workspace section picker; larger screens use a workspace sidebar. See [demo setup, recovery and validation](docs/DEMO_AND_NAVIGATION.md) for commands, update steps and test limits.
