@@ -47,8 +47,16 @@ export function catalogue(db:DatabaseSync,userId:string,q:URLSearchParams) {
   const tag=q.get('tag')||'',favourites=q.get('favourites')==='1';
   const favouriteIds=new Set(db.prepare('SELECT recipe_id FROM recipe_favourites WHERE user_id=?').all(userId).map((r:any)=>r.recipe_id));
   const recipes=db.prepare('SELECT * FROM recipes WHERE archived=0 AND (client_id IS NULL OR client_id=?) ORDER BY title').all(userId).map(decorateRecipe).filter(r=>(!term||`${r.title} ${r.ingredients} ${r.tags.join(' ')}`.toLowerCase().includes(term))&&(!tag||r.tags.includes(tag))&&(!favourites||favouriteIds.has(r.id))).map(r=>({...r,favourite:favouriteIds.has(r.id)}));
+  const maxMinutes=q.get('max_minutes'),excluded=(q.get('exclude')||'').trim().toLowerCase();
+  check(excluded.length<=200,'Keep ingredient exclusions under 200 characters.');
+  const avoid=excluded.split(',').map(v=>v.trim()).filter(Boolean);check(avoid.length<=10,'Use at most 10 ingredient terms.');
+  const time=maxMinutes?Number(maxMinutes):null;check(time===null||(Number.isSafeInteger(time)&&time>=1&&time<=600),'Choose a preparation time between 1 and 600 minutes.');
+  const sort=q.get('sort')||'title';check(['title','fastest','protein','fibre'].includes(sort),'Choose a valid recipe order.');
+  const filtered=recipes.filter(r=>(time===null||r.prep_minutes<=time)&&!avoid.some(v=>r.ingredients.toLowerCase().includes(v)));
+  if(sort==='fastest')filtered.sort((a,b)=>a.prep_minutes-b.prep_minutes||a.title.localeCompare(b.title));
+  if(sort==='protein'||sort==='fibre'){const key=sort==='protein'?'protein_g':'fibre_g';filtered.sort((a,b)=>(b.nutrition?.[key]??-1)-(a.nutrition?.[key]??-1)||a.title.localeCompare(b.title));}
   const offset=Number(q.get('offset')||0),limit=Number(q.get('limit')||24);check(Number.isSafeInteger(offset)&&offset>=0&&Number.isSafeInteger(limit)&&limit>=1&&limit<=100,'Choose a valid recipe page.');
-  return {recipes:recipes.slice(offset,offset+limit),total:recipes.length,offset,limit};
+  return {recipes:filtered.slice(offset,offset+limit),total:filtered.length,offset,limit};
 }
 export function visibleRecipe(db:DatabaseSync,userId:string,recipeId:string) {const r=db.prepare('SELECT * FROM recipes WHERE id=? AND archived=0 AND (client_id IS NULL OR client_id=?)').get(recipeId,userId);check(r,'Recipe not found.',404);return decorateRecipe(r);}
 function slot(v:any) {check(['breakfast','lunch','dinner','snack'].includes(v),'Choose breakfast, lunch, dinner or snack.');return v;}

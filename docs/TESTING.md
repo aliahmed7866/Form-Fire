@@ -169,3 +169,7 @@ Baseline 144/144 Node tests passed; updated suite 156/156 passed on Node 24.19.0
 - New coverage includes source-based recipe calculations, missing fibre, fractional servings, food-gram precision, retry idempotency, stale updates, recipe privacy changes, archival, assigned/diary snapshot stability, unit conversions, profile concurrency, admin profile permission checks, goal history, like-for-like chart series, export and restart persistence.
 
 These checks establish the local-test journeys. They do not establish medical suitability, kitchen testing of every recipe, production hosting, managed identity, payment integration, wearable sync or real health-data compliance.
+
+## Everyday tools (29 September 2026)
+
+185 tests pass, including planner ownership, private recipe rejection, transaction-safe conversion, snapshot/repeat history, future-date protection, quantity-aware shopping, optional habit corrections, timezone dates, exports and cascaded deletion. Syntax checks pass. Desktop 1440px and phone 390px/320px browser checks cover the daily hub, planning, saved shopping ticks, kitchen steps/portions/timer, diary conversion/repeat, guides and Alex’s client-week view. Source and limitations: [Everyday tools](EVERYDAY_RHYTHM.md).

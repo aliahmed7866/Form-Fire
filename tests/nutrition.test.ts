@@ -19,10 +19,10 @@ test('Nutrition catalogue, diary, customisation and access controls',async t=>{
  for(const [c,email] of [[admin,'alex@nutrition.test'],[alice,'alice@nutrition.test'],[bob,'bob@nutrition.test']] as const)assert.equal((await c.call('/auth/login','POST',{email,password:pw})).status,200);
  let recipe:any,entry:any,personal:any;
  try {
- await t.test('120 prefilled recipes with real ingredient calculations; seeding is idempotent',async()=>{
-   assert.equal(app.db.prepare('SELECT COUNT(*) n FROM recipes WHERE nutrition IS NOT NULL').get()?.n,120);
-   const second=openDb(dir);assert.equal(second.prepare('SELECT COUNT(*) n FROM recipes WHERE nutrition IS NOT NULL').get()?.n,120);second.close();
-   const all=(await alice.call('/nutrition/recipes?limit=100')).data;assert.equal(all.total,123);assert.equal(all.recipes.length,100);
+ await t.test('132 prefilled recipes with real ingredient calculations; seeding is idempotent',async()=>{
+   assert.equal(app.db.prepare('SELECT COUNT(*) n FROM recipes WHERE nutrition IS NOT NULL').get()?.n,132);
+   const second=openDb(dir);assert.equal(second.prepare('SELECT COUNT(*) n FROM recipes WHERE nutrition IS NOT NULL').get()?.n,132);second.close();
+   const all=(await alice.call('/nutrition/recipes?limit=100')).data;assert.equal(all.total,135);assert.equal(all.recipes.length,100);
    recipe=all.recipes.find((r:any)=>r.nutrition);assert.ok(recipe);assert.equal(foods.length,2767);
    for(const row of app.db.prepare('SELECT * FROM recipes WHERE nutrition IS NOT NULL').all() as any[]){const n=calculateRecipe(JSON.parse(row.ingredient_items),row.yield_servings);assert.deepEqual(JSON.parse(row.nutrition),n.nutrition);}
    const f=foods.find((f:any)=>f.id==='cofid-14-318'),n=calculateRecipe([{food_id:f.id,grams:200}],4).nutrition;assert.equal(n.protein_g,Math.round(f.protein_g*0.5*10)/10);assert.equal(n.kcal,Math.round(f.kcal*0.5*10)/10);

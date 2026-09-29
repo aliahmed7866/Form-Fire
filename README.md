@@ -168,3 +168,7 @@ Local verification can be re-enabled explicitly with `FF_REQUIRE_VERIFICATION=1`
 ### Nutrition, recipes and fitness progress
 
 The client workspace now includes Recipes, Food diary and My progress. Alex can tailor recipes, review client nutrition/metrics and manage goals and profiles. Includes 120 prefilled recipes and 2,767 UK CoFID food records; macros are estimates calculated from source ingredient weights. See [the nutrition and progress guide](docs/NUTRITION_AND_PROGRESS.md) and [data attribution](data-sources/README.md). Migrations apply automatically on startup.
+
+## Food, training and recovery — together
+
+The client home now brings training, meal ideas and optional habits into one daily space. Plan meals from 132 calculated recipes, combine ingredient quantities into a saved shopping checklist, follow kitchen mode, and log or repeat portions in the diary. Alex can review client weeks. Source-linked guides cover food, fitness, recovery, flavour and safe preparation. See [the everyday tools guide](docs/EVERYDAY_RHYTHM.md) for behaviours, research, access controls and Termux updates.
