@@ -173,3 +173,7 @@ These checks establish the local-test journeys. They do not establish medical su
 ## Everyday tools (29 September 2026)
 
 185 tests pass, including planner ownership, private recipe rejection, transaction-safe conversion, snapshot/repeat history, future-date protection, quantity-aware shopping, optional habit corrections, timezone dates, exports and cascaded deletion. Syntax checks pass. Desktop 1440px and phone 390px/320px browser checks cover the daily hub, planning, saved shopping ticks, kitchen steps/portions/timer, diary conversion/repeat, guides and Alex’s client-week view. Source and limitations: [Everyday tools](EVERYDAY_RHYTHM.md).
+
+## Recipe adaptations and group preparation (0.12)
+
+196 tests pass. The added integration checks cover all 132 recipes with both dietary styles and all three plant proteins, recalculated nutrition, method changes, private copies, source versions, idempotency, group count validation, yield-aware shopping aggregation, forced atomic rollback, prepared/eaten portion separation, exports and actual account deletion. Syntax and whitespace checks pass. Real browser checks at 1440px/390px/320px cover private save, mixed dietary batches, ingredient download, planner save, personal portions and Alex's recipe drafts. See [recipe adaptations](RECIPE_ADAPTATIONS.md) for decisions and limits.
