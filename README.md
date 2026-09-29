@@ -164,3 +164,7 @@ Migration 007 adds checklist progress without changing assigned plans. The app s
 The complete fictional demo now has a dedicated launcher, checked passwords, targeted account recovery and supervised startup on Termux. Main/demo browser sessions are isolated by port. Phone navigation uses a collapsible public menu and workspace section picker; larger screens use a workspace sidebar. See [demo setup, recovery and validation](docs/DEMO_AND_NAVIGATION.md) for commands, update steps and test limits.
 
 Local verification can be re-enabled explicitly with `FF_REQUIRE_VERIFICATION=1` in the server environment. Existing verification state and authenticator secrets are preserved; sessions issued in password-only mode cannot enter strict mode. The complete demo launcher always chooses password-only testing. See [demo repair](docs/DEMO_AND_NAVIGATION.md).
+
+### Nutrition, recipes and fitness progress
+
+The client workspace now includes Recipes, Food diary and My progress. Alex can tailor recipes, review client nutrition/metrics and manage goals and profiles. Includes 120 prefilled recipes and 2,767 UK CoFID food records; macros are estimates calculated from source ingredient weights. See [the nutrition and progress guide](docs/NUTRITION_AND_PROGRESS.md) and [data attribution](data-sources/README.md). Migrations apply automatically on startup.

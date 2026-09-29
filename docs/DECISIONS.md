@@ -101,3 +101,7 @@ Realtime chat, complex scheduling, wearables, community, AI meals, referrals and
 - Add signed-in client/service search and request filters for Alex. Do not put client search strings in URLs.
 - Reuse the bundled illustration system and existing Node/SQLite architecture. No dependency or port change.
 - Remaining gate: rendered desktop/mobile and physical Termux checks. See ENRICHMENT.md for the executed checks and browser limitation.
+
+## 29 September 2026 — nutrition and fitness progress
+
+Extend the existing Node/SQLite application rather than add a second app or an API subscription. Bundle licensed UK CoFID nutrient data; install 120 original editable recipes once. Calculate macros from ingredient weights and keep logged/assigned snapshots stable. Track optional fitness metrics in canonical units with explicit goals, history, comparable exercise series and coach-editable profiles. Follow primary NHS, CDC, ACSM, ISSN and NIDDK guidance; do not automate calorie prescriptions, infer body composition or gamify restrictive behaviour. See NUTRITION_AND_PROGRESS.md for sources, limitations and handover.

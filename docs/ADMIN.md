@@ -113,3 +113,7 @@ This requires an existing deletion request, creates a backup, then removes that 
 Write one item per line in a meal template’s shopping list and check quantities against the agreed servings before publishing. Clients can tick items, download a text copy and reset their ticks for a new shop. Published lists stay attached to their exact client plan version; publishing a new version starts a fresh checklist.
 
 Use **Requests** to search client/service names and filter by status or coaching/private dining. The summary shortcuts separate requests ready for review from those awaiting a client response, and show check-ins still needing feedback. Current client plans now exclude paused services; older versions remain accessible under **Previous plans & paused services**.
+
+## Nutrition and fitness
+
+See [Nutrition and progress](NUTRITION_AND_PROGRESS.md) for recipe editing, client-specific recipe copies, diary review, optional targets, goal settings and progress charts. These tools save to the existing database.
