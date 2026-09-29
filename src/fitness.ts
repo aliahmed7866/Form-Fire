@@ -33,6 +33,7 @@ export const metricDefinitions={
 } as const;
 export function profileInput(b:any,current:any) {
  const p={...current};
+ if(b.habit_keys!==undefined){check(Array.isArray(b.habit_keys)&&b.habit_keys.length<=5&&b.habit_keys.every((v:any)=>['move','colour','prep','wind_down','fluids'].includes(v)),'Choose supported habits.');p.habit_keys=[...new Set(b.habit_keys)];}
  for(const [key,max] of Object.entries({goals:3000,preferences:3000,dietary:3000,goal_notes:3000,experience:1000,equipment:2000,availability:1000,favourite_foods:1000}))if(b[key]!==undefined)p[key]=text(b[key],key.replaceAll('_',' '),max);
  if(b.fitness_goal!==undefined){check(Object.hasOwn(fitnessGoals,b.fitness_goal),'Choose a valid fitness goal.');p.fitness_goal=b.fitness_goal;}
  if(b.units!==undefined){check(['metric','imperial'].includes(b.units),'Choose metric or imperial units.');p.units=b.units;}

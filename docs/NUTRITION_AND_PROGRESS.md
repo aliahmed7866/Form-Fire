@@ -5,7 +5,7 @@ This update extends the existing local-test Node/SQLite app. It adds persistent 
 ## Client journey
 
 1. **My profile:** choose a goal, preferred metric/imperial units, an illustrated profile character and time zone. Add food preferences, dietary requirements, training experience, equipment and availability. Height, weight targets, a maintenance range and body measurements are optional. Hide weight charts if preferred. Names and preferences persist after refresh.
-2. **Recipes:** browse 120 prefilled assembly recipes plus Alex’s existing recipes. Search by ingredients/name; filter by meal/style or favourites. Each calculated recipe shows estimated calories, protein, carbs, fat and available fibre. Read the ingredient quantities and method, then log any fractional serving to a chosen date and meal.
+2. **Recipes:** browse 132 prefilled original recipes plus Alex’s existing recipes. Search by ingredients/name; filter by meal/style or favourites. Each calculated recipe shows estimated calories, protein, carbs, fat and available fibre. Read the ingredient quantities and method, then log any fractional serving to a chosen date and meal.
 3. **Food diary:** browse the date’s logged meals and totals; log individual foods by edible grams from 2,767 UK food records. Correct portions, move entries between meals/dates or remove them. Missing nutrients are marked unknown. Logging is voluntary; there are no food grades, red “over budget” warnings or exercise-calorie offsets.
 4. **My progress:** record weight, waist/hips/chest/arm measurements, self-reported body-fat estimates, exercise loads/reps, distance, duration, steps, sleep or energy. Choose only what helps. View 30/90/365-day, all-time or current-goal charts. Strength series keep different exercise names and rep counts separate. Notes and an accessible data table accompany charts. Edit/delete older records through pagination.
 
@@ -46,3 +46,5 @@ Client queries and mutations use the authenticated user ID; supplied ownership I
 ## Remaining scope
 
 Barcode scanning, commercial food/recipe API feeds, automatic wearable sync, progress-photo storage, custom uploaded profile photos, medical meal planning and automated calorie prescriptions are not connected. The catalogue is a useful prefilled starting point, not an exhaustive branded-food database or 120 independently kitchen-tested dishes. Alex should review recipes and dietary needs before publishing personalised plans. No external recipe-site content or photos have been copied.
+
+The connected daily hub, personal meal planner, kitchen mode, optional habits and additional recipes are described in [Everyday tools](EVERYDAY_RHYTHM.md).

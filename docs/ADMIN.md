@@ -117,3 +117,7 @@ Use **Requests** to search client/service names and filter by status or coaching
 ## Nutrition and fitness
 
 See [Nutrition and progress](NUTRITION_AND_PROGRESS.md) for recipe editing, client-specific recipe copies, diary review, optional targets, goal settings and progress charts. These tools save to the existing database.
+
+## Client weeks and kitchen tools
+
+Open **Client weeks** or a client’s **Their week** link to review optional habits, recorded energy/sleep context and their personal meal ideas. These ideas are separate from your assignments. The catalogue now includes 12 additional original recipes, all editable in Plan studio. See [Everyday tools](EVERYDAY_RHYTHM.md) for snapshot rules, batch cooking and research.
