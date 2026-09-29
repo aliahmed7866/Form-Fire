@@ -1,3 +1,4 @@
+import { decorateRecipe } from './nutrition.ts';
 import type { DatabaseSync } from 'node:sqlite';
 import { exerciseAnimationKeys } from './exercise-catalog.ts';
 
@@ -37,10 +38,10 @@ export function planContent(db:DatabaseSync,kind:string,input:any) {
   };
 }
 // Resolve exactly once at publish time. Clients never read mutable library records.
-export function planSnapshot(db:DatabaseSync,template:any,customisation:string) {
+export function planSnapshot(db:DatabaseSync,template:any,customisation:string,clientId?:string) {
   const c=JSON.parse(template.content);let isDemo=!!template.is_demo;
   function exercise(rid:string) {const e=db.prepare('SELECT * FROM exercises WHERE id=? AND archived=0').get(rid) as any;requireValue(e,'An exercise is archived or missing. Edit the template before publishing.',409);isDemo ||= !!e.is_demo;return {id:e.id,title:e.title,category:e.category,equipment:e.equipment,instructions:e.instructions,video_url:e.video_url,video_caption:e.video_caption,animation:e.animation,is_demo:!!e.is_demo,version:e.version};}
-  function recipe(rid:string) {const r=db.prepare('SELECT * FROM recipes WHERE id=? AND archived=0').get(rid) as any;requireValue(r,'A recipe is archived or missing. Edit the template before publishing.',409);isDemo ||= !!r.is_demo;return {id:r.id,title:r.title,ingredients:r.ingredients,portions:r.portions,preparation:r.preparation,substitutions:r.substitutions,is_demo:!!r.is_demo,version:r.version};}
+  function recipe(rid:string) {const r=db.prepare('SELECT * FROM recipes WHERE id=? AND archived=0').get(rid) as any;requireValue(r,'A recipe is archived or missing. Edit the template before publishing.',409);requireValue(!r.client_id||r.client_id===clientId,'This recipe belongs to another client.',409);isDemo ||= !!r.is_demo;return decorateRecipe(r);}
   const workouts=(c.workouts||[]).map((w:any)=>({...w,exercises:w.exercises.map((e:any)=>({...e,exercise:exercise(e.exercise_id)}))}));
   const recipeIds=[...new Set<string>([...(c.recipe_ids||[]),...(c.meals||[]).map((m:any)=>m.recipe_id)])];
   const recipes=recipeIds.map(recipe);

@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readFileSync, chmodSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { installRecipeCatalogue } from './recipe-catalogue.ts';
 import { installStarterContent } from './starter-content.ts';
 export const id = () => randomUUID();
 export function openDb(dir: string) {
@@ -13,7 +14,7 @@ export function openDb(dir: string) {
   db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   for(const suffix of ['-wal','-shm'])if(existsSync(path+suffix))chmodSync(path+suffix,0o600);
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY)');
-  for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql'], [3, '003_plan_activity.sql'], [4, '004_google_auth.sql'], [5, '005_exercise_motion.sql'], [6, '006_exercise_expansion.sql'], [7, '007_shopping_progress.sql']] as const) {
+  for (const [version, file] of [[1, '001_initial.sql'], [2, '002_plan_library.sql'], [3, '003_plan_activity.sql'], [4, '004_google_auth.sql'], [5, '005_exercise_motion.sql'], [6, '006_exercise_expansion.sql'], [7, '007_shopping_progress.sql'], [8, '008_nutrition.sql'], [9, '009_fitness_progress.sql']] as const) {
     if (db.prepare('SELECT version FROM migrations WHERE version=?').get(version)) continue;
     db.exec('BEGIN IMMEDIATE');
     try {
@@ -23,6 +24,7 @@ export function openDb(dir: string) {
     } catch(e) { db.exec('ROLLBACK'); throw e; }
   }
   if ((process.env.FF_MODE || 'local-test') === 'local-test') installStarterContent(db);
+  installRecipeCatalogue(db);
   // Confirmed service categories; no fabricated prices or client/financial seed data.
   const services = [
     ['train','Online personal training','train','Build strength at your pace, with support that fits your life.','Online coaching · A programme built around you · Weekly check-ins'],

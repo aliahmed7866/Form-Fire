@@ -160,3 +160,12 @@ A browser executable is unavailable in this workspace, so full-page browser rend
 ## 0.8 enrichment pass
 
 Baseline 144/144 Node tests passed; updated suite 156/156 passed on Node 24.19.0. Four Python hub registry tests, syntax checks and whitespace checks also passed. New coverage exercises checklist ownership, role/verification checks, stale-tab conflicts, reset, persistence, plan-version boundaries, export and actual account deletion. UI logic coverage includes shopping escaping, duplicate lines, request filters and next-step selection. Rendered-browser checks remain outstanding due to preview/browser availability; see [ENRICHMENT.md](ENRICHMENT.md).
+
+## Nutrition and fitness update — 29 September 2026
+
+- `npm run check`: passed.
+- `npm test`: 176 tests passed, zero failures. Focused nutrition/fitness tests also passed after the final visibility and timezone refinements.
+- Browser journeys passed at desktop 1440×1000 and phone 390×844: client login/profile/goal changes, comparable strength records and charts, saved recipes, fractional servings, individual-food logging, Alex’s private recipe duplication and macro recalculation, optional targets, and client progress review. No page JavaScript errors or horizontal page overflow were observed. Charts were visually reviewed on phone after increasing label size and replacing unsupported emoji with SVG profile characters.
+- New coverage includes source-based recipe calculations, missing fibre, fractional servings, food-gram precision, retry idempotency, stale updates, recipe privacy changes, archival, assigned/diary snapshot stability, unit conversions, profile concurrency, admin profile permission checks, goal history, like-for-like chart series, export and restart persistence.
+
+These checks establish the local-test journeys. They do not establish medical suitability, kitchen testing of every recipe, production hosting, managed identity, payment integration, wearable sync or real health-data compliance.
