@@ -71,6 +71,8 @@ async function portal(){if(!session.user)return authPage();clientData=await api(
  if(tab==='planner')content=await rhythmPlannerPage();
  if(tab==='rhythm')content=await rhythmHabitsPage();
  if(tab==='learn')content=await rhythmLearnPage();
+ if(tab==='adapt')content=await recipeAdaptationPage();
+ if(tab==='catering')content=await recipeCateringPage();
  if(tab==='cook')content=await rhythmCookingPage();
  if(tab==='progress')content=await fitnessProgressPage();
  if(tab==='nutrition')content=await nutritionDiaryPage();
@@ -97,6 +99,8 @@ async function adminPage(){if(!session.user)return authPage();if(session.user.ro
  if(tab==='requests')content=adminInbox(d);
  if(tab==='clients')content=`<h2>People, before programmes.</h2>${d.clients.length?d.clients.map(c=>`<div class="card"><div class="row"><h3>${esc(c.name)}</h3>${pill(c.verified?'verified':'unverified')}</div><p>${esc(c.email)}</p><dl class="detail-list">${Object.entries(c.profile).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${typeof fitnessProfileFields==='function'?`<div class="actions">${link('/admin/fitness?client='+c.id,'View progress ↗','secondary small')}${link('/admin/nutrition?client='+c.id,'Review nutrition ↗','secondary small')}${link('/admin/rhythm?client='+c.id,'Their week ↗','secondary small')}</div><details><summary>Manage goals & profile</summary>${form('client-profile',`<input type="hidden" name="id" value="${esc(c.id)}">`+field('name','Name',c.name,'text','required')+area('goals','Goals',c.profile.goals||'',false)+area('preferences','Food preferences',c.profile.preferences||'',false)+area('dietary','Dietary requirements',c.profile.dietary||'',false)+fitnessProfileFields(c.profile,c.profile_version))}</details>`:''}${form('client-notes',`<input type="hidden" name="id" value="${c.id}">`+area('admin_notes','Private admin notes — never shared with the client',c.admin_notes,false))}</div>`).join(''):empty('No clients yet.','Register a test client to start the coaching journey.')}<h2>Account requests</h2>${d.account_requests.map(r=>`<div class="notice">${esc(r.email)} · ${esc(r.kind)} · ${esc(r.status)}<br>Process with the documented local deletion command after reviewing retention needs.</div>`).join('')||'<p class="muted">No deletion requests.</p>'}`;
  if(tab==='services')content=`<h2>Services & packages</h2><p class="muted">Only publish confirmed prices. Leave the price blank to invite enquiries.</p><div class="grid"><div>${d.services.map(s=>`<div class="card"><h3>${esc(s.title)}</h3>${pill(s.archived?'archived':s.published?'published':'draft')}<p>${esc(s.description)}</p><button class="secondary small" data-action="edit-service" data-id="${s.id}">Edit service</button></div>`).join('')}</div><div class="card" id="editor"><h3>Create a service</h3>${serviceForm()}</div></div>`;
+ if(tab==='adapt')content=await recipeAdaptationPage(true);
+ if(tab==='catering')content=await recipeCateringPage(true);
  if(tab==='rhythm')content=await adminRhythmPage(d);
  if(tab==='fitness')content=await fitnessProgressPage(true,d);
  if(tab==='nutrition')content=await adminNutritionPage(d);
@@ -124,6 +128,7 @@ document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset.form
  if(k==='verify'||k==='reset'){const r=await api('/auth/'+k,'POST',b);toast(r.message);navigate('/login?next='+encodeURIComponent(b.next||'/portal'));return;}
  if(k.startsWith('enquiry-')){draftSave(f);const kind=k.slice(8);if(!session.user){navigate('/register?next='+encodeURIComponent(kind==='chef'?'/chef':'/enquire'));return;}if(!session.user.verified){navigate('/verify?next='+encodeURIComponent(kind==='chef'?'/chef':'/enquire'));return;}const details=kind==='chef'?{...b,guests:Number(b.guests),budget_minor:Math.round(Number(b.budget)*100)}:b;const r=await api('/requests','POST',{service_id:b.service_id,idempotency_key:b.idempotency_key,details});sessionStorage.removeItem('ff-draft-'+kind);toast('Your request is in. Alex will take a look and get back to you.');navigate('/request/'+r.id);return;}
  if(['daily-date','activity-note','progress-range'].includes(k)){await submitDailyForm(k,b);return;}
+ if(k.startsWith('adapt-')){await submitAdaptationForm(k,b,f);return;}
  if(k.startsWith('rhythm-')){await submitRhythmForm(k,b,f);return;}
  if(k.startsWith('fitness-')){await submitFitnessForm(k,b);return;}
  if(k.startsWith('nutrition-')){await submitNutritionForm(k,b,f);return;}

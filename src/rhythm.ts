@@ -24,7 +24,7 @@ export const habitOptions={
 };
 function decoded(row:any){return {...row,snapshot:JSON.parse(row.snapshot),totals:scaleNutrition(JSON.parse(row.snapshot).nutrition,row.quantity)};}
 export function planMeal(db:DatabaseSync,userId:string,b:any){
- const day=nutritionDate(b.day),slot=mealSlot(b.slot),quantity=amount(b.quantity,'Servings',0.25,20),key=submissionKey(b.idempotency_key);
+ const day=nutritionDate(b.day),slot=mealSlot(b.slot),quantity=amount(b.quantity,'Servings',0.25,100),key=submissionKey(b.idempotency_key);
  const old=db.prepare('SELECT * FROM planned_meals WHERE user_id=? AND idempotency_key=?').get(userId,key) as any;
  if(old){const snapshot=JSON.parse(old.snapshot);check(old.day===day&&old.slot===slot&&old.quantity===quantity&&snapshot.source_id===b.recipe_id,'That submission key belongs to another planned meal.',409);return decoded(old);}
  check(typeof b.recipe_id==='string'&&b.recipe_id.length>0&&b.recipe_id.length<=200,'Choose a recipe.');const recipe=visibleRecipe(db,userId,b.recipe_id);check(recipe.nutrition&&recipe.ingredient_items.length,'Choose a recipe with calculated ingredients.',409);
@@ -36,14 +36,15 @@ export function updatePlannedMeal(db:DatabaseSync,userId:string,id:string,b:any,
  const old=db.prepare('SELECT * FROM planned_meals WHERE id=? AND user_id=?').get(id,userId) as any;check(old,'Planned meal not found.',404);check(b.version===old.version,'This meal changed. Refresh before editing.',409);
  if(remove){db.prepare('DELETE FROM planned_meals WHERE id=? AND user_id=?').run(id,userId);return {ok:true};}
  check(!old.logged_at,'This meal is already logged. Edit its entry in your diary.',409);
- db.prepare('UPDATE planned_meals SET day=?,slot=?,quantity=?,version=version+1 WHERE id=? AND user_id=?').run(nutritionDate(b.day),mealSlot(b.slot),amount(b.quantity,'Servings',0.25,20),id,userId);return {ok:true};
+ db.prepare('UPDATE planned_meals SET day=?,slot=?,quantity=?,version=version+1 WHERE id=? AND user_id=?').run(nutritionDate(b.day),mealSlot(b.slot),amount(b.quantity,'Servings',0.25,100),id,userId);return {ok:true};
 }
 export function logPlannedMeal(db:DatabaseSync,userId:string,id:string,b:any){return atomic(db,()=>{
  const meal=db.prepare('SELECT * FROM planned_meals WHERE id=? AND user_id=?').get(id,userId) as any;check(meal,'Planned meal not found.',404);
- if(meal.logged_at){check(meal.diary_entry_id,'The diary entry was removed. Log another meal from your diary if needed.',409);return {id:meal.diary_entry_id,duplicate:true};}
+ const quantity=amount(b.quantity===undefined?meal.quantity:b.quantity,'Servings eaten',0.01,100);
+ if(meal.logged_at){const existing=meal.diary_entry_id?db.prepare('SELECT quantity FROM food_diary WHERE id=? AND user_id=?').get(meal.diary_entry_id,userId) as any:null;if(b.quantity!==undefined&&existing)check(existing.quantity===quantity,'This meal was already logged with a different portion. Edit it in the diary.',409);check(meal.diary_entry_id,'The diary entry was removed. Log another meal from your diary if needed.',409);return {id:meal.diary_entry_id,duplicate:true};}
  check(b.version===meal.version,'This meal changed. Refresh before logging.',409);
  check(meal.day<=userToday(db,userId),'Future meals are plans. Log them after you have eaten.',409);
- const entryId=randomUUID();db.prepare('INSERT INTO food_diary(id,user_id,day,slot,quantity,snapshot,idempotency_key) VALUES(?,?,?,?,?,?,?)').run(entryId,userId,meal.day,meal.slot,meal.quantity,meal.snapshot,'planner:'+id);
+ const entryId=randomUUID();db.prepare('INSERT INTO food_diary(id,user_id,day,slot,quantity,snapshot,idempotency_key) VALUES(?,?,?,?,?,?,?)').run(entryId,userId,meal.day,meal.slot,quantity,meal.snapshot,'planner:'+id);
  db.prepare('UPDATE planned_meals SET diary_entry_id=?,logged_at=CURRENT_TIMESTAMP,version=version+1 WHERE id=? AND user_id=?').run(entryId,id,userId);return {id:entryId};
 });}
 export function planner(db:DatabaseSync,userId:string,day:string){

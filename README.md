@@ -172,3 +172,7 @@ The client workspace now includes Recipes, Food diary and My progress. Alex can 
 ## Food, training and recovery — together
 
 The client home now brings training, meal ideas and optional habits into one daily space. Plan meals from 132 calculated recipes, combine ingredient quantities into a saved shopping checklist, follow kitchen mode, and log or repeat portions in the diary. Alex can review client weeks. Source-linked guides cover food, fitness, recovery, flavour and safe preparation. See [the everyday tools guide](docs/EVERYDAY_RHYTHM.md) for behaviours, research, access controls and Termux updates.
+
+## Flexible recipes and a table for everyone
+
+Recipes now offer vegan and vegetarian previews with tofu, chickpea or lentil replacements, updated methods and recalculated nutrition. Save your own private copy, or split up to 100 servings across original, vegetarian and vegan batches with a combined ingredient list. **Log my portion** keeps personal intake separate from group preparation. Alex can review variants in the recipe editor; edited/custom recipes need that review before automatic swaps. See [recipe adaptations and group preparation](docs/RECIPE_ADAPTATIONS.md) for sources, limitations, validation and update commands.
