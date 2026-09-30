@@ -1,6 +1,6 @@
 # Automatic screen-recording tour
 
-The recording player performs 100 scripted steps in the working app, alternating between a visitor, Sam (client), Alex (administrator) and Robin (another client). It fills and submits actual forms, checks saved results and describes the current action. Start your phone's screen recorder yourself, then press **Play tour**.
+The recording player performs 104 scripted steps in the working app, alternating between a visitor, Sam (client), Alex (administrator) and Robin (another client). It fills and submits actual forms, checks saved results and describes the current action. Start your phone's screen recorder yourself, then press **Play tour**.
 
 ## Pull and launch
 
@@ -9,12 +9,12 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch feature/recording-walkthrough
-git pull --ff-only origin feature/recording-walkthrough
+git switch feature/contact-settings
+git pull --ff-only origin feature/contact-settings
 bash termux/record.sh
 ```
 
-After merge, use `main` instead of `feature/recording-walkthrough`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+After merge, use `main` instead of `feature/contact-settings`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
 
 The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
@@ -160,4 +160,8 @@ The following list is generated from `public/showcase-scenario.js`; the in-app C
 | 97 | Account | client | Preview the client data export | live |
 | 98 | Account | client | Request account deletion | live |
 | 99 | Account | client | Password recovery and honest delivery status | view |
-| 100 | Finish | client | End with the client’s daily hub | view |
+| 100 | Contact | admin | Alex configures client contact options | live |
+| 101 | Contact | admin | Preview the saved contact settings | live |
+| 102 | Contact | visitor | Visitors keep the enquiry option | live |
+| 103 | Contact | client | Sam sees the enabled contact channels | live |
+| 104 | Finish | client | End with the client’s daily hub | view |

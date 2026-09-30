@@ -185,3 +185,13 @@ Validated with Node 24 on Linux: **208 Node tests passed** using `node --test --
 The optional jsdom rehearsal completed **all 100 recording steps**, using the actual frontend forms/events and a running HTTP/SQLite app, then passed Next/Play/Pause/Coverage controls. Additional regressions verify fresh fixture validation, normal-instance 404 isolation, real authentication/CSRF, occupied-port rejection, inherited data-directory isolation and launch from outside the checkout.
 
 This is DOM/server verification, not rendered Chromium or physical Android acceptance. Check phone layout, readability, timing and the device screen recorder before a full take. External provider, terminal and manual-only checks are enumerated in the recording coverage report and [recording guide](RECORDING_WALKTHROUGH.md).
+
+## Configurable contact options and review — 30 September 2026
+
+**212 Node tests passed** with the default `npm test` command and also with sequential execution; **4 Python tests passed**. Syntax, Termux shell syntax and whitespace checks passed. After moving the timezone helper into the daily-plan module, its focused 11-test calendar/UI group was rerun.
+
+The actual frontend/server DOM rehearsal completed **104 steps**, including Alex saving and previewing contact settings, a visitor receiving no client-only addresses, and a client seeing both enabled channels. Next, Play, Pause and Coverage controls passed. No WhatsApp/Instagram link was opened and no messages were sent.
+
+New tests cover canonical links, misleading/executable URLs, two-client admin denial, unauthenticated denial, CSRF/origin validation, stale-update conflicts, hidden-address and note filtering, saved audience previews, audit minimisation, database reopen, clearing settings, truthful email confirmation and timezone week boundaries. Migration regressions continue preserving existing users and plans.
+
+This is an automated regression and DOM review, not exhaustive verification of every app behaviour, rendered mobile/desktop QA, physical Termux acceptance, a WCAG audit or legal certification. Business and jurisdiction decisions remain documented in [Contact and privacy](CONTACT_AND_PRIVACY.md).
