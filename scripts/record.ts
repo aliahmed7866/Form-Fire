@@ -3,7 +3,7 @@ import { mkdtempSync,mkdirSync,writeFileSync } from 'node:fs';
 import { join,resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { createServer } from 'node:net';
-import { spawn } from 'node:child_process';
+import { spawn,spawnSync } from 'node:child_process';
 import { openDb } from '../src/db.ts';
 import { seedShowcase } from '../src/showcase.ts';
 import { createApp } from '../src/server.ts';
@@ -18,12 +18,17 @@ for(const key of ['FF_GOOGLE_CLIENT_ID','FF_GOOGLE_CLIENT_SECRET','FF_TLS_CERT_F
 const seed=openDb(dir);const showcase=seedShowcase(seed);seed.close();
 const app=createApp({dataDir:dir,showcase,requireVerification:false});
 await new Promise<void>((resolve,reject)=>{app.server.once('error',reject);app.server.listen(port,'127.0.0.1',resolve);});
+let closing=false;function close(){if(closing)return;closing=true;app.server.close(()=>{app.db.close();process.exit(0);});}
+process.on('SIGINT',close);process.on('SIGTERM',close);
 try{
  const response=await fetch(`${process.env.FF_ORIGIN}/api/auth/login`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json'},body:JSON.stringify(showcase.admin)});
  const result=await response.json();if(!response.ok||result.user?.role!=='admin')throw Error('Recording administrator sign-in check failed.');
  await fetch(`${process.env.FF_ORIGIN}/api/auth/logout`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json',Cookie:response.headers.get('set-cookie')!.split(';')[0],'X-CSRF-Token':result.csrf},body:'{}'});
- console.log(`\nFORM & FIRE — SCREEN-RECORDING WORKSPACE\nFictional accounts and transactions only. Normal app data is untouched.\n\nOpen ${process.env.FF_ORIGIN}/?record=1\nStart your phone screen recorder, then press Play tour.\nKeep this Termux session running. Ctrl+C stops the server.\nA new launch creates a fresh take; saved takes are not deleted.\nWorkspace: ${dir}\n`);
+ const health=await fetch(process.env.FF_ORIGIN+'/health',{signal:AbortSignal.timeout(5000)});
+ const ready=await fetch(process.env.FF_ORIGIN+'/api/showcase',{signal:AbortSignal.timeout(5000)});
+ if(!health.ok||!ready.ok||(await ready.json()).runId!==showcase.runId)throw Error('Recording readiness check failed.');
+ // Best effort: prevents CPU sleep on Termux; Android can still stop the app.
+ const wake=spawnSync('termux-wake-lock',[],{stdio:'ignore',timeout:3000});
+ console.log(`\nFORM & FIRE — SCREEN-RECORDING WORKSPACE\nFictional accounts and transactions only. Normal app data is untouched.\n\nOpen ${process.env.FF_ORIGIN}/?record=1\nStart your phone screen recorder, then press Play tour.\nKeep this Termux session running. Ctrl+C stops the server.\nCheck this recording from another Termux session: FF_RECORD_PORT=${port} bash termux/record.sh status\n${wake.status===0?'Termux keep-awake requested. After recording, run termux-wake-unlock when you no longer need Termux awake.\n':''}If Android stops Termux in the background, allow its background activity in Android battery settings.\nA new launch creates a fresh take; saved takes are not deleted.\nWorkspace: ${dir}\n`);
  spawn('termux-open-url',[process.env.FF_ORIGIN+'/?record=1'],{stdio:'ignore'}).on('error',()=>{});
 }catch(error){app.server.close();app.db.close();throw error;}
-let closing=false;function close(){if(closing)return;closing=true;app.server.close(()=>{app.db.close();process.exit(0);});}
-process.on('SIGINT',close);process.on('SIGTERM',close);

@@ -9,12 +9,12 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch feature/contact-settings
-git pull --ff-only origin feature/contact-settings
+git switch fix/recording-connection
+git pull --ff-only origin fix/recording-connection
 bash termux/record.sh
 ```
 
-After merge, use `main` instead of `feature/contact-settings`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+After merge, use `main` instead of `fix/recording-connection`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
 
 The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
@@ -22,11 +22,27 @@ The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` wh
 - **Next step** runs one step while paused.
 - **Speed** offers half, normal and double speed. Start with normal for readable captions.
 - **Compact** reduces the presenter panel.
+- **Check connection** verifies the recording server and take ID. If a connection failed before any save was attempted, it unlocks Play/Next for that step. It never replays a save.
 - **Coverage** lists completed, failed and unrun steps, plus remaining manual checks. Download its JSON report if wanted.
 
 Switching away from the browser or interacting with the app pauses playback. Return to the current tour screen before resuming. Reloads between completed steps retain progress within the same browser tab. Reloading during a step blocks replay because the save may already have happened.
 
-For another recording, stop the server with **Ctrl+C**, then run `bash termux/record.sh` again. Each launch creates a new take. A failed step stops the tour with its error; fix the cause and start a fresh take instead of repeating possibly saved actions.
+For another recording, stop the server with **Ctrl+C**, then run `bash termux/record.sh` again. Each launch creates a new take. Connection failures before any attempted save can recover through Check connection. Other failures, uncertain saves and interrupted older-player takes require a fresh take. Recording reads have a ten-second timeout per attempt and one retry; writes have one attempt only. Playback checks the take before starting, and the server rejects requests carrying a different take ID.
+
+## If step 1 says it cannot reach the app
+
+The loaded page does not prove the server is still running. The older player permanently blocked even a failed read and suggested restarting the normal app. The fixed player checks the recording connection and reports the correct port and command.
+
+Keep the recording Termux session open. From a second Termux session, run:
+
+```bash
+cd "$HOME/Form-Fire"
+bash termux/record.sh status
+```
+
+For a custom port, prefix the status command with the same `FF_RECORD_PORT` value. Status is read-only, prints no credentials, and exits unsuccessfully if the server is down or the port belongs to an ordinary app. If it reports reachable, return to the browser and press **Check connection**, then **Play tour**. If the server stopped, launch a fresh take and reload the printed URL. A take blocked by the older player should also be replaced with a fresh take after updating.
+
+The launcher requests `termux-wake-lock` when available, checks readiness and prints recovery instructions. When finished, run `termux-wake-unlock` once you no longer need Termux kept awake. This is best effort: it does not prevent every Android process kill. If Termux reports that its process was killed, allow background activity in its Android battery settings and try a fresh take. Do not close the recording Termux session while recording. See [Termux’s Android process notice](https://github.com/termux/termux-app/blob/master/README.md) and [the keep-awake command source](https://github.com/termux/termux-tools/blob/master/scripts/termux-wake-lock.in). The reported browser error alone does not establish that Android killed the process.
 
 ## Data and access
 

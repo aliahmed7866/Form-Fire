@@ -195,3 +195,15 @@ The actual frontend/server DOM rehearsal completed **104 steps**, including Alex
 New tests cover canonical links, misleading/executable URLs, two-client admin denial, unauthenticated denial, CSRF/origin validation, stale-update conflicts, hidden-address and note filtering, saved audience previews, audit minimisation, database reopen, clearing settings, truthful email confirmation and timezone week boundaries. Migration regressions continue preserving existing users and plans.
 
 This is an automated regression and DOM review, not exhaustive verification of every app behaviour, rendered mobile/desktop QA, physical Termux acceptance, a WCAG audit or legal certification. Business and jurisdiction decisions remain documented in [Contact and privacy](CONTACT_AND_PRIVACY.md).
+
+## Recording connection recovery — 30 September 2026
+
+The reported page loaded its presenter but failed at step 1 with a fetch error. The exact device-side interruption was not observable here. Code review confirmed that the old player permanently blocked a failed read and pointed to the normal app’s restart command.
+
+The recording transport now has bounded requests, one retry for reads only, and no automatic write retries. Play checks connectivity; Check connection can recover a failed read only when no write was attempted. The server rejects a recording request tagged with another take’s ID. Errors identify the recording port and its own `record.sh status` command. Startup checks the recording endpoint and requests Termux keep-awake when available.
+
+All **104 DOM/server walkthrough steps** and presenter controls passed. Fault injection then dropped both session-read responses and recovered the same step, rejected a changed take, and dropped a logout response after the server applied it without replaying the write. Unit regressions cover timeouts, retry limits and error routing; process tests check reachable/offline status and normal-app isolation. Syntax, shell syntax and four Python checks passed.
+
+The first parallel full-suite run passed 215/216 tests, with the previously observed demo seed-lock collision in `tests/demo.test.ts`. A sequential full-suite run is recorded below. No physical Android background-process behaviour was verified; a wake request cannot guarantee Android will preserve Termux. See [recording troubleshooting](RECORDING_WALKTHROUGH.md#if-step-1-says-it-cannot-reach-the-app).
+
+Sequential result: `node --test --test-concurrency=1 tests/*.test.ts` — **216 passed, 0 failed**, including both existing demo launcher/seed tests.
