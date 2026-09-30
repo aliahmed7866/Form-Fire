@@ -69,6 +69,7 @@ function invoicesTable(invoices){return invoices.length?`<div class="notice">Man
 async function portal(){if(!session.user)return authPage();clientData=await api('/dashboard');const d=clientData,tab=route().split('/')[2]||'';let content='';
  if(!tab)content=await rhythmHome(d);
  if(tab==='planner')content=await rhythmPlannerPage();
+ if(tab==='movement')content=await movementPage();
  if(tab==='rhythm')content=await rhythmHabitsPage();
  if(tab==='learn')content=await rhythmLearnPage();
  if(tab==='adapt')content=await recipeAdaptationPage();
@@ -129,6 +130,7 @@ document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset.form
  if(k.startsWith('enquiry-')){draftSave(f);const kind=k.slice(8);if(!session.user){navigate('/register?next='+encodeURIComponent(kind==='chef'?'/chef':'/enquire'));return;}if(!session.user.verified){navigate('/verify?next='+encodeURIComponent(kind==='chef'?'/chef':'/enquire'));return;}const details=kind==='chef'?{...b,guests:Number(b.guests),budget_minor:Math.round(Number(b.budget)*100)}:b;const r=await api('/requests','POST',{service_id:b.service_id,idempotency_key:b.idempotency_key,details});sessionStorage.removeItem('ff-draft-'+kind);toast('Your request is in. Alex will take a look and get back to you.');navigate('/request/'+r.id);return;}
  if(['daily-date','activity-note','progress-range'].includes(k)){await submitDailyForm(k,b);return;}
  if(k.startsWith('adapt-')){await submitAdaptationForm(k,b,f);return;}
+ if(k.startsWith('movement-')){await submitMovementForm(k,b);return;}
  if(k.startsWith('rhythm-')){await submitRhythmForm(k,b,f);return;}
  if(k.startsWith('fitness-')){await submitFitnessForm(k,b);return;}
  if(k.startsWith('nutrition-')){await submitNutritionForm(k,b,f);return;}
