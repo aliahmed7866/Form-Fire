@@ -177,3 +177,11 @@ These checks establish the local-test journeys. They do not establish medical su
 ## Recipe adaptations and group preparation (0.12)
 
 196 tests pass. The added integration checks cover all 132 recipes with both dietary styles and all three plant proteins, recalculated nutrition, method changes, private copies, source versions, idempotency, group count validation, yield-aware shopping aggregation, forced atomic rollback, prepared/eaten portion separation, exports and actual account deletion. Syntax and whitespace checks pass. Real browser checks at 1440px/390px/320px cover private save, mixed dietary batches, ingredient download, planner save, personal portions and Alex's recipe drafts. See [recipe adaptations](RECIPE_ADAPTATIONS.md) for decisions and limits.
+
+## Automatic recording walkthrough — 30 September 2026
+
+Validated with Node 24 on Linux: **208 Node tests passed** using `node --test --test-concurrency=1 tests/*.test.ts`; **4 Python tests passed**; application syntax, recording launcher shell syntax and Git whitespace checks passed. The parallel suite had two failures in existing demo seed/repair tests (seed-lock collision and mismatched repaired credentials); the sequential rerun passed both. The full suite is reported with the command actually used, not as a passing default parallel run.
+
+The optional jsdom rehearsal completed **all 100 recording steps**, using the actual frontend forms/events and a running HTTP/SQLite app, then passed Next/Play/Pause/Coverage controls. Additional regressions verify fresh fixture validation, normal-instance 404 isolation, real authentication/CSRF, occupied-port rejection, inherited data-directory isolation and launch from outside the checkout.
+
+This is DOM/server verification, not rendered Chromium or physical Android acceptance. Check phone layout, readability, timing and the device screen recorder before a full take. External provider, terminal and manual-only checks are enumerated in the recording coverage report and [recording guide](RECORDING_WALKTHROUGH.md).

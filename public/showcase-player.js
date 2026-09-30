@@ -1,0 +1,62 @@
+import { buildShowcase } from './showcase-scenario.js';
+export function trackShowcaseApp() {
+ let pending=0,last=Date.now();const originalApi=api,originalRender=render;
+ api=async(...args)=>{pending++;last=Date.now();try{return await originalApi(...args);}finally{pending--;last=Date.now();}};
+ render=async(...args)=>{pending++;last=Date.now();try{return await originalRender(...args);}finally{pending--;last=Date.now();}};
+ return async()=>{const end=Date.now()+20000;while(pending||Date.now()-last<30){if(Date.now()>end)throw Error('The page did not finish loading. Playback stopped.');await new Promise(r=>setTimeout(r,10));}};
+}
+export function createShowcaseUI({getSession,request,renderPage,setRoute,wait=ms=>new Promise(r=>setTimeout(r,ms)),gate=async()=>{},pace=()=>1,settle=async()=>{},note=()=>{},preview=()=>{}}) {
+ const find=selector=>{const el=document.querySelector(selector);if(!el)throw Error('The tour could not find '+selector+'. It has stopped here.');return el;};
+ const expose=el=>{for(let p=el.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;if(el.tagName==='DETAILS')el.open=true;el.scrollIntoView({block:'center',behavior:'instant'});document.querySelectorAll('.showcase-focus').forEach(e=>e.classList.remove('showcase-focus'));el.classList.add('showcase-focus');};
+ const beat=async(ms=600)=>{await gate();await wait(ms/pace());await gate();};
+ const until=async predicate=>{const end=Date.now()+15000;while(Date.now()<end){if(await predicate())return;await wait(80);}throw Error('The saved result did not appear. Playback has stopped; inspect this step before continuing.');};
+ const fillElement=async(el,value)=>{expose(el);if(el.type==='checkbox')el.checked=!!value;else el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));await beat(180);};
+ const form=async(key,values={},selector)=>{await gate();await settle();const f=find(selector||`form[data-form="${key}"]`);expose(f);for(const [name,value]of Object.entries(values)){const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);await fillElement(el,value);}
+  if(!f.checkValidity()){const bad=[...f.elements].find(e=>e.validity&&!e.validity.valid);throw Error(`The ${key} form needs attention: ${bad?.name||'a field'} — ${bad?.validationMessage||'invalid value'}`);}
+  await beat(550);await new Promise((resolve,reject)=>{const timer=setTimeout(()=>{document.removeEventListener('ff:form-result',listener);reject(Error('Save took too long. Check the result before starting a new recording.'));},20000);const listener=e=>{if(e.detail.form!==f)return;clearTimeout(timer);document.removeEventListener('ff:form-result',listener);e.detail.ok?resolve():reject(Error(e.detail.error));};document.addEventListener('ff:form-result',listener);f.requestSubmit();});await wait(80);await settle();
+ };
+ const ui={api:request,beat,until,form,note,preview,
+  async go(path){await gate();setRoute(path);await renderPage();await settle();const error=document.querySelector('#main > .wrap > .error');if(error?.textContent)throw Error(error.textContent);window.scrollTo(0,0);await beat(200);},
+  async inspect(selector){await gate();expose(find(selector));await beat();},
+  async fill(selector,value){await gate();await fillElement(find(selector),value);await settle();},
+  async click(selector,options={}){await gate();const el=find(selector);expose(el);if(el.disabled)throw Error('The tour control is disabled: '+selector);await beat(350);const oldConfirm=window.confirm;if(options.confirm)window.confirm=()=>true;try{el.click();}finally{window.confirm=oldConfirm;}await settle();},
+  async role(role,config){const current=await getSession(),wanted=role==='visitor'?null:config[role].email;if(current.user?.email===wanted||(!current.user&&!wanted))return;if(current.user){await request('/auth/logout','POST',{});await getSession();}if(!wanted){await ui.go('/');return;}await ui.go('/login');await form('login',{email:wanted,password:config[role].password});const signed=await getSession();if(signed.user?.email!==wanted)throw Error('Role switch did not sign in to the expected fictional account.');}
+ };
+ return ui;
+}
+
+export async function startShowcase() {
+ const config=await api('/showcase'),storageKey='ff-recording:'+config.runId;
+ let saved;try{saved=JSON.parse(sessionStorage.getItem(storageKey)||'null');}catch{}
+ let index=saved?.index||0,playing=false,busy=false,single=false,blocked=!!saved?.inFlight,speed=1,elapsed=0;
+ const state=saved?.state||{},results=saved?.results||[];
+ const panel=document.createElement('section');panel.id='showcase-player';panel.setAttribute('aria-label','Screen-recording presenter');
+ panel.innerHTML='<div class="showcase-top"><strong>RECORDING · FICTIONAL DATA</strong><span data-tour-position></span></div><h2 data-tour-title>Ready when you are.</h2><p data-tour-caption>Start your screen recorder, then press Play tour. The tour saves real actions in this separate demo workspace.</p><div class="showcase-controls"><button type="button" data-tour-play>Play tour</button><button type="button" data-tour-next>Next step</button><label>Speed <select data-tour-speed><option value="0.5">Slow · ½×</option><option value="1" selected>Normal · 1×</option><option value="2">Quick · 2×</option></select></label><button type="button" class="secondary" data-tour-report>Coverage</button><button type="button" class="secondary" data-tour-small aria-expanded="true">Compact</button></div><p data-tour-status role="status"></p><div data-tour-details hidden></div>';
+ document.body.prepend(panel);document.body.classList.add('showcase-active');
+ const title=panel.querySelector('[data-tour-title]'),caption=panel.querySelector('[data-tour-caption]'),status=panel.querySelector('[data-tour-status]'),position=panel.querySelector('[data-tour-position]'),play=panel.querySelector('[data-tour-play]'),next=panel.querySelector('[data-tour-next]');
+ const persist=inFlight=>sessionStorage.setItem(storageKey,JSON.stringify({index,state,results,inFlight}));
+ const update=()=>{position.textContent=`${Math.min(index+1,steps.length)} / ${steps.length} · ${results.filter(r=>r.status==='completed').length} completed`;play.textContent=playing?'Pause':'Play tour';next.disabled=(busy&&playing)||single||blocked||index>=steps.length;play.disabled=(busy&&single)||blocked||index>=steps.length;};
+ const gate=async()=>{while(!playing&&!single)await new Promise(r=>setTimeout(r,100));};
+ const settle=trackShowcaseApp();
+ const ui=createShowcaseUI({settle,getSession:async()=>{session=await api('/session');return session;},request:(...args)=>api(...args),renderPage:()=>render(),setRoute:path=>history.replaceState(null,'',location.pathname+location.search+'#'+path),gate,pace:()=>speed,note:text=>{status.textContent=text;},preview:(heading,text)=>{const box=panel.querySelector('[data-tour-details]');box.hidden=false;box.replaceChildren();const h=document.createElement('h3');h.textContent=heading;const pre=document.createElement('pre');pre.textContent=text;box.append(h,pre);}});
+ const steps=buildShowcase(config,ui,state);
+ const remaining=[
+  'External Google OAuth, real email, hosted checkout, uploads and wearables: disconnected / configuration required; never simulated as connected.',
+  'Terminal operations: install, update recovery, encrypted backup/restore and actual account deletion require a separate disposable-environment test.',
+  'Password recovery codes/reset, browser download prompts and external video providers are manual checks; the tour shows their available entry points.',
+  'This tour covers the implemented feature families and representative edits/states, not every input combination, animation frame or security edge case.'
+ ];
+ const report=()=>({run_id:config.runId,generated_at:new Date().toISOString(),steps:steps.map(step=>({id:step.id,chapter:step.chapter,title:step.title,kind:step.kind,...(results.find(r=>r.id===step.id)||{status:'not run'})})),manual_or_disconnected:remaining});
+ const showReport=()=>{const box=panel.querySelector('[data-tour-details]');box.hidden=!box.hidden;if(box.hidden)return;box.replaceChildren();const h=document.createElement('h3');h.textContent='Coverage — what actually ran';box.append(h);const pre=document.createElement('pre');pre.textContent=report().steps.map(r=>`${r.status.toUpperCase()} · ${r.chapter} · ${r.title}${r.error?' — '+r.error:''}`).join('\n')+'\n\nMANUAL / DISCONNECTED\n'+remaining.join('\n');box.append(pre);const download=document.createElement('button');download.type='button';download.textContent='Download coverage JSON';download.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(report(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='form-fire-recording-coverage.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};box.append(download);};
+ async function run(singleStep=false){if(busy||blocked||index>=steps.length)return;busy=true;single=singleStep;if(!single)playing=true;update();try{do{const step=steps[index];title.textContent=step.chapter+' / '+step.title;caption.textContent=step.caption||'Watch this action happen in the working app.';status.textContent='Running as '+(step.role==='admin'?'Alex':step.role==='client'?'Sam':step.role==='other'?'Robin':'a visitor')+'…';persist(true);await ui.role(step.role,config);await step.run();await ui.beat(250);results.push({id:step.id,status:'completed',finished_at:new Date().toISOString()});index++;persist(false);status.textContent='Step saved / checked.';update();elapsed=0;while(elapsed<3500&&!single){await gate();await new Promise(r=>setTimeout(r,100));elapsed+=100*speed;}if(single)break;}while(index<steps.length);if(index>=steps.length){playing=false;title.textContent='That’s the tour. Good food, good movement, real support.';caption.textContent='Stop your screen recorder whenever you are ready. Open Coverage for the exact completed steps and remaining manual checks.';status.textContent='Complete · '+steps.length+' steps.';}}
+ catch(error){playing=false;blocked=true;const step=steps[index];results.push({id:step.id,status:'failed',error:error.message});persist(true);status.textContent='Paused on an error: '+error.message+' Start a fresh take after resolving it; this step will not be blindly retried.';}
+ finally{busy=false;single=false;update();}}
+ play.onclick=()=>{if(playing){playing=false;status.textContent='Paused. Any in-flight save is allowed to finish.';}else{playing=true;if(!busy)run();}update();};next.onclick=()=>{if(busy&&!playing){single=true;update();}else run(true);};
+ panel.querySelector('[data-tour-speed]').onchange=e=>{speed=Number(e.target.value);};panel.querySelector('[data-tour-report]').onclick=showReport;
+ panel.querySelector('[data-tour-small]').onclick=e=>{const compact=panel.classList.toggle('compact');e.target.textContent=compact?'Expand':'Compact';e.target.setAttribute('aria-expanded',String(!compact));};
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){playing=false;status.textContent='Paused while the browser is in the background.';update();}});
+ document.addEventListener('click',e=>{if(e.isTrusted&&!panel.contains(e.target)&&playing){playing=false;status.textContent='Paused for you to explore. Resume only after returning to the tour’s current screen.';update();}},true);
+ if(blocked)status.textContent='This take was interrupted during a step. Start the launcher again for a fresh take; automatic replay could duplicate a save.';
+ update();return {steps,report};
+}
+if(typeof window!=='undefined'&&!window.__SHOWCASE_TEST__)startShowcase().catch(error=>{const box=document.createElement('p');box.setAttribute('role','alert');box.textContent='Recording presenter could not start: '+error.message;document.body.prepend(box);});

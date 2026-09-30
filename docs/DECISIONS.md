@@ -111,3 +111,7 @@ Extend the existing Node/SQLite application rather than add a second app or an A
 ## 30 September 2026 — everyday movement journal
 
 Keep the current Node/SQLite architecture. Add optional owner-scoped activity records with explicit intensity and separate strength days, without converting steps or workout ticks into aerobic minutes. Weekly records remain independent of food targets and missing weeks remain unknown. NHS/WHO activity guidance, NHS vegan nutrition, FSA labelling guidance and W3C form feedback inform the behaviour. Add practical plant-based and allergen guidance to the field guide. See MOVEMENT_JOURNAL.md for research, migration, test evidence and outstanding visual review.
+
+## Recording walkthrough — 30 September 2026
+
+Keep recording automation inside an explicitly isolated local fixture server. A fresh take and generated credentials allow real UI mutations without changing the installed application data. The ordinary server does not expose the presenter or configuration. The player waits for application completion events, stops on failed/uncertain saves, and reports manual/disconnected coverage explicitly. No runtime dependency or framework migration is introduced; optional jsdom rehearsal is development-only. See [recording guide](RECORDING_WALKTHROUGH.md).

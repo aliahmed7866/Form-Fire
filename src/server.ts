@@ -1,3 +1,4 @@
+import { validateShowcase, type Showcase } from './showcase.ts';
 import { saveMovement, updateMovement, movementData, movementExport } from './movement.ts';
 import { adaptationSource, recipeAdaptation, proteinSwaps, saveAdaptation, cateringPreview, saveCatering, adaptationsExport } from './recipe-adaptations.ts';
 import { guides } from './guides.ts';
@@ -28,13 +29,15 @@ function date(v:any,name:string) {const valid=typeof v==='string'&&/^\d{4}-\d{2}
 const parse=(v:any)=>v ? JSON.parse(v) : null;
 
 const transitions:Record<string,string[]>={submitted:['under_review','withdrawn'],under_review:['awaiting_client_response','approved','declined','withdrawn'],awaiting_client_response:['under_review','withdrawn'],approved:['withdrawn'],declined:[],withdrawn:[]};
-export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch,requireVerification?:boolean}={}) {
+export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch,requireVerification?:boolean,showcase?:Showcase}={}) {
   check((process.env.FF_MODE||'local-test')==='local-test','Only local-test mode is implemented; do not use real client data.');
   const requireVerification=options.requireVerification??process.env.FF_REQUIRE_VERIFICATION==='1';
   const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified:!requireVerification||!!u.verified,profile:parse(u.profile),profile_version:u.profile_version});
   const transport=transportConfig(process.env,options.origin),{origin}=transport;
   const dataDir=options.dataDir||process.env.FF_DATA_DIR||'data';
   const db=openDb(dataDir);
+  const showcase=validateShowcase(db,options.showcase);
+  if(showcase&&requireVerification)throw Error("Recording mode uses the local testing authentication policy.");
   const sessionCookie=instanceCookie(origin),googleCookie=instanceCookie(origin,'ff_google');
   const instance=instanceInfo(dataDir,origin,!!db.prepare('SELECT id FROM content_packs WHERE id=?').get('form-fire-complete-fictional-demo-v1'));
   const google=createGoogleAuth(db,origin,options.google,options.googleFetch);
@@ -60,11 +63,13 @@ export function createApp(options:{dataDir?:string,origin?:string,google?:Google
       // Restrict Host as well as Origin to prevent DNS rebinding against this local app.
       check(req.headers.host===new URL(origin).host,'Unexpected host.',403);
       if(p==='/health'&&method==='GET') { get('SELECT 1');return send(200,{ok:true,app:'form-fire',mode:'local-test',requireVerification,instance}); }
+      if(p==='/api/showcase'&&method==='GET'){check(showcase,'Not found.',404);return send(200,showcase);}
+      if(p.startsWith('/showcase-')&&method==='GET'){check(showcase,'Not found.',404);const assets:Record<string,string>={'/showcase-player.js':'text/javascript','/showcase-scenario.js':'text/javascript','/showcase-player.css':'text/css'};check(assets[p],'Not found.',404);res.writeHead(200,{'Content-Type':assets[p]});return res.end(readFileSync(new URL('../public'+p,import.meta.url)));}
       if(!p.startsWith('/api/')) {
         check(method==='GET','Method not allowed.',405);
         const files:Record<string,[string,string]>={'/exercise-catalog.js':['exercise-catalog.js','text/javascript'],'/exercise-catalog-extra.js':['exercise-catalog-extra.js','text/javascript'],'/exercise-motion.js':['exercise-motion.js','text/javascript'],'/exercise-motion.css':['exercise-motion.css','text/css'],'/experience.js':['experience.js','text/javascript'],'/lifestyle-art.js':['lifestyle-art.js','text/javascript'],'/google-mark.svg':['google-mark.svg','image/svg+xml'],'/art-outdoors.svg':['art-outdoors.svg','image/svg+xml'],'/art-rest.svg':['art-rest.svg','image/svg+xml'],'/art-kitchen.svg':['art-kitchen.svg','image/svg+xml'],'/art-stretch.svg':['art-stretch.svg','image/svg+xml'],'/brand-mark.svg':['brand-mark.svg','image/svg+xml'],'/art-training.svg':['art-training.svg','image/svg+xml'],'/art-nourish.svg':['art-nourish.svg','image/svg+xml'],'/art-dining.svg':['art-dining.svg','image/svg+xml'],'/art-rhythm.svg':['art-rhythm.svg','image/svg+xml'],'/navigation.js':['navigation.js','text/javascript'],'/responsive.css':['responsive.css','text/css'],'/enrichment.js':['enrichment.js','text/javascript'],'/daily-plan.js':['daily-plan.js','text/javascript'],'/plan-studio.js':['plan-studio.js','text/javascript'],'/fitness.js':['fitness.js','text/javascript'],'/fitness.css':['fitness.css','text/css'],'/movement.js':['movement.js','text/javascript'],'/movement.css':['movement.css','text/css'],'/rhythm.js':['rhythm.js','text/javascript'],'/rhythm.css':['rhythm.css','text/css'],'/adaptations.js':['adaptations.js','text/javascript'],'/adaptations.css':['adaptations.css','text/css'],'/nutrition.js':['nutrition.js','text/javascript'],'/nutrition.css':['nutrition.css','text/css'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/hero.svg':['hero.svg','image/svg+xml']};
         const [file,type]=files[p]||['index.html','text/html'];
-        res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});return res.end(readFileSync(new URL('../public/'+file,import.meta.url)));
+        res.writeHead(200,{'Content-Type':type+'; charset=utf-8'});const contents=readFileSync(new URL('../public/'+file,import.meta.url));return res.end(showcase&&file==='index.html'?contents.toString().replace('</head>','<link rel="stylesheet" href="/showcase-player.css"><script type="module" src="/showcase-player.js"></script></head>'):contents);
       }
       if(method!=='GET') {
         check(req.headers.origin===origin,'Refresh this page and try again (origin mismatch).',403);
