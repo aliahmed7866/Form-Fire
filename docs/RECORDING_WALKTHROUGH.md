@@ -1,0 +1,163 @@
+# Automatic screen-recording tour
+
+The recording player performs 100 scripted steps in the working app, alternating between a visitor, Sam (client), Alex (administrator) and Robin (another client). It fills and submits actual forms, checks saved results and describes the current action. Start your phone's screen recorder yourself, then press **Play tour**.
+
+## Pull and launch
+
+Until this branch is merged:
+
+```bash
+cd "$HOME/Form-Fire"
+git fetch origin
+git switch feature/recording-walkthrough
+git pull --ff-only origin feature/recording-walkthrough
+bash termux/record.sh
+```
+
+After merge, use `main` instead of `feature/recording-walkthrough`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+
+The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
+
+- **Pause** pauses at action boundaries; an in-flight save may finish.
+- **Next step** runs one step while paused.
+- **Speed** offers half, normal and double speed. Start with normal for readable captions.
+- **Compact** reduces the presenter panel.
+- **Coverage** lists completed, failed and unrun steps, plus remaining manual checks. Download its JSON report if wanted.
+
+Switching away from the browser or interacting with the app pauses playback. Return to the current tour screen before resuming. Reloads between completed steps retain progress within the same browser tab. Reloading during a step blocks replay because the save may already have happened.
+
+For another recording, stop the server with **Ctrl+C**, then run `bash termux/record.sh` again. Each launch creates a new take. A failed step stops the tour with its error; fix the cause and start a fresh take instead of repeating possibly saved actions.
+
+## Data and access
+
+Each take uses its own private directory under `~/.local/share/form-fire-recordings/take-*`, random fictional account passwords, and a fresh SQLite database. The launcher ignores the normal app data-directory setting. It does not change the installed app database or reset earlier takes. The normal app and complete demo can continue on their own ports.
+
+Recording mode binds only to `127.0.0.1`, forces password-only local testing, and disables configured Google/TLS integrations for this isolated server. Its recording configuration endpoint exposes only that take's fictional credentials. Normal app instances return 404 for the configuration and presenter assets. Normal role, ownership, CSRF and validation rules still apply.
+
+All people, messages, progress, invoices, payments and refunds in the tour are fictional. No money moves. Confirmation prompts for scripted fictional actions are accepted by the player. Do not enter personal information into a recording take or expose its server through a tunnel.
+
+Optional settings: `FF_RECORD_PORT=8090 bash termux/record.sh` uses another free port; 8085 and 8086 are rejected. `FF_RECORD_ROOT` chooses the parent directory for new takes. An occupied port causes an error before another take is created. Saved takes remain until you deliberately remove the relevant recording folders.
+
+## Coverage and limits
+
+The tour covers the implemented feature families and representative create/edit/delete workflows. It includes client registration, coaching conversations and activation, versioned training/meal plans, exercise playback and timers, movement journal, recipes and dietary adaptations, group meals, kitchen/planner/shopping/diary, metrics/goals/habits, check-ins and Alex's review tools, library editing, chef booking, manual invoices/payments/refunds, privacy requests and export preview.
+
+It does not claim to exercise every possible input, error, animation frame or security boundary. Google OAuth, real email delivery, hosted payments, uploads and wearables remain disconnected or require external configuration. Password recovery codes/reset, browser download dialogs, external video providers, install/update, encrypted backup/restore and actual account deletion need separate manual or terminal checks. The recording shows applicable entry points and reports these limits; it does not pretend they succeeded. Export data is previewed without interrupting the recording with a download dialog.
+
+## Development rehearsal
+
+The normal test suite checks fresh-data isolation, fixture validation, asset/configuration isolation, authentication and launcher behaviour. `scripts/test-recording-dom.mjs` additionally runs every step against the real server and frontend DOM, then checks presenter controls. It requires optional development-only `jsdom@30.1.1`; the app and phone launcher do not require it.
+
+```bash
+npm install --prefix ../recording-test-tools jsdom@30.1.1 --no-audit --no-fund
+FF_JSDOM_MODULE="$(cd ../recording-test-tools && pwd)/node_modules/jsdom/lib/api.js" node scripts/test-recording-dom.mjs
+```
+
+This DOM rehearsal checks actual forms, events and persisted results. It does not verify rendered browser layout, physical Android playback or the phone screen recorder. Check the first few steps on your device before making a full video.
+
+## Step inventory
+
+The following list is generated from `public/showcase-scenario.js`; the in-app Coverage report records what actually ran.
+
+| Step | Chapter | Role | Action | Type |
+| --- | --- | --- | --- | --- |
+| 1 | Welcome | visitor | Welcome to Form & Fire | view |
+| 2 | Welcome | visitor | Coaching and combined services | view |
+| 3 | Welcome | visitor | Meet Alex | view |
+| 4 | Welcome | visitor | Private dining enquiries | view |
+| 5 | Welcome | visitor | FAQs and contact | view |
+| 6 | Welcome | visitor | Feel-good ideas and illustrations | view |
+| 7 | Welcome | visitor | Privacy and service terms | view |
+| 8 | Welcome | visitor | Train / Eat / Both | live |
+| 9 | Welcome | visitor | Service terms | view |
+| 10 | Join | visitor | Create a client account | live |
+| 11 | Join | client | Sign in as Sam | live |
+| 12 | Join | client | Make the profile personal | live |
+| 13 | Coaching | client | Ask for training and food support | live |
+| 14 | Coaching | client | Add a note to the conversation | live |
+| 15 | Coaching | admin | Alex’s work queue | view |
+| 16 | Coaching | admin | Start reviewing the request | live |
+| 17 | Coaching | admin | Alex asks a useful question | live |
+| 18 | Coaching | client | Sam replies | live |
+| 19 | Coaching | admin | Approve, then activate separately | live |
+| 20 | Plans | admin | Publish a training programme | live |
+| 21 | Plans | admin | Publish a meal plan | live |
+| 22 | Plans | admin | Edit a template without changing the client copy | live |
+| 23 | Plans | admin | Explicitly publish the revised version | live |
+| 24 | Training | client | Sam sees current and previous plans | view |
+| 25 | Training | client | Open the complete programme | view |
+| 26 | Training | client | Explore movement cues and animation | live |
+| 27 | Training | client | Record a workout and a note | live |
+| 28 | Training | client | Use the optional rest timer | live |
+| 29 | Training | client | Record everyday movement | live |
+| 30 | Training | client | Correct an activity record | live |
+| 31 | Training | client | Weekly activity and eight-week history | view |
+| 32 | Food | client | Search and filter the recipe catalogue | live |
+| 33 | Food | client | Save a favourite | live |
+| 34 | Food | client | Browse favourites | view |
+| 35 | Food | client | Preview vegetarian substitutions | view |
+| 36 | Food | client | Make and save a private vegan copy | live |
+| 37 | Food | client | Plan a meal for tomorrow | live |
+| 38 | Food | client | Move the meal to today and adjust portions | live |
+| 39 | Food | client | Tick an ingredient on the combined shopping list | live |
+| 40 | Food | client | Cook step by step and scale the batch | live |
+| 41 | Food | client | Log only the portion Sam ate | live |
+| 42 | Food | client | Correct a diary portion | live |
+| 43 | Food | client | Repeat a previous meal | live |
+| 44 | Food | client | Find and log an individual food | live |
+| 45 | Food | client | Prepare quantities for a mixed group | live |
+| 46 | Food | client | Save all the group batches to the planner | live |
+| 47 | Food | client | Tick Alex’s assigned shopping list | live |
+| 48 | Food | client | Reset the assigned shopping checklist | live |
+| 49 | Progress | client | Record optional energy and sleep | live |
+| 50 | Progress | client | Record comparable strength results | live |
+| 51 | Progress | client | Change units and preserve the measurement | live |
+| 52 | Progress | client | Change goals and inspect goal history | live |
+| 53 | Rhythm | client | Choose optional habits | live |
+| 54 | Rhythm | client | Record and undo a habit | live |
+| 55 | Rhythm | client | Read the source-linked field guide | view |
+| 56 | Check-ins | client | Send a weekly check-in | live |
+| 57 | Coach review | admin | Review client workouts | view |
+| 58 | Coach review | admin | Review the whole client week | view |
+| 59 | Coach review | admin | Review goal-based progress | view |
+| 60 | Coach review | admin | Review food and optional coaching guidance | live |
+| 61 | Coach review | admin | Keep an admin-only note | live |
+| 62 | Coach review | admin | Reply to the check-in | live |
+| 63 | Studio | admin | Create an unpublished service | live |
+| 64 | Studio | admin | Publish and then archive that demo service | live |
+| 65 | Studio | admin | Create an exercise with an illustration | live |
+| 66 | Studio | admin | Duplicate and archive an exercise | live |
+| 67 | Studio | admin | Duplicate and tailor a private recipe | live |
+| 68 | Studio | admin | Edit and archive a recipe copy | live |
+| 69 | Studio | admin | Duplicate a training template | live |
+| 70 | Studio | admin | Archive the spare template | live |
+| 71 | Studio | admin | Filter the exercise library and inspect coaching cues | live |
+| 72 | Studio | admin | Adjust a client profile from Alex’s account | live |
+| 73 | Studio | admin | Open an adapted recipe in Alex’s editor | live |
+| 74 | Studio | admin | Connection and testing setup | view |
+| 75 | Client follow-up | client | Read Alex’s saved feedback | view |
+| 76 | Private chef | client | Send a private chef enquiry | live |
+| 77 | Private chef | admin | Alex reviews and approves the enquiry | live |
+| 78 | Private chef | admin | Send a fictional proposal | live |
+| 79 | Private chef | admin | Create the chef invoice | live |
+| 80 | Private chef | client | Accept the fictional proposal | live |
+| 81 | Private chef | client | See the outstanding invoice | view |
+| 82 | Payments | admin | Record a fictional manual payment | live |
+| 83 | Payments | admin | Confirm after requirements are satisfied | live |
+| 84 | Payments | admin | Inspect earnings by period and currency | live |
+| 85 | Payments | admin | Cancel the fictional event explicitly | live |
+| 86 | Payments | admin | Record the separate manual refund | live |
+| 87 | Payments | client | Client sees the payment and refund history | view |
+| 88 | Other request states | client | Submit a second request to withdraw | live |
+| 89 | Other request states | client | Submit a meal-only request | live |
+| 90 | Other request states | admin | Review and decline without activating | live |
+| 91 | Other request states | admin | Pause and resume coaching | live |
+| 92 | Privacy | other | Another client has a separate space | live |
+| 93 | Corrections | client | Remove a movement entry | live |
+| 94 | Corrections | client | Remove a diary entry without changing the recipe | live |
+| 95 | Corrections | client | Remove a planned meal while retaining diary history | live |
+| 96 | Corrections | client | Correct then remove an optional measurement | live |
+| 97 | Account | client | Preview the client data export | live |
+| 98 | Account | client | Request account deletion | live |
+| 99 | Account | client | Password recovery and honest delivery status | view |
+| 100 | Finish | client | End with the client’s daily hub | view |

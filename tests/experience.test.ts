@@ -4,7 +4,7 @@ import {createContext,runInContext} from 'node:vm';
 import {readFileSync} from 'node:fs';
 function ui(reduced=false){
  const timers=new Map<number,()=>void>(),listeners=new Map<string,any[]>();let counter=0;
- const c=createContext({document:{addEventListener(event:string,listener:any){listeners.set(event,[...(listeners.get(event)||[]),listener]);}},window:{addEventListener(){},matchMedia(){return {matches:reduced}}},location:{hash:'#/login'},URLSearchParams,setTimeout(fn:()=>void,ms:number){assert.equal(ms,4800);timers.set(++counter,fn);return counter;},clearTimeout(id:number){timers.delete(id);}});
+ const c=createContext({CustomEvent:class{type:string;detail:any;constructor(type:string,init:any){this.type=type;this.detail=init.detail;}},document:{dispatchEvent(event:any){for(const fn of listeners.get(event.type)||[])fn(event);},addEventListener(event:string,listener:any){listeners.set(event,[...(listeners.get(event)||[]),listener]);}},window:{addEventListener(){},matchMedia(){return {matches:reduced}}},location:{hash:'#/login'},URLSearchParams,setTimeout(fn:()=>void,ms:number){assert.equal(ms,4800);timers.set(++counter,fn);return counter;},clearTimeout(id:number){timers.delete(id);}});
  for(const file of ['lifestyle-art.js','experience.js','plan-studio.js','daily-plan.js','enrichment.js','navigation.js','app.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8').replace(/\nrender\(\);\s*$/,'\n'),c);
  runInContext("toast=message=>{lastToast=message}",c);return {c,timers,listeners};
 }

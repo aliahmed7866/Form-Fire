@@ -180,3 +180,7 @@ The client home now brings training, meal ideas and optional habits into one dai
 ## Flexible recipes and a table for everyone
 
 Recipes now offer vegan and vegetarian previews with tofu, chickpea or lentil replacements, updated methods and recalculated nutrition. Save your own private copy, or split up to 100 servings across original, vegetarian and vegan batches with a combined ingredient list. **Log my portion** keeps personal intake separate from group preparation. Alex can review variants in the recipe editor; edited/custom recipes need that review before automatic swaps. See [recipe adaptations and group preparation](docs/RECIPE_ADAPTATIONS.md) for sources, limitations, validation and update commands.
+
+## Automatic recording tour
+
+Run `bash termux/record.sh` to open a fresh fictional workspace on port 8088. Start your phone screen recorder and press **Play tour** for 100 steps through client and Alex workflows, with captions, pause, single-step, speed and coverage controls. Each launch creates a separate take; normal app data is untouched. See [pull commands, coverage and recording instructions](docs/RECORDING_WALKTHROUGH.md).
