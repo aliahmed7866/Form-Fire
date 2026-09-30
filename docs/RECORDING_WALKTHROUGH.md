@@ -9,19 +9,19 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch fix/recording-connection
-git pull --ff-only origin fix/recording-connection
+git switch fix/hide-recording-panel
+git pull --ff-only origin fix/hide-recording-panel
 bash termux/record.sh
 ```
 
-After merge, use `main` instead of `fix/recording-connection`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+After merge, use `main` instead of `fix/hide-recording-panel`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
 
 The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
 - **Pause** pauses at action boundaries; an in-flight save may finish.
 - **Next step** runs one step while paused.
 - **Speed** offers half, normal and double speed. Start with normal for readable captions.
-- **Compact** reduces the presenter panel.
+- **Hide panel** removes the full presenter and its large page spacer while playback continues. Only a small **Tour · step/104** button remains; tap it to restore the controls. The hidden preference is remembered for this take in the tab. Errors bring the panel back so the reason for stopping stays visible.
 - **Check connection** verifies the recording server and take ID. If a connection failed before any save was attempted, it unlocks Play/Next for that step. It never replays a save.
 - **Coverage** lists completed, failed and unrun steps, plus remaining manual checks. Download its JSON report if wanted.
 
