@@ -30,14 +30,14 @@ function date(v:any,name:string) {const valid=typeof v==='string'&&/^\d{4}-\d{2}
 const parse=(v:any)=>v ? JSON.parse(v) : null;
 
 const transitions:Record<string,string[]>={submitted:['under_review','withdrawn'],under_review:['awaiting_client_response','approved','declined','withdrawn'],awaiting_client_response:['under_review','withdrawn'],approved:['withdrawn'],declined:[],withdrawn:[]};
-export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch,requireVerification?:boolean,showcase?:Showcase}={}) {
+export function createApp(options:{dataDir?:string,origin?:string,google?:GoogleConfig,googleFetch?:typeof fetch,requireVerification?:boolean,showcase?:Showcase,resumeShowcase?:boolean}={}) {
   check((process.env.FF_MODE||'local-test')==='local-test','Only local-test mode is implemented; do not use real client data.');
   const requireVerification=options.requireVerification??process.env.FF_REQUIRE_VERIFICATION==='1';
   const safeUser=(u:any)=>({id:u.id,email:u.email,name:u.name,role:u.role,verified:!requireVerification||!!u.verified,email_verified:!!u.verified,profile:parse(u.profile),profile_version:u.profile_version});
   const transport=transportConfig(process.env,options.origin),{origin}=transport;
   const dataDir=options.dataDir||process.env.FF_DATA_DIR||'data';
   const db=openDb(dataDir);
-  const showcase=validateShowcase(db,options.showcase);
+  const showcase=validateShowcase(db,options.showcase,options.resumeShowcase);
   if(showcase&&requireVerification)throw Error("Recording mode uses the local testing authentication policy.");
   const sessionCookie=instanceCookie(origin),googleCookie=instanceCookie(origin,'ff_google');
   const instance=instanceInfo(dataDir,origin,!!db.prepare('SELECT id FROM content_packs WHERE id=?').get('form-fire-complete-fictional-demo-v1'));

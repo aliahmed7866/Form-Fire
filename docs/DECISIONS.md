@@ -123,3 +123,7 @@ Use admin-managed, versioned contact settings with hidden defaults and server-fi
 ## Recording connectivity — 30 September 2026
 
 Treat a failed read differently from an uncertain save. Retry recording reads once with a timeout, require an explicit connection check before resuming a failed step, and never replay writes automatically. Tag recording requests with the take ID so an old tab cannot write into a replacement take. Keep the existing foreground launcher and add specific read-only diagnostics plus best-effort Termux keep-awake; do not claim that browser-side recovery can restart a killed Android process.
+
+## Managed recording lifecycle — 30 September 2026
+
+Superseding the earlier decision to retain a foreground-only recorder: use a dedicated, opt-in Termux runit service per recording port, with a private manifest and exit log. `start` and `restart` preserve the take, database and sessions; `fresh` alone replaces the active take with a new directory. A signal-killed server can reopen that take automatically; a configuration error stops restart and remains in the log. Foreground operation remains explicit and available on desktop. Resume accepts only the known fictional fixture accounts plus the registered fictional client, validates workspace/port identity before writes, and retains all existing ownership/authentication and uncertain-save protections. A service cannot guarantee survival if Android kills all of Termux.
