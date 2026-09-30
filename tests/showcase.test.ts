@@ -20,9 +20,9 @@ test('Normal app does not expose recording assets or credentials; isolated app u
   const app=createApp({dataDir:dir,origin:'http://127.0.0.1:8099',showcase:config});await new Promise<void>(r=>app.server.listen(8099,'127.0.0.1',r));
   try{
    const base='http://127.0.0.1:8099';const call=(path:string,options:any={})=>fetch(base+path,{...options,headers:{...options.headers,Connection:'close'}});const html=await(await call('')).text();assert.equal(html.includes('/showcase-player.js'),enabled);
-   for(const path of ['/api/showcase','/showcase-player.js','/showcase-scenario.js','/showcase-player.css'])assert.equal((await call(path)).status,enabled?200:404,path);
+   for(const path of ['/api/showcase','/showcase-player.js','/showcase-connection.js','/showcase-scenario.js','/showcase-player.css'])assert.equal((await call(path)).status,enabled?200:404,path);
    assert.equal((await call('/api/admin/dashboard')).status,401);
-   if(config){const r=await call('/api/auth/login',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify(config.admin)});const session=await r.json();assert.equal(r.status,200);assert.equal(session.user.role,'admin');assert.equal((await (await call('/api/session')).json()).requireVerification,false);const cookie=r.headers.get('set-cookie')!.split(';')[0];assert.equal((await call('/api/admin/dashboard',{headers:{Cookie:cookie}})).status,200);assert.equal((await call('/api/admin/services',{method:'POST',headers:{Cookie:cookie,Origin:base,'Content-Type':'application/json'},body:'{}'})).status,403);}
+   if(config){const changed=await call('/api/session',{headers:{'X-Recording-Run':'old-take'}});assert.equal(changed.status,409);assert.equal((await changed.json()).code,'recording_changed');const rejected=await call('/api/auth/register',{method:'POST',headers:{'X-Recording-Run':'old-take',Origin:base,'Content-Type':'application/json'},body:JSON.stringify(config.client)});assert.equal(rejected.status,409);assert.equal((app.db.prepare('SELECT COUNT(*) n FROM users').get() as any).n,2);const r=await call('/api/auth/login',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify(config.admin)});const session=await r.json();assert.equal(r.status,200);assert.equal(session.user.role,'admin');assert.equal((await (await call('/api/session')).json()).requireVerification,false);const cookie=r.headers.get('set-cookie')!.split(';')[0];assert.equal((await call('/api/admin/dashboard',{headers:{Cookie:cookie}})).status,200);assert.equal((await call('/api/admin/services',{method:'POST',headers:{Cookie:cookie,Origin:base,'Content-Type':'application/json'},body:'{}'})).status,403);}
   }finally{await new Promise<void>(r=>app.server.close(()=>r()));app.db.close();rmSync(dir,{recursive:true,force:true});}
  }
 });
@@ -41,8 +41,10 @@ test('Recording launcher works outside the checkout and preserves existing data'
  try{
   const end=Date.now()+15000;while(!output.includes('Open http://127.0.0.1:8097/')&&Date.now()<end&&child.exitCode===null)await new Promise(r=>setTimeout(r,30));
   assert.match(output,/SCREEN-RECORDING WORKSPACE/,errors);const response=await fetch('http://127.0.0.1:8097/api/session',{headers:{Connection:'close'}});assert.equal((await response.json()).requireVerification,false);
+  const status=spawn('bash',[script,'status'],{cwd:root,env,stdio:['ignore','pipe','pipe']});let checkOutput='';status.stdout.on('data',b=>checkOutput+=b);assert.equal(await new Promise(r=>status.on('exit',r)),0);assert.match(checkOutput,/Recording server reachable/);assert.ok(!checkOutput.includes('password'));
   assert.equal(readFileSync(sentinel,'utf8'),'KEEP EXISTING DATA');const takes=readdirSync(join(root,'takes'));assert.equal(takes.length,1);
   child.kill('SIGTERM');assert.equal(await closed,0);
+  const unavailable=spawn('bash',[script,'status'],{cwd:root,env,stdio:'ignore'});assert.equal(await new Promise(r=>unavailable.on('exit',r)),1);
   const blocker=createServer();await new Promise<void>(r=>blocker.listen(8097,'127.0.0.1',r));
   try{const failed=spawn('bash',[script],{cwd:root,env,stdio:'ignore'});assert.notEqual(await new Promise(r=>failed.on('exit',r)),0);assert.deepEqual(readdirSync(join(root,'takes')),takes);}finally{await new Promise<void>(r=>blocker.close(()=>r()));}
  }finally{if(child.exitCode===null)child.kill('SIGTERM');await closed;rmSync(root,{recursive:true,force:true});}

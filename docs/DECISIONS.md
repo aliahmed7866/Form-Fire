@@ -119,3 +119,7 @@ Keep recording automation inside an explicitly isolated local fixture server. A 
 ## Configurable contact channels — 30 September 2026
 
 Use admin-managed, versioned contact settings with hidden defaults and server-filtered public/client audiences. Use plain canonical WhatsApp/Instagram links, no social SDK, no tracking and no client data in URLs. Audience choices are per channel; signed-in access does not imply an active paid service. Keep real email ownership distinct from local testing access. Privacy wording now tracks the implemented data inventory, while business-specific legal decisions remain open. See [review and evidence register](CONTACT_AND_PRIVACY.md).
+
+## Recording connectivity — 30 September 2026
+
+Treat a failed read differently from an uncertain save. Retry recording reads once with a timeout, require an explicit connection check before resuming a failed step, and never replay writes automatically. Tag recording requests with the take ID so an old tab cannot write into a replacement take. Keep the existing foreground launcher and add specific read-only diagnostics plus best-effort Termux keep-awake; do not claim that browser-side recovery can restart a killed Android process.

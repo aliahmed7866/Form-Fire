@@ -94,6 +94,10 @@ test('Network failure keeps entered credentials, gives local recovery steps and 
  const h=loginHarness([{networkError:true}]);h.c.location.hostname='127.0.0.1';await h.submit();
  assert.equal(h.sent.length,1);assert.equal(h.insertions,0);assert.equal(h.fields.password.value,'keep this exact password');assert.equal(h.c.location.hash,'#/login');assert.equal(h.c.renderCount,0);assert.match(h.error.textContent,/couldn’t reach FORM & FIRE/);assert.match(h.error.textContent,/form-fire status/);assert.match(h.error.textContent,/form-fire restart/);assert.ok(!h.error.textContent.includes('Failed to fetch'));
 });
+test('Recording connection errors identify the recording port and its own status command',async()=>{
+ const h=loginHarness([{networkError:true}]);h.c.location.hostname='127.0.0.1';h.c.location.port='8090';h.c.location.search='?record=1';await h.submit();
+ assert.match(h.error.textContent,/recording server on port 8090/);assert.match(h.error.textContent,/record.sh status/);assert.ok(!h.error.textContent.includes('form-fire restart'));assert.equal(h.sent.length,1);
+});
 test('Unreadable server responses produce a useful error and do not reveal an authenticator field',async()=>{
  const h=loginHarness([{status:502,invalidJSON:true}]);h.c.location.hostname='form-fire.example';await h.submit();
  assert.equal(h.sent.length,1);assert.equal(h.insertions,0);assert.match(h.error.textContent,/unexpected response/);assert.match(h.error.textContent,/try again/);assert.ok(!h.error.textContent.includes('Termux'));assert.ok(!h.error.textContent.includes('Unexpected token'));

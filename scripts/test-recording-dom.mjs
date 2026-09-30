@@ -14,19 +14,44 @@ const dir=mkdtempSync(join(tmpdir(),'ff-record-test-'));
 const seed=openDb(dir),config=seedShowcase(seed);seed.close();
 const port=Number(process.env.FF_RECORD_TEST_PORT||8098),origin='http://127.0.0.1:'+port,app=createApp({dataDir:dir,origin,showcase:config});await new Promise(r=>app.server.listen(port,'127.0.0.1',r));
 const dom=new JSDOM(readFileSync(publicFile('index.html'),'utf8'),{url:origin,runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;const evaluate=code=>runInContext(code,dom.getInternalVMContext());let cookie='';
-w.__SHOWCASE_TEST__=true;w.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};w.URL.createObjectURL=()=> 'blob:fixture';w.URL.revokeObjectURL=()=>{};w.structuredClone=structuredClone;w.crypto.randomUUID=randomUUID;w.confirm=()=>true;
+w.AbortController=AbortController;w.__SHOWCASE_TEST__=true;w.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};w.URL.createObjectURL=()=> 'blob:fixture';w.URL.revokeObjectURL=()=>{};w.structuredClone=structuredClone;w.crypto.randomUUID=randomUUID;w.confirm=()=>true;
 w.fetch=async(path,options={})=>{const headers={...options.headers,Cookie:cookie};if(options.method&&options.method!=='GET')headers.Origin=origin;const r=await fetch(origin+path,{...options,headers});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return r;};
 try{
  for(const el of [...w.document.querySelectorAll('script[src]')]){const src=el.getAttribute('src');evaluate(readFileSync(publicFile(src.slice(1)),'utf8').replace(/\nrender\(\);\s*$/,'\n'));}
  evaluate(readFileSync(publicFile('showcase-scenario.js'),'utf8').replace('export function','function'));
- evaluate(readFileSync(publicFile('showcase-player.js'),'utf8').replace(/^import .*\n/,'').replaceAll('export function','function').replaceAll('export async function','async function'));
+ evaluate(readFileSync(publicFile('showcase-connection.js'),'utf8').replaceAll('export function','function').replaceAll('export async function','async function'));
+ evaluate(readFileSync(publicFile('showcase-player.js'),'utf8').replace(/^import .*\n/gm,'').replaceAll('export function','function').replaceAll('export async function','async function'));
  w.config=config;
  await evaluate("render()");
- evaluate("var settle=trackShowcaseApp();var tourUI=createShowcaseUI({settle,getSession:async()=>{session=await api('/session');return session},request:(...args)=>api(...args),renderPage:()=>render(),setRoute:path=>history.replaceState(null,'','#'+path),wait:ms=>new Promise(r=>setTimeout(r,Math.min(ms,5))),pace:()=>1000});var tourState={};var tourSteps=buildShowcase(config,tourUI,tourState)");
+ evaluate("var initialApi=api,initialRender=render;var settle=trackShowcaseApp();var tourUI=createShowcaseUI({settle,getSession:async()=>{session=await api('/session');return session},request:(...args)=>api(...args),renderPage:()=>render(),setRoute:path=>history.replaceState(null,'','#'+path),wait:ms=>new Promise(r=>setTimeout(r,Math.min(ms,5))),pace:()=>1000});var tourState={};var tourSteps=buildShowcase(config,tourUI,tourState)");
  for(let i=0;i<w.tourSteps.length;i++){const step=w.tourSteps[i];console.log(`${i+1}/${w.tourSteps.length} ${step.title}`);await w.tourUI.role(step.role,config);await step.run();}
  console.log('ALL RECORDING STEPS PASSED');
- const presenter=await w.startShowcase();
+ evaluate('api=initialApi;render=initialRender');
  const until=async test=>{const end=Date.now()+10000;while(!test()){if(Date.now()>end)throw Error('Presenter control timed out');await new Promise(r=>setTimeout(r,20));}};
+ const liveFetch=w.fetch;
+ // Drop a logout response AFTER the server applied it. Repeating a write is unsafe.
+ const unsafe=await w.startShowcase();let logoutCalls=0;
+ w.fetch=async(path,options)=>{const result=await liveFetch(path,options);if(path==='/api/auth/logout'){logoutCalls++;throw TypeError('Dropped logout response');}return result;};
+ w.document.querySelector('[data-tour-next]').click();
+ await until(()=>unsafe.report().steps[0].status==='failed');
+ if(logoutCalls!==1)throw Error('A write was retried.');
+ w.fetch=liveFetch;w.document.querySelector('[data-tour-connection]').click();
+ await until(()=>!w.document.querySelector('[data-tour-connection]').disabled);
+ if(!w.document.querySelector('[data-tour-play]').disabled)throw Error('An uncertain save was allowed to replay.');
+ w.document.querySelector('#showcase-player').remove();w.sessionStorage.removeItem('ff-recording:'+config.runId);evaluate('api=initialApi;render=initialRender');
+ const presenter=await w.startShowcase();let failedReads=0;
+ w.fetch=async(path,options)=>{if(path==='/api/session'){failedReads++;throw TypeError('Dropped read');}return liveFetch(path,options);};
+ w.document.querySelector('[data-tour-next]').click();
+ await until(()=>presenter.report().steps[0].status==='failed');
+ if(failedReads!==2)throw Error('Read retries were not bounded to two attempts.');
+ if(!w.document.querySelector('[data-tour-status]').textContent.includes('No save was attempted'))throw Error('Read-only failure was not recoverable.');
+ // A live server with another take ID must not unlock stale playback.
+ w.fetch=async(path,options)=>{const result=await liveFetch(path,options);if(path==='/api/showcase')return {ok:true,json:async()=>({...config,runId:'another-take'})};return result;};
+ w.document.querySelector('[data-tour-connection]').click();
+ await until(()=>!w.document.querySelector('[data-tour-connection]').disabled);
+ if(!w.document.querySelector('[data-tour-play]').disabled)throw Error('Changed take allowed recovery.');
+ w.fetch=liveFetch;w.document.querySelector('[data-tour-connection]').click();
+ await until(()=>!w.document.querySelector('[data-tour-play]').disabled);
  w.document.querySelector('[data-tour-next]').click();
  await until(()=>presenter.report().steps[0].status==='completed'&&!w.document.querySelector('[data-tour-next]').disabled);
  if(presenter.report().steps[1].status!=='not run')throw Error('Next ran more than one step.');
@@ -39,4 +64,5 @@ try{
  w.document.querySelector('[data-tour-report]').click();
  if(!w.document.querySelector('[data-tour-details]').textContent.includes('MANUAL / DISCONNECTED'))throw Error('Coverage does not disclose manual work.');
  console.log('NEXT, PLAY, PAUSE AND COVERAGE CONTROLS PASSED');
+ console.log('DROPPED READ RECOVERY, CHANGED TAKE DENIAL AND NO WRITE REPLAY PASSED');
 }catch(error){console.error(error);console.error('PAGE',w.document.querySelector('#main').textContent.slice(-2200));process.exitCode=1;}finally{w.close();await new Promise(r=>app.server.close(r));app.db.close();rmSync(dir,{recursive:true,force:true});}
