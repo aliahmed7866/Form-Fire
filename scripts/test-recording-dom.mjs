@@ -38,7 +38,7 @@ try{
  w.fetch=liveFetch;w.document.querySelector('[data-tour-connection]').click();
  await until(()=>!w.document.querySelector('[data-tour-connection]').disabled);
  if(!w.document.querySelector('[data-tour-play]').disabled)throw Error('An uncertain save was allowed to replay.');
- w.document.querySelector('#showcase-player').remove();w.sessionStorage.removeItem('ff-recording:'+config.runId);evaluate('api=initialApi;render=initialRender');
+ w.document.querySelector('#showcase-player').remove();w.document.querySelector('#showcase-reopen')?.remove();w.sessionStorage.removeItem('ff-recording:'+config.runId);evaluate('api=initialApi;render=initialRender');
  const presenter=await w.startShowcase();let failedReads=0;
  w.fetch=async(path,options)=>{if(path==='/api/session'){failedReads++;throw TypeError('Dropped read');}return liveFetch(path,options);};
  w.document.querySelector('[data-tour-next]').click();
