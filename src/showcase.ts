@@ -12,11 +12,12 @@ export function seedShowcase(db:DatabaseSync):Showcase {
  db.exec('COMMIT');return config;
  }catch(error){db.exec('ROLLBACK');throw error;}
 }
-export function validateShowcase(db:DatabaseSync,config?:Showcase) {
+export function validateShowcase(db:DatabaseSync,config?:Showcase,resume=false) {
  if(!config)return null;
  if((process.env.FF_MODE||'local-test')!=='local-test'||!db.prepare('SELECT id FROM content_packs WHERE id=?').get('screen-recording:'+config.runId))throw Error('Recording mode requires its own fictional workspace.');
  const rows=db.prepare('SELECT * FROM users').all() as any[];
- if(rows.length!==2)throw Error('Recording mode must start with only its two fixture accounts. Start a fresh recording run.');
+ if(!resume&&rows.length!==2)throw Error('Recording mode must start with only its two fixture accounts. Start a fresh recording run.');
+ if(resume&&(rows.length<2||rows.length>3||rows.some(row=>![config.admin.id,config.other.id].includes(row.id)&&(row.email!==config.client.email||row.role!=='client'))))throw Error('The saved recording contains unexpected accounts. Refusing to resume it.');
  for(const [role,u] of [['admin',config.admin],['client',config.other]] as const){const row=rows.find(r=>r.id===u.id);if(!row||row.role!==role||row.email!==u.email||!row.email.endsWith('@form-fire.example')||!passwordOK(u.password,row.password))throw Error('Recording credentials do not match their fictional accounts.');}
  if(config.client.email!=='recording-sam@form-fire.example')throw Error('Unexpected recording client.');
  return config;

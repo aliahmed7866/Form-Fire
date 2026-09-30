@@ -183,7 +183,7 @@ Recipes now offer vegan and vegetarian previews with tofu, chickpea or lentil re
 
 ## Automatic recording tour
 
-Run `bash termux/record.sh` to open a fresh fictional workspace on port 8088. Start your phone screen recorder and press **Play tour** for 104 steps through client and Alex workflows, with captions, pause, single-step, speed and coverage controls. Each launch creates a separate take; normal app data is untouched. See [pull commands, coverage and recording instructions](docs/RECORDING_WALKTHROUGH.md).
+Run `pkg install termux-services` once, then `bash termux/record.sh start` to open the managed fictional recording workspace on port 8088. Start your phone screen recorder and press **Play tour** for 123 steps through client and Alex workflows, with tap cues and hideable controls. `start` and `restart` preserve the take; `fresh` creates another. Use `status`, `logs` and `stop` to manage it. Normal app data is untouched. See [pull commands, coverage and recording instructions](docs/RECORDING_WALKTHROUGH.md).
 
 ## Configurable contact options
 

@@ -1,34 +1,31 @@
-// Each launch makes a NEW fictional workspace. No reset or existing database arguments.
-import { mkdtempSync,mkdirSync,writeFileSync } from 'node:fs';
-import { join,resolve } from 'node:path';
-import { homedir } from 'node:os';
-import { createServer } from 'node:net';
+// Foreground starts a fresh take; the service reopens its private, validated manifest.
 import { spawn,spawnSync } from 'node:child_process';
-import { openDb } from '../src/db.ts';
-import { seedShowcase } from '../src/showcase.ts';
 import { createApp } from '../src/server.ts';
-const port=Number(process.env.FF_RECORD_PORT||8088);
-if(!Number.isInteger(port)||port<1024||port>65535||[8085,8086].includes(port))throw Error('Choose a recording port from 1024–65535, separate from 8085/8086. Default: 8088.');
-await new Promise<void>((resolve,reject)=>{const probe=createServer();probe.once('error',()=>reject(Error(`Recording port ${port} is busy. Stop the previous recording server or set FF_RECORD_PORT to another port.`)));probe.listen(port,'127.0.0.1',()=>probe.close(()=>resolve()));});
-const parent=resolve(process.env.FF_RECORD_ROOT||join(homedir(),'.local/share/form-fire-recordings'));
-mkdirSync(parent,{recursive:true,mode:0o700});
-const dir=mkdtempSync(join(parent,'take-'));writeFileSync(join(dir,'recording-only.json'),JSON.stringify({fictional:true,created_at:new Date().toISOString()}),{mode:0o600});
-process.env.FF_MODE='local-test';process.env.FF_HOST='127.0.0.1';process.env.FF_PORT=String(port);process.env.FF_ORIGIN=`http://127.0.0.1:${port}`;process.env.FF_REQUIRE_VERIFICATION='0';
+import {recordingSettings,assertRecordingPortFree,prepareRecording,loadRecording} from './record-workspace.ts';
+const {port,origin}=recordingSettings();
+process.env.FF_MODE='local-test';process.env.FF_HOST='127.0.0.1';process.env.FF_PORT=String(port);process.env.FF_ORIGIN=origin;process.env.FF_REQUIRE_VERIFICATION='0';
 for(const key of ['FF_GOOGLE_CLIENT_ID','FF_GOOGLE_CLIENT_SECRET','FF_TLS_CERT_FILE','FF_TLS_KEY_FILE'])delete process.env[key];
-const seed=openDb(dir);const showcase=seedShowcase(seed);seed.close();
-const app=createApp({dataDir:dir,showcase,requireVerification:false});
+if(process.argv[2]==='prepare'){console.log((await prepareRecording()).dir);process.exit(0);}
+const resume=!!process.env.FF_RECORD_TAKE;
+if(resume)await assertRecordingPortFree(port);
+const {dir,showcase}=resume?loadRecording(process.env.FF_RECORD_TAKE!):await prepareRecording();
+const app=createApp({dataDir:dir,showcase,requireVerification:false,resumeShowcase:resume});
 await new Promise<void>((resolve,reject)=>{app.server.once('error',reject);app.server.listen(port,'127.0.0.1',resolve);});
-let closing=false;function close(){if(closing)return;closing=true;app.server.close(()=>{app.db.close();process.exit(0);});}
-process.on('SIGINT',close);process.on('SIGTERM',close);
+let closing=false;function close(signal:string){if(closing)return;closing=true;console.log(`${new Date().toISOString()} Stopping recording server: ${signal}`);app.server.close(()=>{app.db.close();process.exit(0);});}
+process.on('SIGINT',()=>close('SIGINT'));process.on('SIGTERM',()=>close('SIGTERM'));
 try{
- const response=await fetch(`${process.env.FF_ORIGIN}/api/auth/login`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json'},body:JSON.stringify(showcase.admin)});
+ // Fresh takes get a real sign-in smoke check. Recovery must not mutate sessions.
+ if(!resume){
+ const response=await fetch(`${process.env.FF_ORIGIN}/api/auth/login`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json'},body:JSON.stringify(showcase.admin),signal:AbortSignal.timeout(10000)});
  const result=await response.json();if(!response.ok||result.user?.role!=='admin')throw Error('Recording administrator sign-in check failed.');
- await fetch(`${process.env.FF_ORIGIN}/api/auth/logout`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json',Cookie:response.headers.get('set-cookie')!.split(';')[0],'X-CSRF-Token':result.csrf},body:'{}'});
+ const logout=await fetch(`${process.env.FF_ORIGIN}/api/auth/logout`,{method:'POST',headers:{Origin:process.env.FF_ORIGIN,'Content-Type':'application/json',Cookie:response.headers.get('set-cookie')!.split(';')[0],'X-CSRF-Token':result.csrf},body:'{}',signal:AbortSignal.timeout(5000)});
+ if(!logout.ok)throw Error('Recording administrator sign-out check failed.');
+ }
  const health=await fetch(process.env.FF_ORIGIN+'/health',{signal:AbortSignal.timeout(5000)});
  const ready=await fetch(process.env.FF_ORIGIN+'/api/showcase',{signal:AbortSignal.timeout(5000)});
  if(!health.ok||!ready.ok||(await ready.json()).runId!==showcase.runId)throw Error('Recording readiness check failed.');
  // Best effort: prevents CPU sleep on Termux; Android can still stop the app.
  const wake=spawnSync('termux-wake-lock',[],{stdio:'ignore',timeout:3000});
- console.log(`\nFORM & FIRE — SCREEN-RECORDING WORKSPACE\nFictional accounts and transactions only. Normal app data is untouched.\n\nOpen ${process.env.FF_ORIGIN}/?record=1\nStart your phone screen recorder, then press Play tour.\nKeep this Termux session running. Ctrl+C stops the server.\nCheck this recording from another Termux session: FF_RECORD_PORT=${port} bash termux/record.sh status\n${wake.status===0?'Termux keep-awake requested. After recording, run termux-wake-unlock when you no longer need Termux awake.\n':''}If Android stops Termux in the background, allow its background activity in Android battery settings.\nA new launch creates a fresh take; saved takes are not deleted.\nWorkspace: ${dir}\n`);
- spawn('termux-open-url',[process.env.FF_ORIGIN+'/?record=1'],{stdio:'ignore'}).on('error',()=>{});
+ console.log(`\n${new Date().toISOString()} FORM & FIRE — SCREEN-RECORDING WORKSPACE\nFictional accounts and transactions only. Normal app data is untouched.\n\nOpen ${origin}/?record=1\nTake: ${showcase.runId}\n${process.env.FF_RECORD_MANAGED==='1'?'Managed recording service. Recovery keeps this same take.':'Keep this Termux session running. Ctrl+C stops the foreground server.'}\nCheck: cd "$HOME/Form-Fire" && FF_RECORD_PORT=${port} bash termux/record.sh status\n${wake.status===0?'Termux keep-awake requested. Run termux-wake-unlock when finished.\n':''}Workspace: ${dir}\n`);
+ if(process.env.FF_RECORD_MANAGED!=='1')spawn('termux-open-url',[origin+'/?record=1'],{stdio:'ignore'}).on('error',()=>{});
 }catch(error){app.server.close();app.db.close();throw error;}

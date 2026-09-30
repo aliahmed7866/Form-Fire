@@ -9,14 +9,15 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch feature/natural-recording-tour
-git pull --ff-only origin feature/natural-recording-tour
-bash termux/record.sh
+git switch fix/recording-service-recovery
+git pull --ff-only origin fix/recording-service-recovery
+pkg install termux-services
+bash termux/record.sh start
 ```
 
-After merge, use `main` instead of `feature/natural-recording-tour`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+After merge, use `main` instead of `fix/recording-service-recovery`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Termux uses `termux-services`; desktop users can run the foreground recorder with `npm run record`.
 
-The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
+The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. The Termux command returns after verifying the service. Keep Termux running in Android; the recording no longer depends on keeping the launching shell in the foreground. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
 - **Pause** pauses at action boundaries; an in-flight save may finish.
 - **Next step** runs one step while paused.
@@ -28,7 +29,7 @@ The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` wh
 
 Switching away from the browser or interacting with the app pauses playback. Return to the current tour screen before resuming. Reloads between completed steps retain progress within the same browser tab. Reloading during a step blocks replay because the save may already have happened; the profile step can use the read-only confirmation described above. An older tour’s saved step numbers are not reused after a tour update: start a fresh take.
 
-For another recording, stop the server with **Ctrl+C**, then run `bash termux/record.sh` again. Each launch creates a new take. Connection failures before any attempted save can recover through Check connection. Other failures, unconfirmed writes and interrupted older-player takes require a fresh take. Recording reads have a ten-second timeout per attempt and one retry; writes have one attempt only. Playback checks the take before starting, and the server rejects requests carrying a different take ID.
+For another recording, run `bash termux/record.sh fresh`. Managed `start` reuses the current take and `restart` reopens that same take; neither creates a replacement behind the browser’s back. `stop` preserves it. Explicit `foreground` and desktop `npm run record` still create a fresh take and stop with **Ctrl+C**. Connection failures before any attempted save can recover through Check connection. Other failures, unconfirmed writes and interrupted older-player takes require a fresh take. Recording reads have a ten-second timeout per attempt and one retry; writes have one attempt only. Playback checks the take before starting, and the server rejects requests carrying a different take ID.
 
 ## If any step says it cannot reach the app
 
@@ -36,18 +37,20 @@ The loaded page does not prove the server is still running. The older player per
 
 For example, “Make the profile personal” can stop while loading the profile, before its Save button is used. If the error says **No save was attempted**, check the same server and resume through **Check connection → Play tour**. If a save may have happened at this particular profile step, Check connection can confirm the intended server result before moving on, without resubmitting it. The step name alone does not establish a problem with profile saving, and the browser error cannot identify why the server stopped responding. If it recurs, preserve the Termux status output and the Coverage JSON so the failed request can be identified.
 
-Keep the recording Termux session open. From a second Termux session, run:
+Check the managed recording from any Termux session:
 
 ```bash
 cd "$HOME/Form-Fire"
 bash termux/record.sh status
 ```
 
-For a custom port, prefix the status command with the same `FF_RECORD_PORT` value. Status is read-only, prints no credentials, and exits unsuccessfully if the server is down or the port belongs to an ordinary app. If it reports reachable, return to the browser and press **Check connection**, then **Play tour**. If the server stopped, launch a fresh take and reload the printed URL. A take blocked by the older player should also be replaced with a fresh take after updating.
+For a custom port, prefix the status command with the same `FF_RECORD_PORT` value. Status is read-only, prints no credentials, and exits unsuccessfully if the server is down or the port belongs to an ordinary app. If it reports reachable, return to the browser and press **Check connection**, then **Play tour**. If the managed server stopped, run `bash termux/record.sh start` to reopen its saved take, then return to the same tab and choose Check connection. `bash termux/record.sh logs` shows recent startup errors and exit code/signal. Connection refusal (`ECONNREFUSED`) and timeouts are reported separately. Older foreground takes lack the private recovery manifest; create a fresh take after this update.
 
-The launcher requests `termux-wake-lock` when available, checks readiness and prints recovery instructions. When finished, run `termux-wake-unlock` once you no longer need Termux kept awake. This is best effort: it does not prevent every Android process kill. If Termux reports that its process was killed, allow background activity in its Android battery settings and try a fresh take. Do not close the recording Termux session while recording. See [Termux’s Android process notice](https://github.com/termux/termux-app/blob/master/README.md) and [the keep-awake command source](https://github.com/termux/termux-tools/blob/master/scripts/termux-wake-lock.in). The reported browser error alone does not establish that Android killed the process.
+The launcher requests `termux-wake-lock` when available. A separate `form-fire-recording-8088` runit service reopens the same manifest/database if its server process is killed. Configuration errors stop automatic restart and remain in the private log. Services stay opt-in after a supervisor restart; run `start` again if Android stopped all of Termux. Android can still terminate the whole app: allow Termux background activity in Android battery settings if that occurs. When finished, use `bash termux/record.sh stop`, then `termux-wake-unlock` once no other Termux task needs it. See [Termux services](https://github.com/termux/termux-services), [runit process recovery and exit signals](https://smarden.org/runit/runsv.8.html), and [Termux’s Android process notice](https://github.com/termux/termux-app/blob/master/README.md). The reported connection failure does not establish which process exited or why.
 
 ## Data and access
+
+Managed commands are `start`, `restart`, `fresh`, `stop`, `status` and `logs`. Custom ports use a separate service and log. Normal app/demo services are never stopped by these controls.
 
 Each take uses its own private directory under `~/.local/share/form-fire-recordings/take-*`, random fictional account passwords, and a fresh SQLite database. The launcher ignores the normal app data-directory setting. It does not change the installed app database or reset earlier takes. The normal app and complete demo can continue on their own ports.
 
@@ -55,7 +58,7 @@ Recording mode binds only to `127.0.0.1`, forces password-only local testing, an
 
 All people, messages, progress, invoices, payments and refunds in the tour are fictional. No money moves. Confirmation prompts for scripted fictional actions are accepted by the player. Do not enter personal information into a recording take or expose its server through a tunnel.
 
-Optional settings: `FF_RECORD_PORT=8090 bash termux/record.sh` uses another free port; 8085 and 8086 are rejected. `FF_RECORD_ROOT` chooses the parent directory for new takes. An occupied port causes an error before another take is created. Saved takes remain until you deliberately remove the relevant recording folders.
+Optional settings: `FF_RECORD_PORT=8090 bash termux/record.sh` uses another free port; 8085 and 8086 are rejected. `FF_RECORD_ROOT` chooses the parent directory for new takes. An occupied port causes an error before another take is created. Recovery checks the private manifest, take ID, port, directory and expected fictional accounts before opening for writes. Logs contain no fixture passwords. Saved takes remain until you deliberately remove the relevant recording folders.
 
 ## Coverage and limits
 

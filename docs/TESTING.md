@@ -207,3 +207,17 @@ All **104 DOM/server walkthrough steps** and presenter controls passed. Fault in
 The first parallel full-suite run passed 215/216 tests, with the previously observed demo seed-lock collision in `tests/demo.test.ts`. A sequential full-suite run is recorded below. No physical Android background-process behaviour was verified; a wake request cannot guarantee Android will preserve Termux. See [recording troubleshooting](RECORDING_WALKTHROUGH.md#if-step-1-says-it-cannot-reach-the-app).
 
 Sequential result: `node --test --test-concurrency=1 tests/*.test.ts` — **216 passed, 0 failed**, including both existing demo launcher/seed tests.
+
+## Recording service recovery — 30 September 2026
+
+The reported phone status also failed from Termux, so the browser alone could not recover the server. The previous foreground launcher had no service supervision, saved recovery manifest or persistent exit log. The new Termux launcher manages a separate recording service and reopens the same take. This does not establish why the user's earlier process stopped.
+
+Validation: **25 focused tests passed**, application syntax checks passed, `bash -n termux/record.sh` and `git diff --check` passed. The lifecycle test used real upstream **runit 2.2.0** binaries compiled on Linux. It launched the service from outside the checkout, registered Sam, signed in, saved a profile, killed the server with SIGKILL, and confirmed automatic recovery with the same take ID, profile version, cookie session and CSRF token. It also verified start/restart/stop/fresh, preserved old databases, rejection of stale-take headers, private manifests, password-free logs, readable connection refusal and stopping automatic restart after an invalid manifest. Recording ownership/authentication, read-only retry and no-write-replay regressions also passed.
+
+The optional real-supervisor test runs when `FF_RUNIT_TEST_BIN` points to a directory containing `sv`, `runsv` and `runsvdir`:
+
+```bash
+FF_RUNIT_TEST_BIN=/path/to/runit/bin node --test tests/recording-service.test.ts tests/showcase.test.ts tests/recording-connection.test.ts tests/experience.test.ts
+```
+
+The harness owns a real runsvdir process; Termux's service-daemon launcher is represented by a no-op because that supervisor is already running. No physical Android battery-management or screen-recording test was possible. If Android terminates the entire Termux app, reopen Termux and use `record.sh start`; this preserves the managed take. UI write replay rules are unchanged.
