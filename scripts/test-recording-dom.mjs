@@ -20,6 +20,7 @@ try{
  for(const el of [...w.document.querySelectorAll('script[src]')]){const src=el.getAttribute('src');evaluate(readFileSync(publicFile(src.slice(1)),'utf8').replace(/\nrender\(\);\s*$/,'\n'));}
  evaluate(readFileSync(publicFile('showcase-scenario.js'),'utf8').replace('export function','function'));
  evaluate(readFileSync(publicFile('showcase-connection.js'),'utf8').replaceAll('export function','function').replaceAll('export async function','async function'));
+ evaluate(readFileSync(publicFile('showcase-cue.js'),'utf8').replace('export function','function'));
  evaluate(readFileSync(publicFile('showcase-player.js'),'utf8').replace(/^import .*\n/gm,'').replaceAll('export function','function').replaceAll('export async function','async function'));
  w.config=config;
  await evaluate("render()");
