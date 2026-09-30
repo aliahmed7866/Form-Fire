@@ -183,4 +183,8 @@ Recipes now offer vegan and vegetarian previews with tofu, chickpea or lentil re
 
 ## Automatic recording tour
 
-Run `bash termux/record.sh` to open a fresh fictional workspace on port 8088. Start your phone screen recorder and press **Play tour** for 100 steps through client and Alex workflows, with captions, pause, single-step, speed and coverage controls. Each launch creates a separate take; normal app data is untouched. See [pull commands, coverage and recording instructions](docs/RECORDING_WALKTHROUGH.md).
+Run `bash termux/record.sh` to open a fresh fictional workspace on port 8088. Start your phone screen recorder and press **Play tour** for 104 steps through client and Alex workflows, with captions, pause, single-step, speed and coverage controls. Each launch creates a separate take; normal app data is untouched. See [pull commands, coverage and recording instructions](docs/RECORDING_WALKTHROUGH.md).
+
+## Configurable contact options
+
+Alex can set WhatsApp and Instagram details in **Alex’s admin → Contact options**, choose Hidden / Signed-in clients / Everyone for each, add reply hours, and preview saved visibility. Clients find **Contact Alex** in their workspace. Links send no messages automatically and include no client-data prefill. The privacy draft, email-status badges and check-in timezone defaults are also corrected. See [setup, review findings and remaining launch decisions](docs/CONTACT_AND_PRIVACY.md).

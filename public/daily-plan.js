@@ -105,3 +105,5 @@ document.addEventListener('click',async e=>{
     document.querySelector(`[data-daily-item="${assignmentId}-${payload.item_kind}-${payload.item_index}"] [data-daily-action]`)?.focus({preventScroll:true});
   }catch(error){toast(error.message);}finally{button.disabled=false;}
 });
+
+function checkinMonday(timezone,now=new Date()){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:timezone||Intl.DateTimeFormat().resolvedOptions().timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now),get=k=>parts.find(p=>p.type===k).value;const day=new Date(`${get('year')}-${get('month')}-${get('day')}T12:00:00Z`);day.setUTCDate(day.getUTCDate()-((day.getUTCDay()+6)%7));return day.toISOString().slice(0,10);}

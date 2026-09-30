@@ -115,3 +115,7 @@ Keep the current Node/SQLite architecture. Add optional owner-scoped activity re
 ## Recording walkthrough — 30 September 2026
 
 Keep recording automation inside an explicitly isolated local fixture server. A fresh take and generated credentials allow real UI mutations without changing the installed application data. The ordinary server does not expose the presenter or configuration. The player waits for application completion events, stops on failed/uncertain saves, and reports manual/disconnected coverage explicitly. No runtime dependency or framework migration is introduced; optional jsdom rehearsal is development-only. See [recording guide](RECORDING_WALKTHROUGH.md).
+
+## Configurable contact channels — 30 September 2026
+
+Use admin-managed, versioned contact settings with hidden defaults and server-filtered public/client audiences. Use plain canonical WhatsApp/Instagram links, no social SDK, no tracking and no client data in URLs. Audience choices are per channel; signed-in access does not imply an active paid service. Keep real email ownership distinct from local testing access. Privacy wording now tracks the implemented data inventory, while business-specific legal decisions remain open. See [review and evidence register](CONTACT_AND_PRIVACY.md).
