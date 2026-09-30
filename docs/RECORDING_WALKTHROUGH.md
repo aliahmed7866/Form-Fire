@@ -9,12 +9,12 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch fix/hide-recording-panel
-git pull --ff-only origin fix/hide-recording-panel
+git switch feature/recording-tap-cues
+git pull --ff-only origin feature/recording-tap-cues
 bash termux/record.sh
 ```
 
-After merge, use `main` instead of `fix/hide-recording-panel`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
+After merge, use `main` instead of `feature/recording-tap-cues`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Desktop users can run `npm run record`.
 
 The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. Keep Termux running. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
@@ -22,6 +22,7 @@ The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` wh
 - **Next step** runs one step while paused.
 - **Speed** offers half, normal and double speed. Start with normal for readable captions.
 - **Hide panel** removes the full presenter and its large page spacer while playback continues. Only a small **Tour · step/104** button remains; tap it to restore the controls. The hidden preference is remembered for this take in the tab. Errors bring the panel back so the reason for stopping stays visible.
+- **Tap cues** show a ring on the exact button, checkbox or field being used, with a short label such as “Tap · Save” or “Fill · Goals”. The player pauses briefly on the cue before acting. Cues stay visible with the panel hidden and never intercept taps. They name controls without repeating entered values or passwords. Reduced-motion settings use a static marker instead of the tap animation. Page changes and inspections retain the existing page/section highlights; they do not pretend a navigation link was tapped.
 - **Check connection** verifies the recording server and take ID. If a connection failed before any save was attempted, it unlocks Play/Next for that step. It never replays a save.
 - **Coverage** lists completed, failed and unrun steps, plus remaining manual checks. Download its JSON report if wanted.
 
@@ -29,9 +30,11 @@ Switching away from the browser or interacting with the app pauses playback. Ret
 
 For another recording, stop the server with **Ctrl+C**, then run `bash termux/record.sh` again. Each launch creates a new take. Connection failures before any attempted save can recover through Check connection. Other failures, uncertain saves and interrupted older-player takes require a fresh take. Recording reads have a ten-second timeout per attempt and one retry; writes have one attempt only. Playback checks the take before starting, and the server rejects requests carrying a different take ID.
 
-## If step 1 says it cannot reach the app
+## If any step says it cannot reach the app
 
 The loaded page does not prove the server is still running. The older player permanently blocked even a failed read and suggested restarting the normal app. The fixed player checks the recording connection and reports the correct port and command.
+
+For example, “Make the profile personal” can stop while loading the profile, before its Save button is used. If the error says **No save was attempted**, check the same server and resume through **Check connection → Play tour**. The step name alone does not establish a problem with profile saving, and the browser error cannot identify why the server stopped responding.
 
 Keep the recording Termux session open. From a second Termux session, run:
 
@@ -70,6 +73,8 @@ FF_JSDOM_MODULE="$(cd ../recording-test-tools && pwd)/node_modules/jsdom/lib/api
 ```
 
 This DOM rehearsal checks actual forms, events and persisted results. It does not verify rendered browser layout, physical Android playback or the phone screen recorder. Check the first few steps on your device before making a full video.
+
+Version 0.15.3 verification (30 September 2026, Linux / Node 24.19.0): all 104 workflows and presenter/recovery checks passed, along with 22 focused recording, launcher and experience tests and application syntax checks. A focused profile rehearsal verified cue labels with the panel hidden, marker coordinates using simulated layout, no entered password/email in labels, one submission per form, saved profile data and pausing before an edit. Browser visual verification remains outstanding: the Chromium download failed in this environment. The reported phone connection failure was not reproduced; this release adds visual cues and does not claim to fix an Android server interruption.
 
 ## Step inventory
 
