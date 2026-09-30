@@ -4,6 +4,10 @@ A working local-test app for online coaching, chef-created meal plans and privat
 
 **This is a testing release, not a production launch. Use fictional client information.** Data persists in SQLite. Google client sign-in is optional and requires your own OAuth credentials; its button appears only after configuration. Managed authentication migration, email delivery, hosted checkout and private file uploads are not connected. Local authentication uses hashed passwords and server sessions. Email verification and administrator authenticator prompts are turned off for local testing; password recovery still uses the private terminal outbox. The server deliberately binds only to loopback.
 
+## Latest enhancement
+
+Optional everyday activity records, weekly summaries and eight-week history are available in **Move your way**, with Alex’s review in **Client weeks**. See [the movement journal guide](docs/MOVEMENT_JOURNAL.md) for research, update steps and validation limitations.
+
 ## Termux: install beside AYCF and Admin Hub
 
 Use a current Termux installation with Node 24 or later available. The installer checks for Node's built-in SQLite support. No npm dependencies, bundler, native npm module builds or Docker required.
