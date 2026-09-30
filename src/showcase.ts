@@ -5,9 +5,9 @@ export type Showcase = {runId:string; admin:{id:string,email:string,password:str
 export function seedShowcase(db:DatabaseSync):Showcase {
  if((db.prepare('SELECT COUNT(*) n FROM users').get() as any).n)throw Error('Recording setup requires a fresh database. Existing users will not be changed.');
  const runId=randomUUID(),password=()=>randomBytes(24).toString('base64url');
- const config={runId,admin:{id:randomUUID(),email:'recording-alex@form-fire.example',password:password()},other:{id:randomUUID(),email:'recording-robin@form-fire.example',password:password()},client:{email:'recording-sam@form-fire.example',password:password(),name:'DEMO · Sam'}};
+ const config={runId,admin:{id:randomUUID(),email:'recording-alex@form-fire.example',password:password()},other:{id:randomUUID(),email:'recording-robin@form-fire.example',password:password()},client:{email:'recording-sam@form-fire.example',password:password(),name:'Sam (fictional)'}};
  db.exec('BEGIN IMMEDIATE');try{
- for(const [role,u,name] of [['admin',config.admin,'DEMO · Alex'],['client',config.other,'DEMO · Robin']] as const)db.prepare('INSERT INTO users(id,email,name,password,role,verified) VALUES(?,?,?,?,?,1)').run(u.id,u.email,name,passwordHash(u.password),role);
+ for(const [role,u,name] of [['admin',config.admin,'Alex (fictional)'],['client',config.other,'Robin (fictional)']] as const)db.prepare('INSERT INTO users(id,email,name,password,role,verified) VALUES(?,?,?,?,?,1)').run(u.id,u.email,name,passwordHash(u.password),role);
  db.prepare('INSERT INTO content_packs(id) VALUES(?)').run('screen-recording:'+runId);
  db.exec('COMMIT');return config;
  }catch(error){db.exec('ROLLBACK');throw error;}

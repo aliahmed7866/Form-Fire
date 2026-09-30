@@ -21,15 +21,46 @@ try{
  evaluate(readFileSync(publicFile('showcase-scenario.js'),'utf8').replace('export function','function'));
  evaluate(readFileSync(publicFile('showcase-connection.js'),'utf8').replaceAll('export function','function').replaceAll('export async function','async function'));
  evaluate(readFileSync(publicFile('showcase-cue.js'),'utf8').replace('export function','function'));
+ evaluate(readFileSync(publicFile('showcase-journey.js'),'utf8').replace(/^import .*\n/gm,'').replace('export function','function'));
  evaluate(readFileSync(publicFile('showcase-player.js'),'utf8').replace(/^import .*\n/gm,'').replaceAll('export function','function').replaceAll('export async function','async function'));
  w.config=config;
  await evaluate("render()");
  evaluate("var initialApi=api,initialRender=render;var settle=trackShowcaseApp();var tourUI=createShowcaseUI({settle,getSession:async()=>{session=await api('/session');return session},request:(...args)=>api(...args),renderPage:()=>render(),setRoute:path=>history.replaceState(null,'','#'+path),wait:ms=>new Promise(r=>setTimeout(r,Math.min(ms,5))),pace:()=>1000});var tourState={};var tourSteps=buildShowcase(config,tourUI,tourState)");
  for(let i=0;i<w.tourSteps.length;i++){const step=w.tourSteps[i];console.log(`${i+1}/${w.tourSteps.length} ${step.title}`);await w.tourUI.role(step.role,config);await step.run();}
  console.log('ALL RECORDING STEPS PASSED');
+ console.log('NAVIGATION',JSON.stringify(w.tourUI.navigation));
  evaluate('api=initialApi;render=initialRender');
  const until=async test=>{const end=Date.now()+10000;while(!test()){if(Date.now()>end)throw Error('Presenter control timed out');await new Promise(r=>setTimeout(r,20));}};
  const liveFetch=w.fetch;
+ const clearPresenter=()=>{w.document.querySelector('#showcase-player')?.remove();w.document.querySelector('#showcase-reopen')?.remove();w.sessionStorage.removeItem('ff-recording:'+config.runId);evaluate('api=initialApi;render=initialRender');};
+ // Simulate the reported profile interruption after and before the PUT reaches the server.
+ // Accelerate only the presentation pauses; use the real UI, transport and database.
+ evaluate('var normalShowcaseUI=createShowcaseUI;createShowcaseUI=options=>normalShowcaseUI({...options,wait:ms=>new Promise(r=>setTimeout(r,Math.min(ms,5))),pace:()=>1000});');
+ const profileIndex=w.tourSteps.findIndex(s=>s.title==='Make the profile personal');
+ for(const applied of [true,false]){
+  await evaluate("api('/profile','PUT',{name:config.client.name,favourite_foods:'Before the interrupted save'})");
+  await evaluate('render()');
+  w.sessionStorage.setItem('ff-recording:'+config.runId,JSON.stringify({version:2,index:profileIndex,state:{},results:[],inFlight:false}));
+  const profilePresenter=await w.startShowcase();let profileWrites=0;
+  w.fetch=async(path,options)=>{if(path==='/api/profile'&&options?.method==='PUT'){profileWrites++;if(applied)await liveFetch(path,options);throw TypeError('Dropped profile request or response');}return liveFetch(path,options);};
+  w.document.querySelector('[data-tour-next]').click();
+  await until(()=>profilePresenter.report().steps[profileIndex].status==='failed');
+  if(profileWrites!==1)throw Error('Profile save was retried.');
+  if(profilePresenter.report().last_failure.path!=='/profile')throw Error('Missing failed request diagnostic.');
+  w.fetch=async(path,options)=>path==='/api/showcase'?{ok:true,json:async()=>({...config,runId:'another-take'})}:liveFetch(path,options);
+  w.document.querySelector('[data-tour-connection]').click();await until(()=>!w.document.querySelector('[data-tour-connection]').disabled);
+  if(!w.document.querySelector('[data-tour-play]').disabled)throw Error('A different take unlocked the interrupted profile.');
+  w.fetch=liveFetch;
+  const before=(await (await liveFetch('/api/session')).json()).user.profile_version;
+  w.document.querySelector('[data-tour-connection]').click();await until(()=>!w.document.querySelector('[data-tour-connection]').disabled);
+  const recovered=profilePresenter.report().steps[profileIndex].status==='completed';
+  if(recovered!==applied)throw Error('Profile recovery did not match the server result.');
+  if((await (await liveFetch('/api/session')).json()).user.profile_version!==before)throw Error('Recovery wrote to the profile.');
+  if(w.document.querySelector('[data-tour-play]').disabled===applied)throw Error('Profile recovery enabled the wrong action.');
+  clearPresenter();
+ }
+ evaluate('createShowcaseUI=normalShowcaseUI');
+ console.log('PROFILE SAVE RECONCILIATION, CHANGED TAKE DENIAL AND NO RESUBMISSION PASSED');
  // Drop a logout response AFTER the server applied it. Repeating a write is unsafe.
  const unsafe=await w.startShowcase();let logoutCalls=0;
  w.fetch=async(path,options)=>{const result=await liveFetch(path,options);if(path==='/api/auth/logout'){logoutCalls++;throw TypeError('Dropped logout response');}return result;};

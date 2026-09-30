@@ -1,5 +1,5 @@
 // Recording-only transport: retry reads once; never repeat a save automatically.
-export function createRecordingRequest(request,{wait=ms=>new Promise(r=>setTimeout(r,ms)),timeout=10000,onWrite=()=>{},runId}={}) {
+export function createRecordingRequest(request,{wait=ms=>new Promise(r=>setTimeout(r,ms)),timeout=10000,onWrite=()=>{},onFailure=()=>{},runId}={}) {
  return async(path,method='GET',body)=>{
   const read=method==='GET';
   if(!read)onWrite();
@@ -9,7 +9,7 @@ export function createRecordingRequest(request,{wait=ms=>new Promise(r=>setTimeo
    catch(error){
     const connection=controller.signal.aborted||['connection_unavailable','unexpected_response'].includes(error.code);
     if(connection&&!error.code)error.code='connection_unavailable';
-    if(!connection||!read||attempt===1)throw error;
+    if(!connection||!read||attempt===1){onFailure({path:path.split('?')[0],method,code:error.code||'request_failed',timed_out:controller.signal.aborted,at:new Date().toISOString()});throw error;}
    }finally{clearTimeout(timer);}
    await wait(350);
   }
