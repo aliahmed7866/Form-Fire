@@ -21,3 +21,12 @@ test('Recovery verifies the same take before allowing playback',async()=>{
  await verifyRecordingConnection(request,'same');assert.deepEqual(calls,['/showcase','/session']);
  calls.length=0;await assert.rejects(()=>verifyRecordingConnection(request,'different'),{code:'recording_changed'});assert.deepEqual(calls,['/showcase']);
 });
+test('Recording diagnostics identify the final failed request without form values or query strings',async()=>{
+ const failures:any[]=[];
+ const request=createRecordingRequest(async()=>{throw offline();},{wait:async()=>{},onFailure:(failure:any)=>failures.push(failure)});
+ await assert.rejects(()=>request('/profile?private=value','PUT',{password:'never include this'}));
+ assert.equal(failures.length,1);assert.equal(failures[0].path,'/profile');assert.equal(failures[0].method,'PUT');assert.equal(failures[0].timed_out,false);
+ assert.ok(!JSON.stringify(failures).includes('private'));assert.ok(!JSON.stringify(failures).includes('password'));
+ await assert.rejects(()=>request('/session'));
+ assert.equal(failures.length,2,'a retried read records only its final failure');
+});
