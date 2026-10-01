@@ -13,7 +13,8 @@ node src/manage.ts backup
 git fetch origin main
 git merge --ff-only origin/main
 if ! npm test; then echo "Tests failed. Service was not restarted. Previous commit: $FF_PREVIOUS_SHA" >&2; exit 1; fi
-sv restart form-fire
+FF_CONFIG_DIR="$FF_CONFIG_DIR" bash termux/service.sh repair-launcher
+bash termux/service.sh restart
 for attempt in 1 2 3 4 5; do
   if node src/healthcheck.ts; then
     echo "Updated to $(git rev-parse --short HEAD)"; exit 0

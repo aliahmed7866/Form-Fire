@@ -35,7 +35,9 @@ test('Recording inventory names roles, unique steps and the complete connected f
 test('Recording launcher works outside the checkout and preserves existing data',async()=>{
  const {spawn}=await import('node:child_process');const {readFileSync,writeFileSync,readdirSync}=await import('node:fs');const {createServer}=await import('node:net');
  const root=mkdtempSync(join(tmpdir(),'ff-record-launch-')),sentinel=join(root,'original-data');writeFileSync(sentinel,'KEEP EXISTING DATA');
- const script=new URL('../termux/record.sh',import.meta.url).pathname,env={...process.env,FF_RECORD_ROOT:join(root,'takes'),FF_RECORD_PORT:'8097',FF_DATA_DIR:sentinel,FF_REQUIRE_VERIFICATION:'1'};
+ const script=new URL('../termux/record.sh',import.meta.url).pathname,env:NodeJS.ProcessEnv={...process.env,FF_RECORD_ROOT:join(root,'takes'),FF_RECORD_PORT:'8097',FF_DATA_DIR:sentinel,FF_REQUIRE_VERIFICATION:'1'};
+ // Exercise foreground mode on every host, without touching installed Termux services.
+ delete env.PREFIX;
  const child=spawn('bash',[script],{cwd:root,env,stdio:['ignore','pipe','pipe']});let output='',errors='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>errors+=b);
  const closed=new Promise<number|null>(r=>child.on('exit',r));
  try{

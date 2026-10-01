@@ -96,7 +96,7 @@ test('Network failure keeps entered credentials, gives local recovery steps and 
 });
 test('Recording connection errors identify the recording port and its own status command',async()=>{
  const h=loginHarness([{networkError:true}]);h.c.location.hostname='127.0.0.1';h.c.location.port='8090';h.c.location.search='?record=1';await h.submit();
- assert.match(h.error.textContent,/recording server on port 8090/);assert.match(h.error.textContent,/record.sh status/);assert.ok(!h.error.textContent.includes('form-fire restart'));assert.equal(h.sent.length,1);
+ assert.match(h.error.textContent,/recording server on port 8090/);assert.match(h.error.textContent,/FF_RECORD_PORT=8090 bash termux\/record.sh status/);assert.match(h.error.textContent,/FF_RECORD_PORT=8090 bash termux\/record.sh start/);assert.ok(!h.error.textContent.includes('form-fire restart'));assert.equal(h.sent.length,1);
 });
 test('Unreadable server responses produce a useful error and do not reveal an authenticator field',async()=>{
  const h=loginHarness([{status:502,invalidJSON:true}]);h.c.location.hostname='form-fire.example';await h.submit();

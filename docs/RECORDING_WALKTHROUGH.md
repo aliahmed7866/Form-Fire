@@ -7,17 +7,16 @@ The recording player performs 123 scripted steps in the working app, alternating
 Until this branch is merged:
 
 ```bash
-cd "$HOME/Form-Fire"
-git fetch origin
-git switch feature/easier-client-coach-flow
-git pull --ff-only origin feature/easier-client-coach-flow
-pkg install termux-services
-bash termux/record.sh start
+cd "$HOME/Form-Fire" &&
+git fetch origin &&
+git switch fix/recording-startup-recovery &&
+git pull --ff-only origin fix/recording-startup-recovery &&
+bash termux/record.sh fresh
 ```
 
-After merge, use `main` instead of `feature/easier-client-coach-flow`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Termux uses `termux-services`; desktop users can run the foreground recorder with `npm run record`.
+After merge, use `main` instead of `fix/recording-startup-recovery`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. If the supervisor is not installed, run `pkg install termux-services` once. Desktop users can run the foreground recorder with `npm run record`.
 
-The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. The Termux command returns after verifying the service. Keep Termux running in Android; the recording no longer depends on keeping the launching shell in the foreground. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
+The launcher opens the recording address with `termux-open-url` when available, and prints it if you need to open it manually. It initially prefers **http://127.0.0.1:8088/?record=1**. For a fresh or first managed take, an occupied default port triggers a bounded search for an available port from 8088–8118. The selected port is remembered, so later `status`, `logs`, `start`, `restart` and `stop` commands target the same recording. Open the newly printed address if it changed; an older browser tab still points at its old server. The Termux command returns after verifying the service. Keep Termux running in Android. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 
 - **Pause** pauses at action boundaries; an in-flight save may finish.
 - **Next step** runs one step while paused.
@@ -44,9 +43,11 @@ cd "$HOME/Form-Fire"
 bash termux/record.sh status
 ```
 
-For a custom port, prefix the status command with the same `FF_RECORD_PORT` value. Status is read-only, prints no credentials, and exits unsuccessfully if the server is down or the port belongs to an ordinary app. If it reports reachable, return to the browser and press **Check connection**, then **Play tour**. If the managed server stopped, run `bash termux/record.sh start` to reopen its saved take, then return to the same tab and choose Check connection. `bash termux/record.sh logs` shows recent startup errors and exit code/signal. Connection refusal (`ECONNREFUSED`) and timeouts are reported separately. Older foreground takes lack the private recovery manifest; create a fresh take after this update.
+For an older take on another port, prefix each command with that take's `FF_RECORD_PORT` value. Status is read-only, prints no credentials, and exits unsuccessfully if the server is down or the port belongs to an ordinary app. If it reports reachable, return to the browser and press **Check connection**, then **Play tour**. If the managed server stopped, run `bash termux/record.sh start` to reopen its saved take, then return to the same tab and choose Check connection. `bash termux/record.sh logs` shows recent startup errors and exit code/signal. Connection refusal (`ECONNREFUSED`) and timeouts are reported separately. Older foreground takes lack the private recovery manifest; create a fresh take after this update.
 
-The launcher requests `termux-wake-lock` when available. A separate `form-fire-recording-8088` runit service reopens the same manifest/database if its server process is killed. Configuration errors stop automatic restart and remain in the private log. Services stay opt-in after a supervisor restart; run `start` again if Android stopped all of Termux. Android can still terminate the whole app: allow Termux background activity in Android battery settings if that occurs. When finished, use `bash termux/record.sh stop`, then `termux-wake-unlock` once no other Termux task needs it. See [Termux services](https://github.com/termux/termux-services), [runit process recovery and exit signals](https://smarden.org/runit/runsv.8.html), and [Termux’s Android process notice](https://github.com/termux/termux-app/blob/master/README.md). The reported connection failure does not establish which process exited or why.
+If `fresh` reports that the managed service is down but its port is still busy, another listener may still own the port. Only `EADDRINUSE` triggers automatic selection; permission and other bind errors retain their actual code. The launcher never kills an unknown listener. An explicit `FF_RECORD_PORT=8088` stays fixed and fails on conflict; remove that setting to let a fresh take select an available port. Restart and resume always keep the original take's port. If `runsv not running` appears, the launcher now starts the standard Termux supervisor and waits for it before controlling the recording. A supervisor failure shows its own diagnostic output.
+
+The launcher requests `termux-wake-lock` when available. A separate `form-fire-recording-<port>` runit service reopens the same manifest/database if its server process is killed. Configuration errors stop automatic restart and remain in the private log. Services stay opt-in after a supervisor restart; run `start` again if Android stopped all of Termux. Android can still terminate the whole app: allow Termux background activity in Android battery settings if that occurs. When finished, use `bash termux/record.sh stop`, then `termux-wake-unlock` once no other Termux task needs it. See [Termux services](https://github.com/termux/termux-services), [runit process recovery and exit signals](https://smarden.org/runit/runsv.8.html), and [Termux’s Android process notice](https://github.com/termux/termux-app/blob/master/README.md). The reported connection failure does not establish which process exited or why.
 
 ## Data and access
 
@@ -58,7 +59,7 @@ Recording mode binds only to `127.0.0.1`, forces password-only local testing, an
 
 All people, messages, progress, invoices, payments and refunds in the tour are fictional. No money moves. Confirmation prompts for scripted fictional actions are accepted by the player. Do not enter personal information into a recording take or expose its server through a tunnel.
 
-Optional settings: `FF_RECORD_PORT=8090 bash termux/record.sh` uses another free port; 8085 and 8086 are rejected. `FF_RECORD_ROOT` chooses the parent directory for new takes. An occupied port causes an error before another take is created. Recovery checks the private manifest, take ID, port, directory and expected fictional accounts before opening for writes. Logs contain no fixture passwords. Saved takes remain until you deliberately remove the relevant recording folders.
+Optional settings: `FF_RECORD_PORT=8090 bash termux/record.sh` fixes the port explicitly; 8085 and 8086 are rejected. `FF_RECORD_ROOT` chooses the parent directory for takes and their remembered active port. A fixed occupied port, exhausted candidate range or non-conflict bind error stops before creating another take. Alternate selection skips all existing service directories. Recovery checks the private manifest, take ID, port, directory and expected fictional accounts before opening for writes. Logs contain no fixture passwords. Saved takes remain until you deliberately remove the relevant recording folders. Foreground recording keeps its selected port fixed and does not update the managed active-port setting.
 
 ## Coverage and limits
 
@@ -76,6 +77,8 @@ FF_JSDOM_MODULE="$(cd ../recording-test-tools && pwd)/node_modules/jsdom/lib/api
 ```
 
 This DOM rehearsal checks actual forms, events and persisted results. It does not verify rendered browser layout, physical Android playback or the phone screen recorder. Check the first few steps on your device before making a full video.
+
+Version 0.17.1 startup verification (1 October 2026; Linux / Node 24.19.0): all 231 Node tests passed with no skips, including real runit service recovery. Tests cover an occupied port after the managed service stops, automatic selection and remembered controls, fixed-port refusal without new data, preserved take/session recovery, cold supervisor startup and missed directory discovery. Existing services keep their processes during supervisor recovery. Application and shell syntax checks passed. Physical Android execution remains unverified.
 
 Version 0.16.0 verification (1 October 2026, London time; Linux / Node 24.19.0): all 123 workflows and existing presenter/recovery checks passed. Focused tests reproduced a dropped profile response after the write and a failed request before the write; only a matching saved profile unlocked continuation, and no recovery wrote the profile again. Changed takes stayed blocked. A 390px-width DOM rehearsal of onboarding used five main-menu taps, two section-menu taps and 14 links, with no direct route jumps. All 23 focused Node tests and application syntax checks passed. Browser visual verification remains outstanding because the cloud browser could not open the local preview; the phone's original server interruption is not diagnosed by these tests.
 

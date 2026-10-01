@@ -8,7 +8,9 @@ command -v node >/dev/null || { echo 'Install Node 24+ in Termux first: pkg inst
 node -e "if(Number(process.versions.node.split('.')[0])<24)throw Error('Node 24 or later is required');require('node:sqlite')"
 FF_RECORD_ACTION="${1:-start}"
 case "$FF_RECORD_ACTION" in start|fresh|restart|foreground|status|stop|logs) ;; *) echo 'Usage: bash termux/record.sh [start|fresh|restart|foreground|status|stop|logs]' >&2; exit 1;; esac
-export FF_RECORD_PORT="${FF_RECORD_PORT:-8088}"
+FF_RECORD_EXPLICIT_PORT="${FF_RECORD_PORT:-}"
+FF_RECORD_PORT="$(node --input-type=module -e "import {recordingSettings} from './scripts/record-workspace.ts';console.log(recordingSettings().port)")"
+export FF_RECORD_PORT
 FF_RECORD_ROOT="$(node --input-type=module -e "import {recordingSettings} from './scripts/record-workspace.ts';console.log(recordingSettings().parent)")"
 export FF_RECORD_ROOT
 unset FF_RECORD_TAKE FF_RECORD_MANAGED
@@ -49,13 +51,9 @@ if [ "$FF_RECORD_ACTION" = stop ]; then
   echo 'Managed recording stopped. The saved take is preserved.'; exit 0
 fi
 export SVDIR="$PREFIX/var/service"
-service-daemon start >/dev/null 2>&1 || true
+. "$FF_RECORD_APP/termux/service.sh"
 if [ "$FF_RECORD_OWNED" = 1 ] && { [ "$FF_RECORD_ACTION" = fresh ] || [ "$FF_RECORD_ACTION" = restart ]; }; then
-  # Wait for the supervisor to discover this service before sending stop.
-  for FF_RECORD_ATTEMPT in {1..30}; do
-    if sv status "$FF_RECORD_SERVICE" >/dev/null 2>&1; then break; fi
-    sleep 0.2
-  done
+  ff_wait_for_supervisor "$FF_RECORD_SERVICE"
   sv -w 10 stop "$FF_RECORD_SERVICE"
 fi
 if [ "$FF_RECORD_OWNED" = 1 ] && [ "$FF_RECORD_ACTION" = start ] && node scripts/record-status.ts >/dev/null 2>&1; then
@@ -63,9 +61,22 @@ if [ "$FF_RECORD_OWNED" = 1 ] && [ "$FF_RECORD_ACTION" = start ] && node scripts
 else
   if [ "$FF_RECORD_ACTION" = fresh ] || [ -z "${FF_RECORD_TAKE:-}" ]; then
     # Port check happens before seeding. A normal app or old foreground take is never stopped.
+    FF_RECORD_AUTO_PORT=0
+    if [ -z "$FF_RECORD_EXPLICIT_PORT" ] && [ "$FF_RECORD_ACTION" != restart ]; then FF_RECORD_AUTO_PORT=1; fi
+    FF_RECORD_SELECTED_PORT="$(FF_RECORD_AUTO_PORT="$FF_RECORD_AUTO_PORT" node --input-type=module -e "import {chooseRecordingPort} from './scripts/record-workspace.ts';try{console.log(await chooseRecordingPort(process.env.FF_RECORD_AUTO_PORT==='1'))}catch(error){console.error(error.message);process.exit(1)}")"
+    if [ "$FF_RECORD_SELECTED_PORT" != "$FF_RECORD_PORT" ]; then
+      echo "Port $FF_RECORD_PORT is occupied (EADDRINUSE); starting a fresh recording on $FF_RECORD_SELECTED_PORT. The existing listener is unchanged."
+      export FF_RECORD_PORT="$FF_RECORD_SELECTED_PORT"
+      FF_RECORD_LOG="$FF_RECORD_ROOT/logs/$FF_RECORD_PORT.log"
+      FF_RECORD_SERVICE="$PREFIX/var/service/form-fire-recording-$FF_RECORD_PORT"
+      # Check again before preparing a take; do not reuse an existing alternate service.
+      if [ -e "$FF_RECORD_SERVICE" ] || [ -L "$FF_RECORD_SERVICE" ]; then
+        echo 'The selected recording service appeared during startup. Retry fresh; no new take was created.' >&2; exit 1
+      fi
+    fi
     FF_RECORD_TAKE="$(node scripts/record.ts prepare)"; export FF_RECORD_TAKE
   else
-    node --input-type=module -e "import {loadRecording} from './scripts/record-workspace.ts';loadRecording(process.env.FF_RECORD_TAKE)"
+    node --input-type=module -e "import {loadRecording,assertRecordingPortFree,recordingSettings} from './scripts/record-workspace.ts';loadRecording(process.env.FF_RECORD_TAKE);await assertRecordingPortFree(recordingSettings().port)"
   fi
   mkdir -p "$FF_RECORD_SERVICE" "$FF_RECORD_ROOT/logs"
   chmod 700 "$FF_RECORD_SERVICE" "$FF_RECORD_ROOT/logs"
@@ -88,14 +99,17 @@ else
     printf 'if [ "$1" != 0 ] && [ "$2" = 0 ]; then sv down .; fi\nsleep 1\n'
   } > "$FF_RECORD_SERVICE/finish.tmp"
   chmod 700 "$FF_RECORD_SERVICE/finish.tmp"; mv "$FF_RECORD_SERVICE/finish.tmp" "$FF_RECORD_SERVICE/finish"
-  FF_RECORD_STARTED=0
-  for FF_RECORD_ATTEMPT in {1..30}; do
-    if sv up "$FF_RECORD_SERVICE" >/dev/null 2>&1; then FF_RECORD_STARTED=1; break; fi
-    sleep 0.2
-  done
-  if [ "$FF_RECORD_STARTED" != 1 ]; then echo 'The Termux supervisor is unavailable. Reopen Termux, then run bash termux/record.sh start.' >&2; show_logs; exit 1; fi
+  # Save only after a recoverable take/service exists, so controls also work after a startup failure.
+  node --input-type=module -e "import {rememberRecordingPort} from './scripts/record-workspace.ts';rememberRecordingPort()"
+  echo "Recording address: http://127.0.0.1:$FF_RECORD_PORT/?record=1"
+  if ! ff_wait_for_supervisor "$FF_RECORD_SERVICE"; then
+    echo "Retry: cd \"\$HOME/Form-Fire\" && FF_RECORD_PORT=$FF_RECORD_PORT bash termux/record.sh start" >&2
+    show_logs; exit 1
+  fi
+  sv up "$FF_RECORD_SERVICE"
   if ! node scripts/record-status.ts --wait; then show_logs; exit 1; fi
 fi
+node --input-type=module -e "import {rememberRecordingPort} from './scripts/record-workspace.ts';rememberRecordingPort()"
 echo 'Recording runs as a Termux service; this command can return to the prompt.'
 echo 'Controls: bash termux/record.sh status | logs | restart | fresh | stop'
 echo 'Keep Termux running in Android. Open the URL above, then press Play tour.'
