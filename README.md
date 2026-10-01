@@ -188,3 +188,9 @@ Run `pkg install termux-services` once, then `bash termux/record.sh start` to op
 ## Configurable contact options
 
 Alex can set WhatsApp and Instagram details in **Alex’s admin → Contact options**, choose Hidden / Signed-in clients / Everyone for each, add reply hours, and preview saved visibility. Clients find **Contact Alex** in their workspace. Links send no messages automatically and include no client-data prefill. The privacy draft, email-status badges and check-in timezone defaults are also corrected. See [setup, review findings and remaining launch decisions](docs/CONTACT_AND_PRIVACY.md).
+
+## Easier enquiries and everyday use
+
+Coaching starts with a service choice and one goal. Routine, experience, equipment and food preferences are optional; clients review their answers before sending. Coaching and private-dining forms use short panels with Back/Edit, preserve drafts through account setup, and keep duplicate-submission protection.
+
+Alex can enable WhatsApp in **Contact options**. An open client request then offers an optional WhatsApp handoff with a generic editable greeting; questionnaire answers stay in the app. External messages do not sync back automatically. Plans, progress, check-ins and agreed booking changes remain in the app. See [usability decisions and validation](docs/USABILITY_IMPROVEMENTS.md).

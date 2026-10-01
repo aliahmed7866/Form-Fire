@@ -1,0 +1,24 @@
+.enquiry-layout{align-items:start;gap:clamp(24px,5vw,64px)}
+.enquiry-layout>*,[data-enquiry-flow],.enquiry-review-group{min-width:0}
+.enquiry-layout .page-intro h1{font-size:clamp(2.2rem,4.4vw,3.8rem)}
+.enquiry-layout .enquiry-art{max-width:280px;margin:24px 0}
+[data-enquiry-flow] [hidden]{display:none!important}
+.enquiry-progress{font-size:.82rem;font-weight:700;color:var(--muted);margin:0 0 16px}
+[data-enquiry-panel] h2{font-size:clamp(1.4rem,3vw,1.9rem);margin:0 0 20px;scroll-margin-top:120px}
+[data-enquiry-flow] input,[data-enquiry-flow] select,[data-enquiry-flow] textarea{font-size:1rem;max-width:100%;min-width:0}
+[data-enquiry-flow] textarea{min-height:106px;resize:vertical}
+.field-hint{display:block;font-weight:400;font-size:.88rem;line-height:1.55;color:var(--muted);margin:6px 0 10px}
+.enquiry-extra{border:1px solid var(--line);border-radius:12px;padding:0;margin:20px 0}
+.enquiry-extra>summary{padding:16px;min-height:48px;font-size:.95rem;line-height:1.55;overflow-wrap:anywhere}
+.enquiry-extra[open]>summary{margin-bottom:8px;border-bottom:1px solid var(--line)}
+.enquiry-extra>label,.enquiry-extra>.form-grid{margin:16px}
+.enquiry-controls{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-top:24px}
+.enquiry-controls>button{min-height:48px;white-space:normal;flex:1 1 135px;margin:0}
+.enquiry-draft-note{margin:18px 0 0;font-size:.8rem}
+.enquiry-review-group{border-top:1px solid var(--line);padding:18px 0}
+.enquiry-review-group dl{margin:0 0 14px}
+.enquiry-review-group dt{font-weight:700;font-size:.85rem;margin:12px 0 4px}
+.enquiry-review-group dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.enquiry-review-group .button,.enquiry-review-group button{min-height:44px}
+[data-enquiry-flow] [aria-invalid="true"]{border:2px solid #9b3f2c}
+@media(max-width:760px){.enquiry-layout{grid-template-columns:minmax(0,1fr);gap:24px}.enquiry-layout .enquiry-art{display:none}.enquiry-layout .page-intro{margin-bottom:20px}.enquiry-layout>.card{padding:22px}.enquiry-layout .notice{margin-bottom:12px}[data-enquiry-flow] .form-grid{grid-template-columns:minmax(0,1fr)}}

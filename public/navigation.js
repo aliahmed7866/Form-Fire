@@ -13,9 +13,18 @@ function setSections(open,{focus=false}={}) {
   if(focus)button.focus();
 }
 function workspaceTabs(admin=false) {
-  const items=admin?[['','Overview'],['requests','Requests'],['clients','Clients'],['plans','Plan studio'],['nutrition','Nutrition'],['rhythm','Client weeks'],['checkins','Check-ins'],['progress','Plan activity'],['fitness','Fitness progress'],['services','Services'],['money','Money'],['audit','Activity'],['contact','Contact options'],['setup','Setup & testing']]:[['','Overview'],['today','Today'],['movement','Move your way'],['progress','My progress'],['nutrition','Food diary'],['recipes','Recipes'],['planner','Meal planner'],['rhythm','My rhythm'],['learn','Field guide'],['shopping','Shop & prepare'],['feel-good','Feel-good ideas'],['requests','My requests'],['plans','My plans'],['checkins','Check-ins'],['money','Payments'],['contact','Contact Alex'],['profile','My profile']];
+  const groups=admin?[
+    ['Day to day',[['','Overview'],['requests','Requests'],['clients','Clients'],['checkins','Check-ins']]],
+    ['Plans & progress',[['plans','Plan studio'],['nutrition','Nutrition'],['rhythm','Client weeks'],['progress','Plan activity'],['fitness','Fitness progress']]],
+    ['Your business',[['services','Services'],['money','Money'],['contact','Contact options'],['audit','Activity'],['setup','Setup & testing']]]
+  ]:[
+    ['Your next step',[['','Overview'],['today','Today'],['plans','My plans'],['checkins','Check-ins'],['progress','My progress']]],
+    ['Food & movement',[['recipes','Recipes'],['planner','Meal planner'],['shopping','Shop & prepare'],['nutrition','Food diary'],['movement','Move your way'],['rhythm','My rhythm']]],
+    ['Support & account',[['requests','My requests'],['contact','Contact Alex'],['profile','My profile'],['money','Payments'],['learn','Field guide'],['feel-good','Feel-good ideas']]]
+  ];
+  const items=groups.flatMap(([,links])=>links);
   const base=admin?'/admin':'/portal',current=route().endsWith('/adapt')?'Recipe swaps':route().endsWith('/catering')?'Group quantities':route()==='/portal/cook'?'Kitchen mode':route()==='/portal/recipe'?'Recipe':route()==='/portal/foods'?'Food library':items.find(([p])=>route()===base+(p?'/'+p:''))?.[1]||'Overview';
-  return `<aside class="workspace-nav"><button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>${admin?'Alex’s workspace':'Your space'}</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Sections <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs" aria-label="${admin?'Admin':'Client'} sections">${items.map(([p,t])=>{const path=base+(p?'/'+p:'');return `<a href="#${path}" ${route()===path?'class="active" aria-current="page"':''}>${t}<span aria-hidden="true">↗</span></a>`;}).join('')}</nav></aside>`;
+  return `<aside class="workspace-nav"><button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>${admin?'Alex’s workspace':'Your space'}</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Sections <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs" aria-label="${admin?'Admin':'Client'} sections">${groups.map(([title,links],group)=>`<div class="workspace-nav-group" role="group" aria-labelledby="workspace-group-${group}"><p class="workspace-nav-label" id="workspace-group-${group}">${esc(title)}</p><div class="workspace-nav-links">${links.map(([p,t])=>{const path=base+(p?'/'+p:'');return `<a href="#${path}" ${route()===path?'class="active" aria-current="page"':''}>${t}<span aria-hidden="true">↗</span></a>`;}).join('')}</div></div>`).join('')}</nav></aside>`;
 }
 function syncNavigation() {
   setMenu(false);setSections(false);

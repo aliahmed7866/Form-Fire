@@ -1,6 +1,6 @@
 # Automatic screen-recording tour
 
-The recording player performs 123 scripted steps in the working app, alternating between a visitor, Sam (client), Alex (administrator) and Robin (another client). It uses visible links and navigation menus where available, opens disclosure sections, types text gradually, submits actual forms, checks saved results and describes the current action. Brief actor/chapter cards explain when the story moves from Sam to Alex or to an alternative example. The controls can stay hidden throughout playback. Start your phone's screen recorder yourself, then press **Play tour**.
+The recording player performs 123 scripted steps in the working app, alternating between a visitor, Sam (client), Alex (administrator) and Robin (another client). It uses visible links and navigation menus where available, opens disclosure sections, types text gradually, submits actual forms, checks saved results and describes the current action. Brief actor/chapter cards explain when the story moves from Sam to Alex or to an alternative example. The controls can stay hidden throughout playback. Coaching and private-dining enquiries are demonstrated panel by panel, including optional details and the final review before submission. Start your phone's screen recorder yourself, then press **Play tour**.
 
 ## Pull and launch
 
@@ -9,13 +9,13 @@ Until this branch is merged:
 ```bash
 cd "$HOME/Form-Fire"
 git fetch origin
-git switch fix/recording-service-recovery
-git pull --ff-only origin fix/recording-service-recovery
+git switch feature/easier-client-coach-flow
+git pull --ff-only origin feature/easier-client-coach-flow
 pkg install termux-services
 bash termux/record.sh start
 ```
 
-After merge, use `main` instead of `fix/recording-service-recovery`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Termux uses `termux-services`; desktop users can run the foreground recorder with `npm run record`.
+After merge, use `main` instead of `feature/easier-client-coach-flow`. Git will stop if local edits conflict; preserve those edits before switching. The launcher requires Node 24 or later and no npm installation. Termux uses `termux-services`; desktop users can run the foreground recorder with `npm run record`.
 
 The launcher opens **http://127.0.0.1:8088/?record=1** with `termux-open-url` when available, and prints the same address if you need to open it manually. The Termux command returns after verifying the service. Keep Termux running in Android; the recording no longer depends on keeping the launching shell in the foreground. Start screen recording, return to the browser, and tap **Play tour**. Recording the video is handled by your device, not by the app.
 

@@ -38,7 +38,20 @@ export function createShowcaseUI({getSession,request,renderPage,setRoute,wait=ms
  }
  async function form(key,values={},selector){
   await gate();await settle();assertPage();const f=find(selector||`form[data-form="${key}"]`);await prepare(f);
-  for(const [name,value]of Object.entries(values)){const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);await fillElement(el,value);}
+  if(f.hasAttribute('data-enquiry-flow')){
+   // Walk the visible questionnaire in order, including Back for a restored draft.
+   while(Number(f.dataset.enquiryStep)>0)await tap(f.querySelector('[data-enquiry-back]'));
+   for(let step=0;step<2;step++){
+    for(const [name,value]of Object.entries(values)){
+     const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);
+     if(el.type==='hidden'){if(el.value!==String(value))throw Error('The recording enquiry has an unexpected hidden value.');continue;}
+     if(el.closest('[data-enquiry-panel]')?.dataset.enquiryPanel===String(step))await fillElement(el,value);
+    }
+    await tap(f.querySelector('[data-enquiry-next]'));
+    if(Number(f.dataset.enquiryStep)!==step+1)throw Error('The enquiry needs attention before continuing.');
+   }
+   await prepare(f.querySelector('[data-enquiry-review]'));note('Review the answers before sending.');await beat(1800);
+  }else for(const [name,value]of Object.entries(values)){const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);await fillElement(el,value);}
   if(!f.checkValidity()){const bad=[...f.elements].find(e=>e.validity&&!e.validity.valid);throw Error(`The ${key} form needs attention: ${bad?.name||'a field'} — ${bad?.validationMessage||'invalid value'}`);}
   const submitter=[...f.elements].find(el=>el.type==='submit'&&!el.disabled&&!el.hidden);if(!submitter)throw Error('The tour could not find the submit button for '+key+'.');
   expose(submitter);note(cue.show(submitter));
