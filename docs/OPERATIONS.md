@@ -72,6 +72,16 @@ Add `FF_GOOGLE_CLIENT_ID` and `FF_GOOGLE_CLIENT_SECRET` as private exports in th
 
 If the app reports a connection failure, check `~/.local/bin/form-fire status`, then `~/.local/bin/form-fire restart` and refresh the exact configured URL. The new Retry button repeats only page reads. It never retries sign-in or writes automatically. Android background-process termination, wrong ports, HTTP/HTTPS mismatches and untrusted certificates can cause transport failures; the screenshot alone cannot identify which occurred. Inspect private logs on the device if restart does not resolve it.
 
+If an older installed launcher reports `form-fire: runsv not running`, pull the current code, then run:
+
+```bash
+cd "$HOME/Form-Fire" &&
+bash termux/service.sh repair-launcher &&
+bash termux/service.sh restart
+```
+
+This replaces only the command wrapper, retaining the existing private configuration and data. Start/restart use the absolute service directory, recover the Termux supervisor when needed and wait for readiness. They do not restart the global supervisor or stop unrelated services. Supervisor startup errors are shown if recovery fails. `status` remains read-only. The recording server has separate controls: use `bash termux/record.sh start`, not the normal app restart command, to recover a recording.
+
 ## Recover an update blocked by hard-link EACCES
 
 A release before this fix may stop before fetching updates with `EACCES: permission denied, link .../key -> .../backup.key`. The same hard-link restriction can affect archive and restore publication. Do not use chmod 777, remove the key, or disable the pre-update backup.

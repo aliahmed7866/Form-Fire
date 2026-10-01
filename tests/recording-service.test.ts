@@ -5,8 +5,47 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
-import {prepareRecording,loadRecording} from '../scripts/record-workspace.ts';
+import {createServer,Server} from 'node:net';
+import {prepareRecording,loadRecording,assertRecordingPortFree,chooseRecordingPort,rememberRecordingPort,recordingSettings} from '../scripts/record-workspace.ts';
 import {passwordHash} from '../src/auth.ts';
+
+test('Port diagnostics preserve non-conflict errors and never treat permission failures as a reason to move',async(t)=>{
+ const denied=Object.assign(Error('permission denied'),{code:'EACCES'});
+ t.mock.method(Server.prototype,'listen',function(this:Server){process.nextTick(()=>this.emit('error',denied));return this;});
+ await assert.rejects(assertRecordingPortFree(8088),error=>error.code==='EACCES'&&error.cause===denied&&/permission denied/.test(error.message)&&!/is busy/.test(error.message));
+ await assert.rejects(chooseRecordingPort(true),error=>error.code==='EACCES');
+});
+
+test('Recording defaults remember the selected port while explicit overrides and invalid metadata stay strict',()=>{
+ const root=mkdtempSync(join(tmpdir(),'ff-record-port-')),before={...process.env};
+ process.env.FF_RECORD_ROOT=root;delete process.env.FF_RECORD_PORT;
+ try{
+  assert.equal(recordingSettings().port,8088);
+  process.env.FF_RECORD_PORT='8094';rememberRecordingPort();delete process.env.FF_RECORD_PORT;
+  assert.equal(recordingSettings().port,8094);assert.equal(statSync(join(root,'active-port')).mode&0o777,0o600);
+  process.env.FF_RECORD_PORT='8095';assert.equal(recordingSettings().port,8095);assert.equal(readFileSync(join(root,'active-port'),'utf8'),'8094\n');
+  delete process.env.FF_RECORD_PORT;writeFileSync(join(root,'active-port'),'../../other');assert.throws(recordingSettings,/Invalid saved recording port/);
+ }finally{for(const key of ['FF_RECORD_ROOT','FF_RECORD_PORT']){if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key];}rmSync(root,{recursive:true,force:true});}
+});
+
+test('Port exhaustion leaves foreign service directories and the preferred listener untouched',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'ff-record-ports-')),before={...process.env},listener=createServer();
+ await new Promise<void>(r=>listener.listen(0,'127.0.0.1',r));
+ const port=(listener.address() as import('node:net').AddressInfo).port;
+ process.env.FF_RECORD_ROOT=join(root,'takes');process.env.FF_RECORD_PORT=String(port);process.env.PREFIX=root;
+ try{
+  for(let candidate=8088;candidate<=8118;candidate++){
+   const service=join(root,'var/service',`form-fire-recording-${candidate}`);mkdirSync(service,{recursive:true});writeFileSync(join(service,'owner'),'FOREIGN');
+  }
+  await assert.rejects(chooseRecordingPort(false),error=>error.code==='EADDRINUSE');
+  await assert.rejects(chooseRecordingPort(true),/No available recording port/);
+  assert.equal(listener.listening,true);assert.ok(!readdirSync(root).includes('takes'));
+  for(let candidate=8088;candidate<=8118;candidate++)assert.equal(readFileSync(join(root,'var/service',`form-fire-recording-${candidate}`,'owner'),'utf8'),'FOREIGN');
+ }finally{
+  await new Promise<void>(r=>listener.close(()=>r()));
+  for(const key of ['FF_RECORD_ROOT','FF_RECORD_PORT','PREFIX']){if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key];}rmSync(root,{recursive:true,force:true});
+ }
+});
 
 test('Saved recording recovery validates its private manifest, identity and fictional accounts before opening for writes',async()=>{
  const root=mkdtempSync(join(tmpdir(),'ff-record-manifest-')),before={...process.env};
@@ -34,13 +73,17 @@ test('Managed recording survives launcher exit and process kill, preserves the t
  const root=mkdtempSync(join(tmpdir(),'ff-record-service-')),prefix=join(root,'prefix'),bin=join(prefix,'bin'),services=join(prefix,'var/service');
  mkdirSync(bin,{recursive:true});mkdirSync(services,{recursive:true});
  for(const name of ['sv','runsv','runsvdir'])symlinkSync(join(process.env.FF_RUNIT_TEST_BIN!,name),join(bin,name));
- symlinkSync('/bin/bash',join(bin,'bash'));
+ const shell=process.env.PREFIX?join(process.env.PREFIX,'bin/bash'):'/bin/bash';
+ symlinkSync(shell,join(bin,'bash'));
  // The test owns runsvdir directly; Termux's service-daemon supplies that process on device.
- writeFileSync(join(bin,'service-daemon'),'#!/bin/sh\nexit 0\n',{mode:0o700});
+ writeFileSync(join(bin,'service-daemon'),`#!${shell}\nexit 0\n`,{mode:0o700});
  const takes=join(root,'recordings with spaces'),port='8103',origin='http://127.0.0.1:'+port;
- const env={...process.env,PREFIX:prefix,PATH:bin+':'+process.env.PATH,FF_RECORD_ROOT:takes,FF_RECORD_PORT:port};
+ const env:NodeJS.ProcessEnv={...process.env,PREFIX:prefix,PATH:bin+':'+process.env.PATH,FF_RECORD_ROOT:takes,FF_RECORD_PORT:port,SVDIR:join(root,'wrong-services')};
  const script=new URL('../termux/record.sh',import.meta.url).pathname,service=join(services,'form-fire-recording-'+port);
- const supervisor=spawn(join(bin,'runsvdir'),[services],{env,stdio:'ignore'});
+ let supervisorErrors='';
+ const supervisor=spawn(join(bin,'runsvdir'),[services],{env,stdio:['ignore','ignore','pipe']});
+ supervisor.stderr.on('data',b=>supervisorErrors+=b);
+ let alternateService:string|undefined;
  const exec=(command:string,args:string[])=>new Promise<{code:number|null,output:string}>(resolve=>{const child=spawn(command,args,{cwd:root,env,stdio:['ignore','pipe','pipe']});let output='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);child.on('close',code=>resolve({code,output}));});
  const cmd=(action:string)=>exec('bash',[script,action]);
  const call=(path:string,method='GET',body?:any,cookie='',csrf='')=>fetch(origin+path,{method,headers:{Connection:'close',Origin:origin,Cookie:cookie,'Content-Type':'application/json','X-CSRF-Token':csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});
@@ -73,7 +116,29 @@ test('Managed recording survives launcher exit and process kill, preserves the t
   assert.equal((await call('/api/session')).status,200);assert.equal((await fetch(origin+'/api/session',{headers:{'X-Recording-Run':config.runId}})).status,409);
   assert.equal(readdirSync(takes).filter(n=>n.startsWith('take-')).length,2);assert.ok(statSync(join(dir,'form-fire.sqlite')).isFile());
   const logs=(await cmd('logs')).output;for(const password of [config.admin.password,config.client.password,config.other.password])assert.ok(!logs.includes(password));
+  // Reproduce the phone report: managed service is down but another listener still holds its port.
+  assert.equal((await cmd('stop')).code,0);
+  const blocker=createServer();await new Promise<void>(r=>blocker.listen(Number(port),'127.0.0.1',r));
+  try{
+   const oldTake=readFileSync(join(service,'take'),'utf8');
+   result=await cmd('fresh');assert.equal(result.code,1,result.output);assert.match(result.output,/EADDRINUSE/);
+   assert.equal(readFileSync(join(service,'take'),'utf8'),oldTake);assert.equal(readdirSync(takes).filter(n=>n.startsWith('take-')).length,2);
+   delete env.FF_RECORD_PORT;
+   // Both restart and start must preserve this take's port and refuse to move it.
+   result=await cmd('restart');assert.equal(result.code,1,result.output);assert.equal(readFileSync(join(takes,'active-port'),'utf8').trim(),port);
+   const beforeSelectionMtime=statSync(services).mtimeMs;
+   result=await cmd('fresh');assert.equal(result.code,0,result.output+'\nSupervisor: '+JSON.stringify({stderr:supervisorErrors,exit:supervisor.exitCode,signal:supervisor.signalCode,beforeSelectionMtime,afterSelectionMtime:statSync(services).mtimeMs}));assert.match(result.output,/existing listener is unchanged/);
+   const selected=readFileSync(join(takes,'active-port'),'utf8').trim();assert.notEqual(selected,port);
+   alternateService=join(services,'form-fire-recording-'+selected);
+   assert.equal(blocker.listening,true);assert.ok(statSync(join(dir,'form-fire.sqlite')).isFile());
+   assert.equal(readFileSync(join(service,'take'),'utf8'),oldTake);assert.equal(readdirSync(takes).filter(n=>n.startsWith('take-')).length,3);
+   result=await cmd('status');assert.equal(result.code,0,result.output);assert.ok(result.output.includes(`127.0.0.1:${selected}/`));
+   const selectedTake=readFileSync(join(alternateService,'take'),'utf8');
+   result=await cmd('stop');assert.equal(result.code,0,result.output);assert.equal(blocker.listening,true);
+   result=await cmd('start');assert.equal(result.code,0,result.output);assert.equal(readFileSync(join(alternateService,'take'),'utf8'),selectedTake);
+  }finally{await new Promise<void>(r=>blocker.close(()=>r()));}
  }finally{
+  if(alternateService)await exec('sv',['-w','5','shutdown',alternateService]);
   await exec('sv',['-w','5','shutdown',service]);supervisor.kill('SIGTERM');await new Promise(r=>supervisor.once('exit',r));rmSync(root,{recursive:true,force:true});
  }
 });

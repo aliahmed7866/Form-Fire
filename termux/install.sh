@@ -40,32 +40,10 @@ Path(p).write_text('#!'+prefix+'/bin/bash\nset -e\nexec 2>&1\n. '+shlex.quote(en
 PY
 printf '#!%s/bin/sh\nexec svlogd -tt "%s"\n' "$PREFIX" "$FF_DATA_DIR/logs" > "$FF_SERVICE_DIR/log/run"
 chmod +x "$FF_SERVICE_DIR/run" "$FF_SERVICE_DIR/log/run"
-python - "$HOME/.local/bin/form-fire" "$FF_APP_DIR" "$FF_CONFIG_DIR/env" "$PREFIX" <<'PY'
-import shlex,sys
-from pathlib import Path
-p,app,env,prefix=sys.argv[1:]
-Path(p).write_text('#!'+prefix+'/bin/bash\nset -euo pipefail\n. '+shlex.quote(env)+'\ncd '+shlex.quote(app)+'''
-case "${1:-status}" in
-start) sv up form-fire ;;
-stop) sv down form-fire ;;
-restart) sv restart form-fire ;;
-status) sv status form-fire ;;
-update) bash termux/update.sh ;;
-admin) shift; node src/manage.ts "$@" ;;
-attach) python termux/hub-registry.py ;;
-detach) python termux/hub-registry.py --detach ;;
-*) echo 'Usage: form-fire start|stop|restart|status|update|admin|attach|detach'; exit 1 ;;
-esac
-''')
-PY
-chmod +x "$HOME/.local/bin/form-fire"
-# Start the standard Termux service supervisor in the current session if needed.
-if [ -f "$PREFIX/etc/profile.d/start-services.sh" ]; then . "$PREFIX/etc/profile.d/start-services.sh"; fi
-sv-enable form-fire
-for attempt in 1 2 3 4 5; do
-  if sv restart form-fire; then break; fi
-  sleep 2
-done
+FF_CONFIG_DIR="$FF_CONFIG_DIR" bash termux/service.sh repair-launcher
+# Enable only this service, then recover its supervisor before restarting it.
+rm -f "$FF_SERVICE_DIR/down"
+bash termux/service.sh restart
 if [ "${1:-}" = '--with-hub' ]; then python termux/hub-registry.py; fi
 for attempt in 1 2 3 4 5; do
   if node src/healthcheck.ts; then
@@ -76,5 +54,5 @@ for attempt in 1 2 3 4 5; do
   fi
   sleep 2
 done
-echo 'Service did not pass its health check. Check: sv status form-fire and the private data logs.' >&2
+echo 'Service did not pass its health check. Check: bash termux/service.sh status and the private data logs.' >&2
 exit 1
