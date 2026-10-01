@@ -7,3 +7,7 @@ The eight companion illustrations share sage, charcoal, bone, citrus and terraco
 `public/lifestyle-art.js` embeds trusted local SVGs for controlled detail animation under the app’s existing content policy. After editing the four lifestyle source SVGs, regenerate with `npm run art`. No external image service is needed for the illustrations.
 
 `public/google-mark.svg` wraps the unchanged official Google image from [Google’s supplied G logo](https://developers.google.com/static/identity/images/g-logo.png). It is used only in the Google sign-in button, separate from the FORM & FIRE identity. Google’s mark remains Google’s property; follow its [sign-in branding guidance](https://developers.google.com/identity/branding-guidelines) when changing that button.
+
+## Everyday experience additions — October 2026
+
+`public/art-good-day.svg` is an original static project illustration of a notebook, sun and plant. The clipboard/heart in `public/coach-workspace.js` and five line icons in `public/navigation.js` are original local SVG markup using the existing sage, bone, charcoal, citrus and terracotta palette. They are decorative, have no third-party asset or font dependency, and do not teach an exercise or depict Alex/clients. Emoji are decorative companions to text labels, not the sole way to identify an action. These assets have no autonomous animation.

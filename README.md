@@ -6,6 +6,8 @@ A working local-test app for online coaching, chef-created meal plans and privat
 
 ## Latest enhancement
 
+Five main client destinations, a calmer daily schedule, saved check-in states and Alex’s attention queue make existing tools easier to reach. Client search keeps unsaved notes intact, and plan shortcuts preselect the right active request. See [the enhancement and verification notes](docs/CALMER_EXPERIENCE.md).
+
 Optional everyday activity records, weekly summaries and eight-week history are available in **Move your way**, with Alex’s review in **Client weeks**. See [the movement journal guide](docs/MOVEMENT_JOURNAL.md) for research, update steps and validation limitations.
 
 ## Termux: install beside AYCF and Admin Hub

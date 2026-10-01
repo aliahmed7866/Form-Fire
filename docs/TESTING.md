@@ -236,3 +236,9 @@ FF_JSDOM_MODULE=/path/to/jsdom/lib/api.js node scripts/test-recording-dom.mjs
 ```
 
 CSS parsing found no errors in the audited stylesheets. DOM/computed-style checks found stable 22px checkbox footprints with zero padding before/after selection/focus and 44px checkbox labels. These checks do not verify rendered geometry: official Chromium download was blocked by a Site Unavailable response. Physical phone, browser zoom and 320/390/768px/desktop visual acceptance remain outstanding. The implementation targets those breakpoints but is not described as a completed visual or WCAG audit. Research rationale is in [USABILITY_IMPROVEMENTS.md](USABILITY_IMPROVEMENTS.md).
+
+## Calmer daily and coach experience — 1 October 2026
+
+The v0.18.0 regression suite reports **245 passed, 0 failures, 2 platform-specific skips**; the focused UI tests pass; see [the current release evidence](CALMER_EXPERIENCE.md). The real-server enquiry rehearsal and all 123 recording steps pass. New `scripts/test-experience-dom.mjs` adds direct checks for five main navigation links plus all secondary routes, three remaining daily items, persisted completion/undo and visible restored focus, saved-week check-in states, pending/all coach filters, unsaved notes retained through local search, and eligible nondefault request selection in publishing. It signs the test admin in through the actual password/TOTP path. All databases are disposable fictional fixtures.
+
+Run the optional new rehearsal with `FF_JSDOM_MODULE=/absolute/path/to/jsdom/lib/api.js npm run test:experience`. The app itself has no jsdom dependency. CSS parsing and projected breakpoint/cascade checks pass for 320, 390, 640, 760, 768, 1179, 1180 and 1440 CSS pixels, including recording controls above the client phone bar. This is not a rendered layout audit. Actual Chromium 138 and 153 launch failed with SIGTRAP, so visual device/zoom acceptance remains open.

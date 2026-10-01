@@ -1,0 +1,8 @@
+.client-action-symbol{display:inline-grid;place-items:center;width:2.7rem;height:2.7rem;margin-bottom:.7rem;border-radius:50%;background:var(--lime,#d8ef70);color:#242720;font-size:1.45rem}
+.everyday-links a{position:relative}.everyday-links a strong{display:block;margin-top:auto}.everyday-links a p{flex:1}.everyday-links a{display:flex;flex-direction:column;align-items:flex-start}
+.client-day-lead{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;margin-bottom:1.5rem}.client-day-lead .rhythm-page-heading{margin:0}.client-day-lead img{width:170px;height:auto;flex-shrink:0}
+.daily-focus-title{margin:1.7rem 0 1rem}.daily-extras{margin-top:1rem}.daily-extras summary{font-weight:700}.daily-extras>.daily-grid{margin-top:1rem}.daily-recorded summary{color:#415436}
+.checkin-saved{background:#eef3df}.checkin-options{margin:1rem 0}.checkin-history .reply{margin-bottom:0}.checkin-history .pill{font-size:.72rem}
+.weekly-history>details>summary{font-size:1.1rem}.weekly-history h2{font-size:1.8rem}
+@media(max-width:600px){.client-day-lead img{width:95px}.client-day-lead{gap:.75rem}.client-day-lead h2{font-size:2rem}.daily-focus-title{font-size:1.25rem}.checkin-history .row{align-items:flex-start}.daily-welcome .week-totals{display:none}}
+@media(prefers-reduced-motion:reduce){.client-action-symbol{animation:none}}
