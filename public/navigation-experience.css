@@ -1,0 +1,59 @@
+/* Five everyday choices, with the full workspace one disclosure away. */
+.client-workspace-nav .client-primary-links{display:grid;grid-template-columns:1fr;gap:7px;width:100%;margin:0 0 20px}
+.client-workspace-nav .client-primary-link{display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;column-gap:12px;min-height:52px;padding:12px 14px;border:1px solid transparent;border-radius:13px;font-weight:700;font-size:.9rem;line-height:1.35;text-decoration:none}
+.client-primary-link .workspace-icon{width:24px;height:24px;grid-row:1/3}
+.client-primary-label{min-width:0}
+.client-primary-description{grid-column:2;font-weight:400;font-size:.65rem;color:var(--muted);margin-top:2px}
+.client-workspace-nav .client-primary-link:hover{background:#e9eddd}
+.client-workspace-nav .client-primary-link.active{background:var(--ink);color:var(--bone);border-color:var(--ink)}
+.client-primary-link.active .client-primary-description{color:#dce2ce}
+.client-workspace-nav .client-shortcuts{display:grid;grid-template-columns:1fr;gap:4px;padding:0;margin:0;background:transparent;border:0}
+.client-workspace-nav .client-shortcut-group{padding:4px 0;border-bottom:1px solid var(--line)}
+.client-shortcut-group>summary{min-height:46px;padding:12px 6px;font-size:.79rem;color:var(--muted)}
+.client-shortcut-group>summary>span{margin-right:3px}
+.client-shortcut-group[open]>summary{margin-bottom:5px;color:var(--ink)}
+.client-shortcut-group .workspace-nav-links{padding-bottom:9px}
+.client-shortcut-group .workspace-nav-links a{font-size:.81rem}
+
+@media(min-width:761px) and (max-width:1179px){
+  .client-workspace-nav .client-primary-links{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .client-workspace-nav .client-primary-link{grid-template-columns:1fr;justify-items:center;text-align:center;gap:7px;padding:12px 8px;background:#e9eddd}
+  .client-primary-link .workspace-icon{grid-row:auto}
+  .client-primary-description{grid-column:1;font-size:.62rem}
+  .client-workspace-nav .client-shortcuts{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:12px;padding:12px 18px;background:var(--white);border:1px solid var(--line);border-radius:12px}
+  .client-workspace-nav.sections-open .client-shortcuts{display:grid}
+}
+
+@media(max-width:760px){
+  body.has-client-navigation{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation :is(input,select,textarea,button,a){scroll-margin-bottom:calc(94px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation #toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  .client-workspace-nav .client-primary-links{position:fixed;inset:auto 0 0;z-index:40;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%;margin:0;padding:8px max(5px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(5px,env(safe-area-inset-right,0px));background:var(--bone);border-top:1px solid var(--line);box-shadow:0 -4px 18px #2528200a}
+  .client-workspace-nav .client-primary-link{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0;min-height:58px;padding:7px 3px;border-radius:12px;font-size:.71rem;line-height:1.25;text-align:center;background:transparent}
+  .client-primary-link .workspace-icon{width:23px;height:23px;flex-shrink:0}
+  .client-primary-description{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .client-workspace-nav .client-primary-link.active{background:#e5edc4;color:var(--ink);border-color:#d4deb4}
+  .client-workspace-nav .client-primary-link:focus-visible{outline-offset:-2px}
+  .client-workspace-nav .section-toggle{min-height:60px;padding:12px 16px}
+  .client-workspace-nav .client-shortcuts{display:none;grid-template-columns:1fr;gap:3px;margin-top:8px;padding:8px 14px;background:var(--white);border:1px solid var(--line);border-radius:12px}
+  .client-workspace-nav.sections-open .client-shortcuts{display:grid}
+  .client-shortcut-group>summary{font-size:.86rem}
+  .client-shortcut-group .workspace-nav-links{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .client-workspace-nav .client-shortcut-group .workspace-nav-links a{min-height:48px;font-size:.83rem}
+  /* Recording controls stay above the client bar in both presenter modes. */
+  body.has-client-navigation.showcase-active{padding-bottom:calc(392px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation.showcase-active.showcase-hidden{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation :is(#showcase-player,#showcase-reopen){bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation.showcase-active .showcase-focus{scroll-margin-bottom:calc(422px + env(safe-area-inset-bottom,0px))}
+  body.has-client-navigation.showcase-hidden .showcase-focus{scroll-margin-bottom:calc(94px + env(safe-area-inset-bottom,0px))}
+}
+
+@media(max-width:340px){
+  .client-workspace-nav .client-primary-link{font-size:.65rem}
+  .client-shortcut-group .workspace-nav-links{grid-template-columns:1fr}
+}
+
+@media print{
+  .client-workspace-nav{display:none}
+  body.has-client-navigation{padding-bottom:0}
+}

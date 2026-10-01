@@ -6,14 +6,14 @@ import {readFileSync} from 'node:fs';
 function harness(){
  const listeners=new Map<string,any>(),windowListeners=new Map<string,any>(),nodes=new Map<string,any>();
  const element=()=>({dataset:{},attrs:new Map<string,string>(),classes:new Set<string>(),focused:false,textContent:'',setAttribute(k:string,v:string){this.attrs.set(k,v);},getAttribute(k:string){return this.attrs.get(k);},focus(){this.focused=true;},classList:{toggle(_k:string,_v:boolean){}}});
- const header=element(),nav=element(),toggle=element(),section=element(),label=element();
- for(const e of [header,nav])e.classList.toggle=(k,v)=>{if(v)e.classes.add(k);else e.classes.delete(k);};
+ const header=element(),nav=element(),toggle=element(),section=element(),label=element(),body=element();
+ for(const e of [header,nav,body])e.classList.toggle=(k,v)=>{if(v)e.classes.add(k);else e.classes.delete(k);};
  Object.assign(toggle,{querySelector:()=>label});
  nodes.set('.site-header',header);nodes.set('.workspace-nav',nav);nodes.set('[data-nav-toggle]',toggle);nodes.set('[data-section-toggle]',section);
- const c=createContext({document:{querySelector(selector:string){if(selector==='.site-header.menu-open')return header.classes.has('menu-open')?header:null;if(selector==='.workspace-nav.sections-open')return nav.classes.has('sections-open')?nav:null;return nodes.get(selector)||null;},addEventListener:(k:string,f:any)=>listeners.set(k,f)},window:{innerWidth:390,addEventListener:(k:string,f:any)=>windowListeners.set(k,f)},location:{port:'8086'},session:{instance:{kind:'demo',label:'Fictional demo'}},route:()=>'/portal/plans',esc:(v:string)=>String(v).replaceAll('<','&lt;'),api:async()=>({instance:{label:'Fictional demo'},csrf:'fresh'})});
+ const c=createContext({document:{body,querySelector(selector:string){if(selector==='.site-header.menu-open')return header.classes.has('menu-open')?header:null;if(selector==='.workspace-nav.sections-open')return nav.classes.has('sections-open')?nav:null;return nodes.get(selector)||null;},addEventListener:(k:string,f:any)=>listeners.set(k,f)},window:{innerWidth:390,addEventListener:(k:string,f:any)=>windowListeners.set(k,f)},location:{port:'8086'},session:{instance:{kind:'demo',label:'Fictional demo'}},route:()=>'/portal/plans',esc:(v:string)=>String(v).replaceAll('<','&lt;'),api:async()=>({instance:{label:'Fictional demo'},csrf:'fresh'})});
  runInContext(readFileSync(new URL('../public/navigation.js',import.meta.url),'utf8'),c);
  const click=(selector:string,target:any)=>listeners.get('click')({target:{closest:(s:string)=>s===selector?target:null}});
- return {c,header,nav,toggle,section,label,nodes,listeners,windowListeners,click};
+ return {c,header,nav,toggle,section,label,body,nodes,listeners,windowListeners,click};
 }
 test('Phone menus toggle accessibly, close on Escape with focus restored, and reset at desktop widths',async()=>{
  const h=harness();await h.click('[data-nav-toggle]',h.toggle);
@@ -25,11 +25,17 @@ test('Phone menus toggle accessibly, close on Escape with focus restored, and re
  await h.click('[data-nav-toggle]',h.toggle);await h.click('.site-header a',{});assert.equal(h.toggle.attrs.get('aria-expanded'),'false');
  await h.click('[data-section-toggle]',h.section);await h.click('[data-nav-toggle]',h.toggle);h.c.window.innerWidth=1440;h.windowListeners.get('resize')();assert.equal(h.toggle.attrs.get('aria-expanded'),'false');assert.equal(h.section.attrs.get('aria-expanded'),'false');
 });
-test('Workspace links keep client/admin destinations separate and identify the current section',()=>{
- const h=harness(),client=runInContext('workspaceTabs()',h.c);assert.ok(client.includes('aria-controls="workspace-links"'));assert.ok(client.includes('href="#/portal/plans" class="active" aria-current="page"'));assert.ok(!client.includes('#/admin'));
+test('Five labelled client destinations simplify the workspace without exposing admin destinations',()=>{
+ const h=harness(),client=runInContext('workspaceTabs()',h.c);assert.ok(client.includes('aria-controls="workspace-links"'));assert.ok(client.includes('href="#/portal/plans" class="client-primary-link active" aria-current="page"'));assert.ok(!client.includes('#/admin'));
+ const primary=client.match(/<nav class="client-primary-links"[^>]*>(.*?)<\/nav>/s)?.[1]||'';
+ assert.deepEqual([...primary.matchAll(/href="#([^"]+)"/g)].map(m=>m[1]),['/portal','/portal/plans','/portal/recipes','/portal/progress','/portal/profile']);
+ assert.deepEqual([...primary.matchAll(/class="client-primary-label">([^<]+)</g)].map(m=>m[1]),['Today','Train','Eat','Progress','Account']);
+ assert.equal((primary.match(/<svg/g)||[]).length,5);assert.equal((primary.match(/aria-hidden="true" focusable="false"/g)||[]).length,5);
+ assert.ok(primary.includes('Training & meal plans'));assert.ok(client.includes('>My plans<span'));
  h.c.route=()=>'/admin/requests';const admin=runInContext('workspaceTabs(true)',h.c);assert.ok(admin.includes('href="#/admin/requests" class="active" aria-current="page"'));assert.ok(admin.includes('#/admin/plans'));assert.ok(!admin.includes('#/portal'));
+ assert.ok(!admin.includes('client-primary-links'));
 });
-test('Grouped workspace navigation retains every destination exactly once',()=>{
+test('Expandable client shortcuts preserve every existing destination, and admin groups remain unchanged',()=>{
  const h=harness();
  for(const [admin,expected] of [
   [false,['','today','movement','progress','nutrition','recipes','planner','rhythm','learn','shopping','feel-good','requests','plans','checkins','money','contact','profile']],
@@ -37,10 +43,48 @@ test('Grouped workspace navigation retains every destination exactly once',()=>{
  ] as const){
   const html=runInContext(`workspaceTabs(${admin})`,h.c),base=admin?'/admin':'/portal';
   const paths=[...html.matchAll(/href="#([^"]+)"/g)].map(m=>m[1]);
-  assert.deepEqual(paths.sort(),expected.map(p=>base+(p?'/'+p:'')).sort());
+  assert.deepEqual([...new Set(paths)].sort(),expected.map(p=>base+(p?'/'+p:'')).sort());
+  if(admin)assert.equal(paths.length,expected.length);
+  else{
+   assert.equal((html.match(/<details /g)||[]).length,3);assert.ok(html.includes('aria-label="More client shortcuts"'));
+   // The inclusive My plans shortcut remains available alongside the Train primary link.
+   assert.equal(paths.filter(p=>p==='/portal/plans').length,2);
+   assert.equal((html.match(/<details [^>]* open>/g)||[]).length,1);
+  }
   assert.equal((html.match(/role="group"/g)||[]).length,3);
   for(let group=0;group<3;group++)assert.ok(html.includes(`id="workspace-group-${group}"`));
  }
+});
+test('Related routes highlight the appropriate primary destination while shortcuts identify the exact page',()=>{
+ const h=harness();
+ for(const [group,paths] of [
+  ['today',['/portal','/portal/today','/portal/checkins','/portal/rhythm','/portal/requests','/portal/contact','/portal/learn','/portal/feel-good']],
+  ['train',['/portal/plans','/portal/movement']],
+  ['eat',['/portal/recipes','/portal/recipe','/portal/foods','/portal/nutrition','/portal/planner','/portal/shopping','/portal/cook','/portal/adapt','/portal/catering']],
+  ['progress',['/portal/progress']],['account',['/portal/profile','/portal/money']]
+ ] as const){
+  for(const path of paths){
+   h.c.route=()=>path;assert.equal(runInContext('clientPrimarySection()',h.c),group,path);
+   const html=runInContext('workspaceTabs()',h.c),primary=html.match(/<nav class="client-primary-links"[^>]*>(.*?)<\/nav>/s)?.[1]||'';
+   assert.equal((primary.match(/client-primary-link active/g)||[]).length,1,path);
+   const active=primary.match(/<a href="#([^"]+)" class="client-primary-link active" aria-current="([^"]+)"/);
+   assert.equal(active?.[1],({today:'/portal',train:'/portal/plans',eat:'/portal/recipes',progress:'/portal/progress',account:'/portal/profile'})[group],path);
+   assert.equal(active?.[2],path===active?.[1]?'page':'true',path);
+  }
+ }
+ h.c.route=()=>'/portal/today';const html=runInContext('workspaceTabs()',h.c);assert.ok(html.includes('href="#/portal/today" class="active" aria-current="page"'));assert.ok(html.includes('<strong>Daily schedule</strong>'));
+ h.c.route=()=>'/portal/catering?id=recipe-1';assert.equal(runInContext('clientPrimarySection()',h.c),'eat');assert.ok(runInContext('workspaceTabs()',h.c).includes('<strong>Group quantities</strong>'));
+});
+test('Client mobile navigation reserves safe-area space and resets when leaving the client workspace',()=>{
+ const h=harness();h.nodes.set('.client-workspace-nav',h.nav);runInContext('syncNavigation()',h.c);assert.ok(h.body.classes.has('has-client-navigation'));
+ h.nodes.delete('.client-workspace-nav');runInContext('syncNavigation()',h.c);assert.ok(!h.body.classes.has('has-client-navigation'));
+ const css=readFileSync(new URL('../public/navigation-experience.css',import.meta.url),'utf8');
+ const mobile=css.slice(css.indexOf('@media(max-width:760px)'),css.indexOf('@media(max-width:340px)'));
+ assert.match(mobile,/body\.has-client-navigation\{padding-bottom:calc\(82px \+ env\(safe-area-inset-bottom,0px\)\)/);
+ assert.match(mobile,/\.client-workspace-nav \.client-primary-links\{position:fixed;inset:auto 0 0/);
+ assert.match(mobile,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(mobile,/body\.has-client-navigation #toast\{bottom:calc\(88px \+ env\(safe-area-inset-bottom,0px\)\)/);
+ assert.match(mobile,/scroll-margin-bottom:calc\(94px \+ env\(safe-area-inset-bottom,0px\)\)/);
 });
 test('Skip to content focuses main without changing the application route',async()=>{
  const h=harness();let focused=false,scrolled=false,prevented=false;
