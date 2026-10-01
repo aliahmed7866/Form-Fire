@@ -221,3 +221,18 @@ FF_RUNIT_TEST_BIN=/path/to/runit/bin node --test tests/recording-service.test.ts
 ```
 
 The harness owns a real runsvdir process; Termux's service-daemon launcher is represented by a no-op because that supervisor is already running. No physical Android battery-management or screen-recording test was possible. If Android terminates the entire Termux app, reopen Termux and use `record.sh start`; this preserves the managed take. UI write replay rules are unchanged.
+
+## Short enquiries and calmer UI — 1 October 2026
+
+`node --test --test-concurrency=1 tests/*.test.ts` completed with **223 passing tests, 0 failures, and 1 optional real-runit test skipped**. The optional supervisor test was not needed for this UI change. Application syntax and `git diff --check` passed. After the final same-route disclosure fix, the 21 experience/enrichment tests and the full enquiry DOM integration were rerun successfully.
+
+The optional `scripts/test-enquiry-dom.mjs` uses real application forms/events and a live HTTP/SQLite server. It passed minimal coaching enquiry, optional answers, review/edit, registration/login draft preservation, no premature request write, idempotent manual retry after a lost response, optional contact failure, grouped chef fields, validation focus, saved budget, and blocked browser-storage fallback. It also checked the three primary home actions and that a saved/undone habit keeps its section open and focus visible; navigating away resets the disclosure.
+
+The existing full recording DOM rehearsal passed **all 123 steps**, plus profile-save reconciliation, changed-take denial, no write resubmission, bounded read recovery and player controls. Its enquiry adapter now taps Continue/Review and opens optional detail sections before typing; it does not fill hidden panels. Current run navigation: 156 link transitions and 17 direct saved views.
+
+```bash
+FF_JSDOM_MODULE=/path/to/jsdom/lib/api.js node scripts/test-enquiry-dom.mjs
+FF_JSDOM_MODULE=/path/to/jsdom/lib/api.js node scripts/test-recording-dom.mjs
+```
+
+CSS parsing found no errors in the audited stylesheets. DOM/computed-style checks found stable 22px checkbox footprints with zero padding before/after selection/focus and 44px checkbox labels. These checks do not verify rendered geometry: official Chromium download was blocked by a Site Unavailable response. Physical phone, browser zoom and 320/390/768px/desktop visual acceptance remain outstanding. The implementation targets those breakpoints but is not described as a completed visual or WCAG audit. Research rationale is in [USABILITY_IMPROVEMENTS.md](USABILITY_IMPROVEMENTS.md).

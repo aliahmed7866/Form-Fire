@@ -1,4 +1,15 @@
 /* Everyday client tools and a focused coaching inbox. */
+function requestNextStep(r,isAdmin=false){
+ let heading='What happens next',copy;
+ if(['withdrawn','declined'].includes(r.status)){heading='This request is closed';copy='Its details and history are kept here for reference. Start a new enquiry if you would like to discuss something else.';}
+ else if(r.kind==='chef'){
+  const messages={enquiry:isAdmin?'Review the gathering details, then agree the menu, date and price before sending a proposal.':'Alex will review your gathering and agree the details with you. This enquiry is not a confirmed booking.',proposed:isAdmin?'The proposal is waiting for the client to review and accept. Acceptance and booking confirmation are separate.':'Read the proposal below. Accept it only when you are happy with the details; confirmation is a separate step.',accepted:isAdmin?'Check the agreed requirements and payment record, then confirm the booking.':'Your proposal is accepted. Alex will confirm the booking once its requirements are met.',confirmed:'The booking is confirmed. Keep the agreed proposal here as your reference.',cancelled:'The booking is cancelled. Any payment refund is recorded separately.'};copy=messages[r.booking_status]||messages.enquiry;
+ }else if(r.active)copy=isAdmin?'The service is active. Publish the agreed plan so the client can follow it, then review their check-ins.':'Your service is active. Published plans, your activity and check-ins stay in your space.';
+ else if(r.status==='approved')copy=isAdmin?'The request is approved. Record the agreed package below and explicitly choose Activate service when onboarding is ready.':'Alex has approved the request. Your service begins once the package and onboarding are agreed and Alex activates it.';
+ else if(r.status==='awaiting_client_response')copy=isAdmin?'You are waiting for a client reply. If you discuss it elsewhere, keep agreed package or booking changes in this app.':'Alex has a question for you. Reply here or use the configured contact option below; keep agreed details in this request.';
+ else copy=isAdmin?(r.status==='submitted'?'Read the short enquiry, then choose Start / resume review. Ask for any missing details in the conversation.':'Discuss what the client needs, then approve or decline the request. Approval alone does not activate a service.'):'Your request is saved. Alex will review it and agree the next step with you. You can add a reply below whenever you need.';
+ return `<div class="notice request-next-step"><strong>${heading}</strong><p>${esc(copy)}</p></div>`;
+}
 function clientNextStep(d) {
   if(!d.user.verified)return ['Verify your account','Use the verification code from the local test outbox to get started.','/verify'];
   const waiting=d.requests.find(r=>r.status==='awaiting_client_response');

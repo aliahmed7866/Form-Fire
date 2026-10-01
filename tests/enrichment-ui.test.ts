@@ -16,6 +16,14 @@ test('Dashboard directs waiting clients to their conversation and excludes pause
   assert.equal(runInContext('clientNextStep(d)[2]',c),'/portal/requests');
   (c.d as any).user.verified=false;assert.equal(runInContext('clientNextStep(d)[2]',c),'/verify');
 });
+test('Request guidance keeps review, activation and booking confirmation separate',()=>{
+ const c=ui();c.r={kind:'coaching',status:'approved',active:0};
+ assert.match(runInContext('requestNextStep(r,true)',c),/explicitly choose Activate service/);
+ assert.match(runInContext('requestNextStep(r,false)',c),/once the package and onboarding are agreed/);
+ c.r={kind:'chef',status:'approved',booking_status:'accepted'};
+ assert.match(runInContext('requestNextStep(r,false)',c),/confirm the booking once/);
+ c.r={kind:'coaching',status:'withdrawn',active:0};assert.match(runInContext('requestNextStep(r,false)',c),/request is closed/);
+});
 test('Shopping escapes list content, keeps duplicate lines distinct and shows saved state',()=>{
   const c=ui();c.list={assignment_id:'id',title:'<svg onload=evil()>',version:2,items:['<img src=x onerror=evil()>','Rice 200g','Rice 200g'],purchased:[1],revision:3,is_demo:true};
   const html=runInContext('shoppingCard(list)',c);

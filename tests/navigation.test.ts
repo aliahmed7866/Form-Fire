@@ -29,6 +29,19 @@ test('Workspace links keep client/admin destinations separate and identify the c
  const h=harness(),client=runInContext('workspaceTabs()',h.c);assert.ok(client.includes('aria-controls="workspace-links"'));assert.ok(client.includes('href="#/portal/plans" class="active" aria-current="page"'));assert.ok(!client.includes('#/admin'));
  h.c.route=()=>'/admin/requests';const admin=runInContext('workspaceTabs(true)',h.c);assert.ok(admin.includes('href="#/admin/requests" class="active" aria-current="page"'));assert.ok(admin.includes('#/admin/plans'));assert.ok(!admin.includes('#/portal'));
 });
+test('Grouped workspace navigation retains every destination exactly once',()=>{
+ const h=harness();
+ for(const [admin,expected] of [
+  [false,['','today','movement','progress','nutrition','recipes','planner','rhythm','learn','shopping','feel-good','requests','plans','checkins','money','contact','profile']],
+  [true,['','requests','clients','plans','nutrition','rhythm','checkins','progress','fitness','services','money','audit','contact','setup']]
+ ] as const){
+  const html=runInContext(`workspaceTabs(${admin})`,h.c),base=admin?'/admin':'/portal';
+  const paths=[...html.matchAll(/href="#([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(paths.sort(),expected.map(p=>base+(p?'/'+p:'')).sort());
+  assert.equal((html.match(/role="group"/g)||[]).length,3);
+  for(let group=0;group<3;group++)assert.ok(html.includes(`id="workspace-group-${group}"`));
+ }
+});
 test('Skip to content focuses main without changing the application route',async()=>{
  const h=harness();let focused=false,scrolled=false,prevented=false;
  h.nodes.set('#main',{focus(){focused=true;},scrollIntoView(){scrolled=true;}});
