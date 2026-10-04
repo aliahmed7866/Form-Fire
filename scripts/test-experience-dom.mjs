@@ -144,7 +144,21 @@ try{
  await go('/admin/plans?view=publish&request='+encodeURIComponent(request));assert.equal(query('form[data-form="assignment"]').elements.request_id.value,request);
  console.log('COACH WORKSPACE: LOCAL SEARCH RETAINS UNSAVED NOTES, QUEUE LINKS AND CONTEXTUAL PUBLISH SELECTION PASSED');
 
- await signIn(sam.email,password);await go('/portal/checkins');
+ await signIn(sam.email,password);await go('/portal/profile');
+ const profile=query('form[data-form="profile"]'),optional=profile.querySelector('.profile-optional');
+ assert.ok(query('.profile-overview .profile-name').textContent.includes('Sam'));
+ assert.equal(all('.profile-section').length,3);assert.equal(optional.open,false);
+ const names=[...profile.elements].filter(el=>el.name).map(el=>el.name);assert.equal(names.length,new Set(names).size,'Regrouping must not duplicate submitted fields');
+ fill(profile,'height_cm','25');profile.requestSubmit();assert.equal(optional.open,true,'Native validation reveals an invalid field inside a closed optional section');
+ fill(profile,'height_cm','175');fill(profile,'units','imperial');fill(profile,'avatar','leaf');fill(profile,'equipment','Fictional dumbbells');fill(profile,'target_weight_kg','75');optional.open=false;
+ assert.equal((await submit(profile)).ok,true);await go('/portal/profile');
+ const savedProfile=JSON.parse(app.db.prepare('SELECT profile FROM users WHERE id=?').get(sam.id).profile);
+ assert.equal(savedProfile.height_cm,175);assert.equal(savedProfile.target_weight_kg,75);assert.equal(savedProfile.units,'imperial');assert.equal(savedProfile.equipment,'Fictional dumbbells');
+ assert.equal(query('form[data-form="profile"]').elements.avatar.value,'leaf');
+ const statuses=w.document.createElement('div');statuses.innerHTML=evaluate('pill("approved")+pill("active")+pill("<img src=x onerror=1>")');
+ assert.ok(statuses.querySelector('.status-info').textContent.includes('approved'));assert.ok(statuses.querySelector('.status-positive').textContent.includes('active'));assert.equal(statuses.querySelector('img'),null);
+ console.log('PROFILE: GROUPED FIELDS, INVALID DISCLOSURE RECOVERY, EXPLICIT SAVE AND CANONICAL UNITS PASSED');
+ await go('/portal/checkins');
  assert.equal(query('form[data-form="checkin"]'),null);assert.ok(all('.checkin-history .reply').some(el=>el.textContent.includes(message)));
  assert.equal(query('.checkin-history .reply b'),null,'Feedback markup must remain plain text');
  console.log('CLIENT FEEDBACK: SAVED RESPONSE REOPENED BESIDE THE WEEKLY UPDATE WITHOUT A DUPLICATE FORM PASSED');

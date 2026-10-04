@@ -12,6 +12,8 @@ The enquiry now uses illustrated answer cards, optional automatic next, Back/swi
 
 Everyday tasks now have searchable shortcuts, calmer recipe filters and in-place favourite saves. Progress entry follows the metric you are viewing, with familiar exercise shortcuts and explicit energy cards. Check-ins, replies and coach feedback keep separate drafts in the browser tab; coach review brings the client’s goals and recent context alongside the response. See [everyday usability research and verification](docs/EVERYDAY_EASE.md).
 
+The UI review adds clearer illustrated action cards, readable check-in states, grouped profile settings, stronger controls, compact progress entry and a more scannable coach workspace. Chef budgets show their currency alongside the amount. See [the UI audit and verification boundaries](docs/UI_POLISH.md).
+
 Optional everyday activity records, weekly summaries and eight-week history are available in **Move your way**, with Alex’s review in **Client weeks**. See [the movement journal guide](docs/MOVEMENT_JOURNAL.md) for research, update steps and validation limitations.
 
 ## Termux: install beside AYCF and Admin Hub

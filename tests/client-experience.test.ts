@@ -33,6 +33,8 @@ test('A saved check-in shows its real feedback and avoids offering a duplicate s
  assert.ok(html.includes('Your check-in is saved.'));assert.ok(!html.includes('data-form="checkin"'));
  assert.ok(html.includes('Try &lt;a&gt;this&lt;/a&gt;'));assert.ok(html.includes('&lt;private&gt;'));assert.ok(!html.includes('<script>'));
  assert.ok(html.includes('/portal/checkins?week=2026-09-21'));assert.ok(html.includes('class="reply"'));
+ assert.ok(html.includes('<time datetime="2026-09-28">28 Sept 2026</time>')||html.includes('<time datetime="2026-09-28">28 Sep 2026</time>'));
+ assert.ok(html.includes('data-selected-week="true"'));assert.ok(html.includes('Feedback ready'));
 });
 test('Check-in retains real form fields, offers optional disclosure and explains service activation',()=>{
  const c=ui();c.location.hash='#/portal/checkins?week=2026-09-28';
@@ -54,6 +56,9 @@ test('Meal-only clients are invited to everyday movement without promising an as
  c.fixture.assignments=[{id:'meal-plan',request_id:'service',kind:'meal',version:1,snapshot:{meals:[]}}];
  runInContext("session={user:fixture.user};api=async path=>path.startsWith('/rhythm')?{keys:[],options:{},logs:[],summary:{workouts:0,diary_days:0,habit_moments:0,energy:null,energy_days:0,sleep:null}}:{entries:[]}",c);
  let html=await runInContext('rhythmHome(fixture)',c);assert.ok(html.includes('Movement that feels like you.'));assert.ok(!html.includes('saved workout notes'));
+ const actions=html.match(/<nav class="everyday-links"[^>]*>([\s\S]*?)<\/nav>/)?.[1]||'';
+ assert.equal((actions.match(/<a href=/g)||[]).length,3,'The illustrated home still offers only three primary choices');
+ assert.equal((actions.match(/focusable="false"/g)||[]).length,3,'Decorative illustrations do not add keyboard stops');
  c.fixture.assignments.push({id:'training-plan',request_id:'service',kind:'training',version:1,snapshot:{workouts:[]}});
  html=await runInContext('rhythmHome(fixture)',c);assert.ok(html.includes('Training that fits today.'));
 });
@@ -68,4 +73,6 @@ test('Check-in starts with writing, asks for energy explicitly, and keeps older 
  c.location.hash='#/portal/checkins?week=2026-08-24';html=runInContext('clientCheckinsPage(fixture)',c);
  assert.ok(!html.includes('data-form="checkin"'));assert.ok(html.indexOf('Reply 4')<html.indexOf('Reply 0'));
  assert.ok(html.includes('Back to this week'));
+ assert.equal((html.match(/data-selected-week="true"/g)||[]).length,1,'Only the chosen historical week receives the selected treatment');
+ assert.match(html,/<article class="card checkin-history" data-selected-week="true">[\s\S]*?datetime="2026-08-24"/);
 });

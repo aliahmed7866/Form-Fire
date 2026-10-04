@@ -2,3 +2,28 @@
 
 /* Optional shortcuts leave every measurement under the client's control. */
 .fitness-log-card{scroll-margin-top:100px}.fitness-log-card h3{scroll-margin-top:110px}.fitness-repeat{padding:14px;background:#f2f3e7;border-radius:10px;margin:0 0 18px}.fitness-repeat>.micro{display:block}.fitness-repeat .actions{margin-top:10px}.fitness-repeat button{min-height:48px;text-align:left;overflow-wrap:anywhere}.fitness-repeat p{margin-bottom:0}.fitness-previous{display:grid;gap:5px;border-left:3px solid #81965a;padding:10px 14px;margin:0 0 20px;min-height:48px}.fitness-previous strong{font-size:1.05rem}.fitness-previous strong span{font-size:.82rem;font-weight:400}.fitness-measurement>div{min-width:0}.fitness-energy-measurement{grid-template-columns:1fr}.fitness-energy-measurement>label{max-width:110px}.fitness-energy-choices{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 16px}.fitness-energy-choices button{min-width:0;min-height:98px;padding:10px 3px;display:flex;flex-direction:column;gap:4px;border-color:#9da58b;border-radius:10px;transition:background .16s ease,border-color .16s ease}.fitness-energy-choices button svg{max-width:100%;flex:none}.fitness-energy-choices button span{font-size:.68rem;line-height:1.25;overflow-wrap:anywhere}.fitness-energy-choices button[aria-pressed=true]{background:var(--lime);border:2px solid var(--ink);box-shadow:0 0 0 1px var(--ink)}.fitness-energy-choices button[aria-pressed=true] strong:after{content:' ✓';font-size:.8rem}.fitness-energy-measurement [data-fitness-value]>label{max-width:260px}.fitness-energy-measurement .micro{margin-top:0}@media(prefers-reduced-motion:reduce){.fitness-energy-choices button{transition:none}}
+
+/* Bring the chart forward and keep choices readable inside narrow cards. */
+[data-form="fitness-filter"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 16px;align-items:end}
+[data-form="fitness-filter"]>.error{grid-column:1/-1}
+[data-form="fitness-filter"]>button[type="submit"]{grid-column:1/-1;justify-self:start;margin-bottom:6px}
+.fitness-energy-measurement [data-fitness-value]{container-type:inline-size}
+.fitness-energy-choices button span{font-size:.78rem;line-height:1.4}
+.fitness-energy-choices button{position:relative;border:2px solid var(--control-border,#7c866f)}
+.fitness-energy-choices button[aria-pressed=true] strong:after{content:none}
+.fitness-energy-choices button[aria-pressed=true]:after{content:'✓';position:absolute;right:5px;top:5px;font-size:.8rem;line-height:1;font-weight:700}
+.fitness-story-table caption{text-align:left;padding:14px 16px;font-size:.85rem;font-weight:700;color:var(--ink);caption-side:top;background:#f0f3e6;border-bottom:1px solid var(--line)}
+@container(max-width:400px){
+ .fitness-energy-choices{grid-template-columns:1fr;gap:8px}
+ .fitness-energy-choices button{display:grid;grid-template-columns:40px 24px minmax(0,1fr);gap:10px;min-height:54px;padding:10px 34px 10px 12px;text-align:left}
+ .fitness-energy-choices button span{font-size:.88rem}
+ .fitness-energy-choices button[aria-pressed=true]:after{right:14px;top:50%;transform:translateY(-50%)}
+}
+@media(max-width:600px){
+ [data-form="fitness-filter"]{grid-template-columns:1fr}
+ [data-form="fitness-filter"]>button[type="submit"]{justify-self:stretch}
+ .fitness-energy-choices{grid-template-columns:1fr;gap:8px}
+ .fitness-energy-choices button{display:grid;grid-template-columns:40px 24px minmax(0,1fr);gap:10px;min-height:54px;padding:10px 34px 10px 12px;text-align:left}
+ .fitness-energy-choices button span{font-size:.88rem}
+ .fitness-energy-choices button[aria-pressed=true]:after{right:14px;top:50%;transform:translateY(-50%)}
+}
