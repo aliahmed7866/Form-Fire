@@ -135,15 +135,21 @@ try{
  automatic(false);custom('occasion');fill('occasion','Fictional gathering');await pause();assert.equal(step(),0);next();assert.equal(step(),1);
  next();assert.equal(step(),1);assert.equal(w.document.activeElement.name,'date');
  fill('date','2027-01-02');fill('location','Exampletown');next();assert.equal(step(),2);
+ assert.equal(form().elements.currency.closest('details'),null,'Currency must be visible beside the budget before review');
+ assert.equal(form().elements.currency.closest('[data-enquiry-panel]').hidden,false);
+ assert.ok(form().elements.currency.closest('.enquiry-budget').contains(form().elements.budget));
  fill('guests','6');fill('budget','360');fill('currency','BAD!');next();
- assert.equal(step(),2);assert.equal(form().elements.currency.closest('details').open,true);assert.equal(w.document.activeElement.name,'currency');assert.equal(form().elements.currency.getAttribute('aria-invalid'),'true');
+ assert.equal(step(),2);assert.equal(w.document.activeElement.name,'currency');assert.equal(form().elements.currency.getAttribute('aria-invalid'),'true');
  fill('currency','GBP');next();assert.equal(step(),3);assert.equal(requestWrites,2,'Chef choices and review do not create a request');
+ assert.match(form().querySelector('[data-enquiry-review]').textContent,/GBP 360/);
+ form().querySelector('[data-enquiry-edit="2"]').click();assert.equal(step(),2);assert.equal(form().elements.budget.value,'360');assert.equal(form().elements.currency.value,'GBP');
+ next();assert.equal(step(),3,'Budget and currency survive editing and return together to review');
  form().querySelector('[data-enquiry-edit="0"]').click();assert.equal(step(),0);assert.equal(form().elements.occasion.value,'Fictional gathering');
  fill('occasion','Fictional birthday gathering');next();assert.equal(step(),3,'Chef edits return directly to review');
  assert.equal((await submit(form())).ok,true);await until(()=>query('form[data-form="reply"]'));
  const chef=app.db.prepare("SELECT * FROM requests WHERE kind='chef'").get();assert.equal(JSON.parse(chef.details).budget_minor,36000);
  assert.equal(JSON.parse(chef.details).occasion,'Fictional birthday gathering');
- console.log('CHEF: FOUR STAGES, CUSTOM OCCASION, REQUIRED GATHERING, PRACTICAL ERROR FOCUS, DIRECT REVIEW EDIT AND PERSISTED BUDGET PASSED');
+ console.log('CHEF: FOUR STAGES, CUSTOM OCCASION, VISIBLE CURRENCY, PRACTICAL ERROR FOCUS, RETAINED BUDGET EDIT AND PERSISTED BUDGET PASSED');
 
  const chefKey=randomUUID();
  for(const [oldStep,newStep] of [[0,0],[1,2],[2,3]]){
