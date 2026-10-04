@@ -1,0 +1,8 @@
+.coaching-draft-note{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;margin:.3rem 0 1rem;padding:.75rem .85rem;border-radius:12px;background:var(--paper,#f6f4e9);border:1px solid var(--line,#dedfd3)}
+.coaching-draft-note p{flex:1 1 220px;margin:0;color:var(--muted,#5d6455);line-height:1.5}
+.coaching-draft-note button{min-height:44px;flex:0 0 auto}
+.coaching-draft-note [hidden]{display:none!important}
+.coaching-draft-conflict{padding:1rem;border:1px solid var(--ink,#252820);border-radius:12px;margin:0 0 1rem;background:var(--paper,#f6f4e9)}
+.coaching-draft-conflict p{margin-top:0}
+.coaching-draft-conflict textarea{min-height:110px}
+.coaching-draft-conflict button{min-height:44px}

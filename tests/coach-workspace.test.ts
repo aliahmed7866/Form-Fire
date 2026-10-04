@@ -96,3 +96,38 @@ test('Client deep links select the requested account rather than showing another
  let html=runInContext('coachClientsPage(d)',c);assert.ok(html.includes('name="id" value="client-paused"'));assert.ok(!html.includes('name="id" value="client-ready"'));assert.ok(html.includes('All clients'));
  (c.location as any).hash='#/admin/clients?client=missing';html=runInContext('coachClientsPage(d)',c);assert.ok(html.includes('Client not found.'));assert.ok(!html.includes('data-form="client-notes"'));
 });
+test('Check-in context selects only this client’s earlier conversation and current active plan versions',()=>{
+ const {c}=ui('#/admin/checkins?checkin=pending');const d=fixture();
+ d.checkins.push({...d.checkins[0],id:'future',week:'2026-10-05',progress:'FUTURE CONTEXT',feedback:'Later feedback'});
+ d.requests.push({...d.requests.find(r=>r.id==='ready')!,id:'same-client-paused',active:0});
+ d.assignments.push(
+  {id:'ready-current',request_id:'ready',user_id:'client-ready',kind:'training',version:2},
+  {id:'another-client-plan',request_id:'ready',user_id:'client-paused',kind:'training',version:9},
+  {id:'paused-plan',request_id:'same-client-paused',user_id:'client-ready',kind:'meal',version:9}
+ );c.d=d;
+ const context=JSON.parse(runInContext('JSON.stringify(coachCheckinContextData(d.checkins[0],d))',c));
+ assert.equal(context.client.id,'client-ready');assert.deepEqual(context.active.map((r:any)=>r.id),['ready']);
+ assert.deepEqual(context.plans.map((p:any)=>p.id),['ready-current']);assert.equal(context.previous.id,'answered');
+ const html=runInContext('coachCheckinCard(d.checkins[0],d)',c);
+ assert.ok(html.includes('Feel stronger'));assert.ok(html.includes('Week of 2026-09-14'));assert.ok(html.includes('Thanks for checking in.'));
+ assert.ok(html.includes('href="#/plan/ready-current"'));assert.ok(!html.includes('href="#/plan/ready-plan"'));assert.ok(!html.includes('paused-plan'));
+ assert.ok(!html.includes('FUTURE CONTEXT'));assert.ok(!html.includes('PRIVATE note'));assert.ok(!html.includes('Need to pause.'));
+ // Context stays read-only and cannot silently become feedback to this client.
+ assert.match(html,/<textarea name="feedback" required><\/textarea>/);
+});
+test('Check-in context keeps historical context and missing information explicit, and escapes saved text',()=>{
+ const {c}=ui();const d=fixture();c.d=d;
+ let html=runInContext('coachCheckinContext(d.checkins[2],d)',c);
+ assert.ok(html.includes('No earlier check-in saved.'));assert.ok(!html.includes('Found a manageable routine.'));
+ (c.d as any).clients[0].profile.goals='<img src=x onerror=evil()> personal goal';
+ (c.d as any).checkins[2].progress='<script>unsafe</script>';
+ (c.d as any).checkins[2].feedback='</p><iframe>feedback';
+ (c.d as any).assignments.find((a:any)=>a.id==='ready-plan').title='<svg onload=evil()> plan';
+ html=runInContext('coachCheckinContext(d.checkins[0],d)',c);
+ for(const forbidden of ['<img','<script','<iframe','<svg'])assert.ok(!html.includes(forbidden));
+ assert.ok(html.includes('&lt;img'));assert.ok(html.includes('&lt;script&gt;unsafe'));assert.ok(html.includes('&lt;/p&gt;&lt;iframe&gt;feedback'));
+ c.empty={user_id:'unknown',week:'2026-09-28'};
+ html=runInContext('coachCheckinContext(empty,d)',c);
+ assert.ok(html.includes('No goal shared in their profile yet.'));assert.ok(html.includes('No active coaching service.'));assert.ok(html.includes('No earlier check-in saved.'));
+ assert.ok(!html.includes('href="#/plan/'));assert.ok(!html.includes('Energy undefined'));assert.ok(!html.includes('undefined'));
+});

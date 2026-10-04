@@ -6,3 +6,8 @@
 .weekly-history>details>summary{font-size:1.1rem}.weekly-history h2{font-size:1.8rem}
 @media(max-width:600px){.client-day-lead img{width:95px}.client-day-lead{gap:.75rem}.client-day-lead h2{font-size:2rem}.daily-focus-title{font-size:1.25rem}.checkin-history .row{align-items:flex-start}.daily-welcome .week-totals{display:none}}
 @media(prefers-reduced-motion:reduce){.client-action-symbol{animation:none}}
+.checkin-page-heading{display:flex;align-items:center;gap:16px;margin-bottom:24px}.checkin-page-heading .client-action-symbol{flex-shrink:0;margin:0}.checkin-page-heading h2{margin:0 0 6px}.checkin-page-heading p{margin:0;color:var(--muted)}
+.checkin-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start}.checkin-layout>*{min-width:0}.checkin-editor>h3{font-size:1.7rem;margin:12px 0}.checkin-editor>p{font-size:.9rem;color:var(--muted)}
+.checkin-prompts{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:18px 0 24px}.checkin-prompts li{display:flex;align-items:center;gap:6px;font-size:.77rem;background:#edf2dc;padding:8px 10px;border-radius:8px}.checkin-prompts span{font-size:1rem;color:#455834}
+.checkin-editor textarea[name=progress]{min-height:130px}.checkin-replies>h3{font-size:1.1rem;margin:0 0 16px}.checkin-replies .checkin-art{height:180px}.checkin-older{margin:18px 0}.checkin-older>summary{min-height:48px;padding:12px 0}.checkin-older[open]>summary{margin-bottom:12px}.checkin-week-links{gap:8px;flex-wrap:wrap}
+@media(max-width:850px){.checkin-layout{grid-template-columns:minmax(0,1fr);gap:24px}.checkin-replies .checkin-art{max-width:360px}.checkin-page-heading h2{font-size:2rem}}
