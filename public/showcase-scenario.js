@@ -76,7 +76,7 @@ export function buildShowcase(config,ui,state={}) {
  view('Rhythm','Read the source-linked field guide','client','/portal/learn');
  add('Rhythm','Explore a recovery idea','client',async()=>{await ui.go('/portal/learn?category=Recovery');await ui.inspect('.field-guide');await ui.inspect('.field-guide details');},'Sam browses a recovery topic and opens its sources without leaving the app.');
  add('Check-ins','Send a weekly check-in','client',async()=>{await form('/portal/checkins','checkin',{progress:'DEMO: I enjoyed the meals and found two manageable sessions.',energy:'4',notes:'DEMO: Could we make next week’s prep simpler?',measurements:''});s.checkin=(await data()).checkins[0].id;});
- add('Check-ins','Read the saved weekly check-in','client',async()=>{await ui.go('/portal');await ui.go('/portal/checkins');await ui.inspect('.split > div:first-child .card');},'Sam checks that the weekly update is saved and can see whether Alex has replied.');
+ add('Check-ins','Read the saved weekly check-in','client',async()=>{await ui.go('/portal');await ui.go('/portal/checkins');await ui.inspect('.checkin-history');},'Sam checks that the weekly update is saved and can see whether Alex has replied.');
  view('Coach review','Review client workouts','admin','/admin/progress');
  view('Coach review','Review the whole client week','admin',()=>'/admin/rhythm?client='+s.clientId);
  view('Coach review','Review goal-based progress','admin',()=>'/admin/fitness?client='+s.clientId+'&metric=strength_load');

@@ -57,3 +57,15 @@ test('Meal-only clients are invited to everyday movement without promising an as
  c.fixture.assignments.push({id:'training-plan',request_id:'service',kind:'training',version:1,snapshot:{workouts:[]}});
  html=await runInContext('rhythmHome(fixture)',c);assert.ok(html.includes('Training that fits today.'));
 });
+test('Check-in starts with writing, asks for energy explicitly, and keeps older feedback reachable',()=>{
+ const c=ui();c.location.hash='#/portal/checkins?week=2026-09-28';
+ c.fixture.checkins=Array.from({length:5},(_,i)=>({id:'week'+i,week:['2026-09-21','2026-09-14','2026-09-07','2026-08-31','2026-08-24'][i],progress:'Saved week '+i,energy:3,notes:'',measurements:'',feedback:'Reply '+i}));
+ let html=runInContext('clientCheckinsPage(fixture)',c);
+ assert.ok(html.indexOf('data-form="checkin"')<html.indexOf('class="card checkin-history"'));
+ assert.ok(html.includes('<select name="energy" required>'));
+ assert.match(html,/<option value="" selected>Choose how it felt<\/option>/);
+ assert.ok(html.includes('More check-ins (2)'));assert.ok(html.includes('Reply 4'));
+ c.location.hash='#/portal/checkins?week=2026-08-24';html=runInContext('clientCheckinsPage(fixture)',c);
+ assert.ok(!html.includes('data-form="checkin"'));assert.ok(html.indexOf('Reply 4')<html.indexOf('Reply 0'));
+ assert.ok(html.includes('Back to this week'));
+});

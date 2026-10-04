@@ -78,6 +78,15 @@ try{
  assert.equal(query('[data-section-toggle]').getAttribute('aria-expanded'),'false');assert.equal(w.document.activeElement,query('[data-section-toggle]'));
  for(const path of expected){await go(path.slice(1));assert.ok(query('.workspace-content'),'Every retained destination must render');}
  console.log('NAVIGATION: FIVE PRIMARY LINKS, EVERY SECONDARY DESTINATION, DISCLOSURES AND ESCAPE FOCUS PASSED');
+ await go('/portal/checkins');const retained=query('form[data-form="checkin"]');fill(retained,'progress','Unsent words stay while finding a task.');
+ const taskSearch=query('[data-task-query]');taskSearch.focus();taskSearch.value='log food';taskSearch.dispatchEvent(new w.Event('input',{bubbles:true}));
+ assert.ok(query('#workspace-task-results a[href="#/portal/nutrition"]'));
+ assert.equal(query('#workspace-task-results a[href^="#/admin"]'),null);
+ assert.equal(query('form[data-form="checkin"]'),retained);assert.equal(retained.elements.progress.value,'Unsent words stay while finding a task.');assert.equal(w.document.activeElement,taskSearch);
+ taskSearch.value='no-such-task-zzz';taskSearch.dispatchEvent(new w.Event('input',{bubbles:true}));assert.match(query('#workspace-task-count').textContent,/No matching shortcut/);
+ taskSearch.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(taskSearch.value,'');assert.equal(query('#workspace-task-results').hidden,true);assert.equal(query('.workspace-nav').classList.contains('task-searching'),false);
+ console.log('TASK FINDER: RELEVANT ROLE-ONLY LINKS, NO PAGE REPLACEMENT, PRESERVED WORDS AND CLEAR/ESCAPE RECOVERY PASSED');
+
 
  await go('/portal/today');
  const front=()=>all('.workspace-content > .daily-grid > .daily-item'),more=query('.daily-extras:not(.daily-recorded)');

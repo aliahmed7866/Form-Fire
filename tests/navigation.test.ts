@@ -99,3 +99,16 @@ test('Password visibility and connection checks preserve entered values and refr
  h.c.api=async(path:string)=>{assert.equal(path,'/session');calls++;return {instance:{label:'Fictional demo'},csrf:'fresh'};};
  await h.click('[data-connection-check]',check);assert.equal(calls,1);assert.equal(check.disabled,false);assert.match(feedback.textContent,/Connected to Fictional demo on port 8086/);assert.equal(h.c.session.csrf,'fresh');assert.equal(input.value,'Keep this exact password');
 });
+test('Task search matches everyday phrases and stays within the selected role',()=>{
+ const h=harness();
+ const search=(admin:boolean,term:string)=>JSON.parse(runInContext(`JSON.stringify(workspaceTaskMatches(${admin},${JSON.stringify(term)}))`,h.c));
+ assert.ok(search(false,'log food').some((task:any)=>task.href==='/portal/nutrition'));
+ assert.ok(search(false,'check in').some((task:any)=>task.href==='/portal/checkins'));
+ assert.ok(search(false,'workout').some((task:any)=>task.href==='/portal/today'));
+ assert.ok(search(true,'publish').some((task:any)=>task.href==='/admin/plans'));
+ assert.ok(search(false,'publish').every((task:any)=>task.href.startsWith('/portal')));
+ assert.equal(search(false,'zzzz no task').length,0);
+ assert.equal(search(false,'  ').length,0);
+ for(const admin of [false,true])for(const task of search(admin,'e'))assert.ok(task.href.startsWith(admin?'/admin':'/portal'));
+ assert.equal(search(false,'<script>').length,0);
+});

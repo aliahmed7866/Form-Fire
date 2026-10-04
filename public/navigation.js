@@ -30,6 +30,59 @@ function clientPrimarySection(path=route()) {
   if(['profile','money'].includes(section))return 'account';
   return 'today';
 }
+// Search destinations by the task, without touching page forms or fetching private records.
+function workspaceTasks(admin=false) {
+ const entries=admin?[
+  ['', 'What needs my attention?', 'Overview, pending replies and the next useful action.', 'home overview dashboard queue'],
+  ['requests','Review a request','Enquiries, conversations and private dining bookings.','reply message inbox booking proposal approve'],
+  ['clients','Find a client','Client details, goals and private coaching notes.','people search profile notes'],
+  ['checkins','Reply to a check-in','Read the week, see their context and leave feedback.','weekly check in checkins check-in feedback reply energy'],
+  ['plans','Create or publish a plan','Training, recipes and meal plans in the plan studio.','assign workout meal recipe exercise template library publish'],
+  ['nutrition','Review food diaries','Recorded food and nutrition information.','meals eating diary calories'],
+  ['rhythm','Review client weeks','Meal planning, habits and everyday routines.','planner cooking habit schedule'],
+  ['progress','Review plan activity','Saved training and meal-plan activity.','workout completion history'],
+  ['fitness','Review fitness progress','Comparable measurements and the client’s goal.','weight strength metrics chart trend'],
+  ['services','Manage services','Published services, descriptions and confirmed prices.','package price offers'],
+  ['money','Review payments','Invoices, manual payment records and earnings.','invoice deposit refund revenue'],
+  ['contact','Set contact options','Manage the contact channels clients can see.','whatsapp instagram phone'],
+  ['audit','View activity history','Review recorded administration changes.','audit events security'],
+  ['setup','Setup and testing','Tools for a fictional local test workspace.','demo sample account diagnostics']
+ ]:[
+  ['', 'My next step', 'Your daily hub and a few useful actions.', 'home today overview dashboard'],
+  ['today','Follow today’s plan','Open scheduled workouts and meals; save what you did.','workout training exercise log session schedule'],
+  ['plans','Open my plans','Training and meal plans Alex has published for you.','programme program coach assigned'],
+  ['movement','Record an activity','Log a walk, a class or other movement you chose.','exercise workout training swimming running yoga cycling'],
+  ['recipes','Find something to cook','Browse recipes and your saved favourites.','eat food meals dinner breakfast lunch vegan vegetarian favourite favorite quick'],
+  ['planner','Plan my meals','Choose meals and quantities for the days ahead.','food week batch cooking servings'],
+  ['shopping','Shop and prepare','Find your shopping list and preparation notes.','groceries ingredients checklist food'],
+  ['nutrition','Log what I ate','Your food diary, with optional nutrition detail.','meals eating food calories breakfast lunch dinner journal'],
+  ['progress','See my progress','Record a measurement or review comparable results.','weight strength fitness goal metrics chart trend'],
+  ['checkins','Check in with Alex','Share your week and read coaching feedback.','weekly check in checkins check-in energy support reply'],
+  ['requests','Find my conversations','Read or reply to your requests with Alex.','message inbox coach support enquiry booking'],
+  ['rhythm','Shape my week','Choose habits that fit your life.','routine habit planner week'],
+  ['profile','Update my details','Name, goals, preferences, time zone and units.','account settings password export delete dietary allergies profile'],
+  ['money','See my payments','Agreed invoices and manual payment records.','invoice money cost price deposit'],
+  ['contact','Contact Alex','Available ways to get in touch.','help whatsapp instagram support'],
+  ['learn','Explore the field guide','Practical guides to training, food and routines.','learn tips help ideas'],
+  ['feel-good','Take a little pause','Low-pressure ideas for a moment to yourself.','rest reset relaxing wellbeing lifestyle']
+ ];
+ return entries.map(([path,title,description,keywords])=>({href:(admin?'/admin':'/portal')+(path?'/'+path:''),title,description,keywords}));
+}
+function workspaceTaskMatches(admin,queryText) {
+ const words=String(queryText).toLowerCase().trim().split(/\s+/).filter(Boolean);
+ if(!words.length)return [];
+ return workspaceTasks(admin).filter(task=>words.every(word=>(task.title+' '+task.description+' '+task.keywords).toLowerCase().includes(word)));
+}
+function workspaceTaskSearch(admin=false) {
+ return `<div class="workspace-task-finder" data-task-finder data-task-audience="${admin?'coach':'client'}"><label for="workspace-task-query"><span aria-hidden="true">⌕</span> Find a task</label><div class="workspace-task-input"><input type="search" id="workspace-task-query" data-task-query placeholder="Try meal, reply or progress" autocomplete="off" aria-controls="workspace-task-results" aria-describedby="workspace-task-count"><button type="button" class="secondary small" data-task-clear hidden>Clear</button></div><p class="micro" id="workspace-task-count" role="status" aria-atomic="true">Search shortcuts in your space.</p><ul id="workspace-task-results" class="workspace-task-results" hidden></ul></div>`;
+}
+function updateWorkspaceTaskSearch(finder) {
+ const input=finder.querySelector('[data-task-query]'),term=input.value.trim(),results=finder.querySelector('.workspace-task-results'),matches=workspaceTaskMatches(finder.dataset.taskAudience==='coach',term);
+ finder.closest('.workspace-nav').classList.toggle('task-searching',!!term);
+ finder.querySelector('[data-task-clear]').hidden=!term;results.hidden=!term;
+ results.innerHTML=matches.map(task=>`<li><a href="#${task.href}"><strong>${esc(task.title)}</strong><span>${esc(task.description)}</span><b aria-hidden="true">↗</b></a></li>`).join('');
+ finder.querySelector('[role="status"]').textContent=term?(matches.length?`${matches.length} ${matches.length===1?'shortcut':'shortcuts'} found.`:'No matching shortcut. Try a simpler word, or clear to browse all sections.'):'Search shortcuts in your space.';
+}
 function clientWorkspaceTabs() {
   const primary=[['','Today','today'],['plans','Train','train'],['recipes','Eat','eat'],['progress','Progress','progress'],['profile','Account','account']];
   const groups=[
@@ -40,7 +93,7 @@ function clientWorkspaceTabs() {
   const path=route().split('?')[0].replace(/\/$/,''),active=clientPrimarySection(path);
   const titles={adapt:'Recipe swaps',catering:'Group quantities',cook:'Kitchen mode',recipe:'Recipe',foods:'Food library'};
   const current=titles[path.split('/')[2]]||groups.flatMap(([, ,links])=>links).find(([p])=>path==='/portal/'+p)?.[1]||primary.find(([p])=>path==='/portal'+(p?'/'+p:''))?.[1]||'Today';
-  return `<aside class="workspace-nav client-workspace-nav"><nav class="client-primary-links" aria-label="Your everyday navigation">${primary.map(([p,title,icon])=>{const target='/portal'+(p?'/'+p:''),selected=icon===active;return `<a href="#${target}" class="client-primary-link${selected?' active':''}"${selected?` aria-current="${path===target?'page':'true'}"`:''}${icon==='train'?' title="Training & meal plans"':''}>${workspaceIcon(icon)}<span class="client-primary-label">${title}</span>${icon==='train'?'<small class="client-primary-description">Training & meal plans</small>':''}</a>`;}).join('')}</nav><button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>More in your space</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Shortcuts <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs client-shortcuts" aria-label="More client shortcuts">${groups.map(([title,icon,links],group)=>`<details class="workspace-nav-group client-shortcut-group" role="group" aria-labelledby="workspace-group-${group}"${links.some(([p])=>path==='/portal/'+p)?' open':''}><summary id="workspace-group-${group}"><span aria-hidden="true">${icon}</span> ${esc(title)}</summary><div class="workspace-nav-links">${links.map(([p,title])=>`<a href="#/portal/${p}"${path==='/portal/'+p?' class="active" aria-current="page"':''}>${esc(title)}<span aria-hidden="true">↗</span></a>`).join('')}</div></details>`).join('')}</nav></aside>`;
+  return `<aside class="workspace-nav client-workspace-nav"><nav class="client-primary-links" aria-label="Your everyday navigation">${primary.map(([p,title,icon])=>{const target='/portal'+(p?'/'+p:''),selected=icon===active;return `<a href="#${target}" class="client-primary-link${selected?' active':''}"${selected?` aria-current="${path===target?'page':'true'}"`:''}${icon==='train'?' title="Training & meal plans"':''}>${workspaceIcon(icon)}<span class="client-primary-label">${title}</span>${icon==='train'?'<small class="client-primary-description">Training & meal plans</small>':''}</a>`;}).join('')}</nav>${workspaceTaskSearch()}<button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>More in your space</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Shortcuts <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs client-shortcuts" aria-label="More client shortcuts">${groups.map(([title,icon,links],group)=>`<details class="workspace-nav-group client-shortcut-group" role="group" aria-labelledby="workspace-group-${group}"${links.some(([p])=>path==='/portal/'+p)?' open':''}><summary id="workspace-group-${group}"><span aria-hidden="true">${icon}</span> ${esc(title)}</summary><div class="workspace-nav-links">${links.map(([p,title])=>`<a href="#/portal/${p}"${path==='/portal/'+p?' class="active" aria-current="page"':''}>${esc(title)}<span aria-hidden="true">↗</span></a>`).join('')}</div></details>`).join('')}</nav></aside>`;
 }
 function workspaceTabs(admin=false) {
   if(!admin)return clientWorkspaceTabs();
@@ -51,7 +104,7 @@ function workspaceTabs(admin=false) {
   ];
   const items=groups.flatMap(([,links])=>links);
   const base=admin?'/admin':'/portal',current=route().endsWith('/adapt')?'Recipe swaps':route().endsWith('/catering')?'Group quantities':route()==='/portal/cook'?'Kitchen mode':route()==='/portal/recipe'?'Recipe':route()==='/portal/foods'?'Food library':items.find(([p])=>route()===base+(p?'/'+p:''))?.[1]||'Overview';
-  return `<aside class="workspace-nav"><button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>${admin?'Alex’s workspace':'Your space'}</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Sections <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs" aria-label="${admin?'Admin':'Client'} sections">${groups.map(([title,links],group)=>`<div class="workspace-nav-group" role="group" aria-labelledby="workspace-group-${group}"><p class="workspace-nav-label" id="workspace-group-${group}">${esc(title)}</p><div class="workspace-nav-links">${links.map(([p,t])=>{const path=base+(p?'/'+p:'');return `<a href="#${path}" ${route()===path?'class="active" aria-current="page"':''}>${t}<span aria-hidden="true">↗</span></a>`;}).join('')}</div></div>`).join('')}</nav></aside>`;
+  return `<aside class="workspace-nav">${workspaceTaskSearch(true)}<button type="button" class="section-toggle" data-section-toggle aria-expanded="false" aria-controls="workspace-links"><span><small>${admin?'Alex’s workspace':'Your space'}</small><strong>${esc(current)}</strong></span><span class="section-toggle-hint">Sections <span aria-hidden="true">⌄</span></span></button><nav id="workspace-links" class="tabs" aria-label="${admin?'Admin':'Client'} sections">${groups.map(([title,links],group)=>`<div class="workspace-nav-group" role="group" aria-labelledby="workspace-group-${group}"><p class="workspace-nav-label" id="workspace-group-${group}">${esc(title)}</p><div class="workspace-nav-links">${links.map(([p,t])=>{const path=base+(p?'/'+p:'');return `<a href="#${path}" ${route()===path?'class="active" aria-current="page"':''}>${t}<span aria-hidden="true">↗</span></a>`;}).join('')}</div></div>`).join('')}</nav></aside>`;
 }
 function syncNavigation() {
   setMenu(false);setSections(false);
@@ -75,7 +128,9 @@ function loginHelp() {
   const demo=session.instance?.kind==='demo';
   return `<details class="signin-help"><summary>Having trouble signing in?</summary><p>${demo?'This demo has its own accounts. Use the logins from form-fire-demo logins, rather than your main app’s account.':'Use the account created in this workspace. Accounts on another port may belong to a separate database.'}</p><p>${demo?'In Termux, use form-fire-demo status to check the server, or form-fire-demo recover followed by your demo email to get a private recovery code.':'If you changed your password, use the new one or choose Forgot your password.'}</p><button type="button" class="secondary small" data-connection-check>Check connection</button><p class="micro" data-connection-status role="status"></p></details>`;
 }
+document.addEventListener('input',e=>{if(!e.target.matches?.('[data-task-query]'))return;const finder=e.target.closest('[data-task-finder]');if(finder)updateWorkspaceTaskSearch(finder);});
 document.addEventListener('click',async e=>{
+  const clear=e.target.closest('[data-task-clear]');if(clear){const finder=clear.closest('[data-task-finder]'),input=finder.querySelector('[data-task-query]');input.value='';updateWorkspaceTaskSearch(finder);input.focus();return;}
   if(e.target.closest('a[href="#main"]')){e.preventDefault();const main=document.querySelector('#main');main.focus();main.scrollIntoView({block:'start'});return;}
   const toggle=e.target.closest('[data-nav-toggle]');
   if(toggle){setMenu(toggle.getAttribute('aria-expanded')!=='true');return;}
@@ -94,6 +149,7 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
+  const taskInput=e.target?.closest?.('[data-task-query]');if(taskInput?.value){taskInput.value='';updateWorkspaceTaskSearch(taskInput.closest('[data-task-finder]'));e.preventDefault();return;}
   if(document.querySelector('.site-header.menu-open')){setMenu(false,{focus:true});e.preventDefault();}
   else if(document.querySelector('.workspace-nav.sections-open')){setSections(false,{focus:true});e.preventDefault();}
 });
