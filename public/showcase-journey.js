@@ -40,11 +40,20 @@ export function createShowcaseUI({getSession,request,renderPage,setRoute,wait=ms
   await gate();await settle();assertPage();const f=find(selector||`form[data-form="${key}"]`);await prepare(f);
   if(f.hasAttribute('data-enquiry-flow')){
    // Walk the visible questionnaire in order, including Back for a restored draft.
-   while(Number(f.dataset.enquiryStep)>0)await tap(f.querySelector('[data-enquiry-back]'));
-   for(let step=0;step<2;step++){
-    for(const [name,value]of Object.entries(values)){
-     const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);
-     if(el.type==='hidden'){if(el.value!==String(value))throw Error('The recording enquiry has an unexpected hidden value.');continue;}
+   const lastStep=f.querySelectorAll('[data-enquiry-panel]').length-1;
+   if(lastStep<1)throw Error('The recording enquiry is missing its answer or review panels.');
+   const answers=Object.entries(values).map(([name,value])=>{
+    const el=f.elements.namedItem(name);if(!el)throw Error(`Missing field ${name} in ${key}.`);
+    if(el.type==='hidden'&&el.value!==String(value))throw Error('The recording enquiry has an unexpected hidden value.');
+    return {el,value};
+   });
+   while(Number(f.dataset.enquiryStep)>0){
+    const previous=Number(f.dataset.enquiryStep);await tap(f.querySelector('[data-enquiry-back]'));
+    if(Number(f.dataset.enquiryStep)!==previous-1)throw Error('The enquiry could not return to the previous answer.');
+   }
+   for(let step=0;step<lastStep;step++){
+    for(const {el,value}of answers){
+     if(el.type==='hidden')continue;
      if(el.closest('[data-enquiry-panel]')?.dataset.enquiryPanel===String(step))await fillElement(el,value);
     }
     await tap(f.querySelector('[data-enquiry-next]'));
