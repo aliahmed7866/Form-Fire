@@ -6,6 +6,8 @@ A working local-test app for online coaching, chef-created meal plans and privat
 
 ## Latest enhancement
 
+Planner, progress and diary saves now preserve newer work. Cross-page saves confirm in place with a View saved link; same-page refreshes protect edits and account boundaries. See [save behavior and verification](docs/SAVE_WORKFLOWS.md).
+
 Five main client destinations, a calmer daily schedule, saved check-in states and Alex’s attention queue make existing tools easier to reach. Client search keeps unsaved notes intact, and plan shortcuts preselect the right active request. See [the enhancement and verification notes](docs/CALMER_EXPERIENCE.md).
 
 The enquiry now uses illustrated answer cards, optional automatic next, Back/swipe navigation and editable review. Custom answers and sign-in drafts are preserved. See [questionnaire design, research and testing](docs/QUESTIONNAIRE_USABILITY.md).

@@ -9,14 +9,14 @@ function harness(){
  const form={elements:controls,isConnected:true,innerHTML:'original fields',setAttribute:(k:string,v:string)=>attrs.set(k,v),removeAttribute:(k:string)=>attrs.delete(k)};
  const c=createContext({document:{addEventListener(event:string,fn:any){listeners.set(event,[...(listeners.get(event)||[]),fn]);}},session:{user:{id:'client-1'}},location:{hash:'#/portal/recipe?id=fictional'},renderVersion:1,form,
   api:(...args:any[])=>{calls.push(args);return new Promise((yes,no)=>{release=yes;reject=no;});},toast:(m:string)=>messages.push(m),navigate:(p:string)=>navigations.push(p),render:async()=>{renders++;},esc:(s:string)=>s,link:(p:string,t:string)=>`<a href="#${p}">${t}</a>`});
- runInContext(readFileSync(new URL('../public/nutrition.js',import.meta.url),'utf8'),c);
+ for(const file of ['save-workflow.js','nutrition.js'])runInContext(readFileSync(new URL('../public/'+file,import.meta.url),'utf8'),c);
  const start=(kind='nutrition-log')=>runInContext(`saveNutritionEntry(${JSON.stringify(kind)},{id:'entry-1',version:'2',quantity:'2',day:'2026-10-10',idempotency_key:'retry-key'},form)`,c);
  return {c,form,attrs,controls,calls,navigations,messages,listeners,start,finish:()=>release({ok:true}),fail:()=>reject(Error('Unconfirmed network result')),get renders(){return renders;}};
 }
-test('Diary saves commit captured fields, lock pending controls and navigate only an untouched originating view',async()=>{
+test('Diary saves commit captured fields, lock pending controls and offer explicit navigation to another page',async()=>{
  const h=harness(),pending=h.start();assert.equal(h.calls.length,1);assert.equal(h.calls[0][1],'POST');assert.equal(h.calls[0][2].quantity,2);assert.equal(h.calls[0][2].idempotency_key,'retry-key');assert.equal(h.attrs.get('aria-busy'),'true');assert.equal(h.controls[0].readOnly,true);assert.equal(h.controls[1].disabled,true);
  await h.start();assert.equal(h.calls.length,1,'Direct repeated submissions do not write twice');let stopped=false;const event={target:h.form,preventDefault(){stopped=true;},stopImmediatePropagation(){}};h.listeners.get('submit')![0](event);assert.ok(stopped);
- h.finish();await pending;assert.deepEqual(h.navigations,['/portal/nutrition?day=2026-10-10']);assert.equal(h.renders,1);assert.equal(h.controls[0].readOnly,false);assert.equal(h.controls[1].disabled,false);assert.equal(h.controls[2].disabled,true,'Caller-owned disabled state stays intact');assert.equal(h.attrs.has('aria-busy'),false);
+ h.finish();await pending;assert.deepEqual(h.navigations,[]);assert.equal(h.renders,0);assert.match(h.form.innerHTML,/View saved diary/);assert.equal(h.attrs.has('data-form'),false);assert.equal(h.controls[0].readOnly,false);assert.equal(h.controls[1].disabled,false);assert.equal(h.controls[2].disabled,true,'Caller-owned disabled state stays intact');assert.equal(h.attrs.has('aria-busy'),false);
 });
 test('Delayed diary saves do not navigate, rerender or focus after newer navigation or leaving and returning',async()=>{
  for(const change of [(h:any)=>{h.c.location.hash='#/portal/profile';},(h:any)=>{h.c.renderVersion++;},(h:any)=>{h.form.isConnected=false;}]){
