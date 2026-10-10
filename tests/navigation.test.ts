@@ -112,3 +112,12 @@ test('Task search matches everyday phrases and stays within the selected role',(
  for(const admin of [false,true])for(const task of search(admin,'e'))assert.ok(task.href.startsWith(admin?'/admin':'/portal'));
  assert.equal(search(false,'<script>').length,0);
 });
+test('Browser titles identify each destination without putting client records in history',()=>{
+ const h=harness();
+ for(const path of ['/portal/today?date=2026-10-01','/admin/clients','/request/private-client-id','/plan/private-title-id'])assert.equal(runInContext(`pageTitle(${JSON.stringify(path)})`,h.c),'Sign in · FORM & FIRE');
+ h.c.session.user={role:'client'};
+ for(const [path,title] of [['/portal','Today'],['/portal/today?date=2026-10-01','Daily schedule'],['/portal/nutrition','Food diary'],['/portal/profile','My details'],['/request/private-client-id','Conversation'],['/plan/private-title-id','Published plan'],['/login','Sign in'],['/privacy','Privacy'],['/unknown','Page not found']])assert.equal(runInContext(`pageTitle(${JSON.stringify(path)})`,h.c),title+' · FORM & FIRE');
+ assert.equal(runInContext("pageTitle('/google-setup')",h.c),'Your space · FORM & FIRE');
+ h.c.session.user={role:'admin'};assert.equal(runInContext("pageTitle('/google-setup')",h.c),'Connection setup · FORM & FIRE');assert.equal(runInContext("pageTitle('/test-admin')",h.c),'Setup & testing · FORM & FIRE');assert.equal(runInContext("pageTitle('/admin/requests?search=Private%20name')",h.c),'Requests · Alex’s admin · FORM & FIRE');
+ assert.equal(runInContext("pageTitle('/portal/constructor')",h.c),'Your space · FORM & FIRE');
+});

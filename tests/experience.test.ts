@@ -106,7 +106,7 @@ test('Failed page load has a manual GET-only retry that restores the normal sign
  const {c,listeners}=ui(),main={innerHTML:''},account={textContent:'',href:'',setAttribute(){},removeAttribute(){}},calls:string[]=[];let first=true;
  c.location.hostname='127.0.0.1';c.document.querySelector=(selector:string)=>selector==='#main'?main:selector==='#account-link'?account:null;c.document.querySelectorAll=()=>[];
  c.fetch=async(url:string,options:any)=>{calls.push(url);assert.equal(options.method,'GET');if(first){first=false;throw TypeError('Failed to fetch');}return {ok:true,json:async()=>url==='/api/session'?{connections:{google:false}}:[]};};
- await runInContext('render()',c);assert.match(main.innerHTML,/data-action="retry-page"/);assert.match(main.innerHTML,/form-fire restart/);assert.equal(calls.length,1);
+ await runInContext('render()',c);assert.match(main.innerHTML,/data-action="retry-page"/);assert.equal(c.document.title,'Page unavailable · FORM & FIRE');assert.match(main.innerHTML,/form-fire restart/);assert.equal(calls.length,1);
  const retryButton={dataset:{action:'retry-page'},disabled:false};await listeners.get('click')!.at(-1)({target:{closest(){return retryButton;}}});
  assert.deepEqual(calls,['/api/session','/api/session','/api/services']);assert.ok(main.innerHTML.includes('data-form="login"'));assert.ok(!main.innerHTML.includes('retry-page'));assert.equal(account.textContent,'Your space ↗');assert.equal(account.href,'#/login');
 });
@@ -119,4 +119,35 @@ test('Illustrations remain still until requested and stop automatically or when 
 test('Reduced-motion preference and page cleanup stop optional illustration movement',()=>{
  const reduced=ui(true),b=button();reduced.c.button=b;runInContext('playDrawing(button)',reduced.c);assert.equal(reduced.timers.size,0);assert.equal(b.classes.size,0);assert.match(runInContext('lastToast',reduced.c),/reduced-motion/);
  const normal=ui();normal.c.button=b;runInContext('playDrawing(button);stopIllustrations()',normal.c);assert.equal(normal.timers.size,0);assert.equal(b.classes.size,0);
+});
+test('Protected deep links retain date, filters and recovery context without trusting nested next',async()=>{
+ const {c}=ui();runInContext('session={connections:{google:true}}',c);
+ for(const path of ['/portal/today?date=2026-10-01&zone=Europe%2FLondon','/portal/checkins?week=2026-09-28','/admin/requests?status=submitted&kind=coaching','/request/example-request','/plan/example-plan','/plan/example-plan/','/portal/today?next=%2Fwork&date=2026-10-01']){
+  c.location.hash='#'+path;const html=runInContext('authPage()',c);
+  assert.ok(html.includes('name="next" value="'+path.replaceAll('&','&amp;')+'"'),path);
+  for(const mode of ['recover','register'])assert.ok(html.includes('#/'+mode+'?next='+encodeURIComponent(path)),path);
+  c.location.hash='#/recover?next='+encodeURIComponent(path);assert.ok(runInContext("authPage('recover')",c).includes('name="next" value="'+path.replaceAll('&','&amp;')+'"'));
+ }
+ c.location.hash='#/login?next=/portal/today?date=2026-10-01';assert.equal(runInContext("query().get('next')",c),'/portal/today?date=2026-10-01');
+ c.fetch=()=>{throw Error('Signed-out detail must not fetch private records');};
+ for(const [path,expression] of [['/request/example-request',"requestPage('example-request')"],['/plan/example-plan',"planPage('example-plan')"]]){
+  c.location.hash='#'+path;const html=await runInContext(expression,c);assert.ok(html.includes('data-form="login"'));assert.ok(html.includes('name="next" value="'+path+'"'));
+ }
+});
+test('Local sign-in restores shared details and full client/admin context while keeping role boundaries',async()=>{
+ for(const role of ['client','admin'])for(const next of ['/request/example-request','/plan/example-plan','/request/example-request/','/plan/example-plan/']){
+  const h=loginHarness([{status:200,data:{user:{role},csrf:'test-csrf'}}]);h.fields.next.value=next;await h.submit();assert.equal(h.c.location.hash,next);
+ }
+ for(const [role,next,want] of [
+  ['client','/portal/today?date=2026-10-01&zone=Europe%2FLondon','/portal/today?date=2026-10-01&zone=Europe%2FLondon'],
+  ['admin','/admin/requests?status=submitted','/admin/requests?status=submitted'],
+  ['client','/admin/requests?status=submitted','/portal'],['admin','/portal/checkins?week=2026-09-28','/admin'],
+  ['admin','/request','/admin'],['admin','/request/example/extra','/admin'],['client','/\\external.example','/portal'],['admin','//external.example','/admin']
+ ]){const h=loginHarness([{status:200,data:{user:{role},csrf:'test-csrf'}}]);h.fields.next.value=next;await h.submit();assert.equal(h.c.location.hash,want);}
+});
+test('Optional refresh commit guards retain the live page when newer edits arrive during a read',async()=>{
+ const {c}=ui(),main={innerHTML:'Live unsaved fields'},account={textContent:'',href:'',setAttribute(){},removeAttribute(){}};let release:any,allowed=true;
+ c.document.querySelector=(selector:string)=>selector==='#main'?main:selector==='#account-link'?account:null;c.document.querySelectorAll=()=>[];
+ c.canCommit=()=>allowed;c.fetch=async(url:string)=>{if(url==='/api/services')await new Promise(resolve=>{release=resolve;});return {ok:true,json:async()=>url==='/api/session'?{connections:{google:false}}:[]};};
+ const pending=runInContext('render({canCommit})',c);while(!release)await Promise.resolve();allowed=false;release();await pending;assert.equal(main.innerHTML,'Live unsaved fields');
 });

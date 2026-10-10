@@ -16,17 +16,23 @@ const dir=mkdtempSync(join(tmpdir(),'ff-recipe-usability-')),port=Number(process
 const app=createApp({dataDir:dir,origin,requireVerification:true}),admin=setupAdminTest(app.db);
 const user=app.db.prepare("SELECT * FROM users WHERE email='example-sam@form-fire.example'").get(),password='Recipe usability fixture password';
 app.db.prepare('UPDATE users SET password=? WHERE id=?').run(passwordHash(password),user.id);
+const otherUser=app.db.prepare("SELECT * FROM users WHERE email='example-jamie@form-fire.example'").get();app.db.prepare('UPDATE users SET password=? WHERE id=?').run(passwordHash(password),otherUser.id);
 await new Promise(resolve=>app.server.listen(port,'127.0.0.1',resolve));
 const dom=new JSDOM(readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),{url:origin,runScripts:'outside-only',pretendToBeVisual:true});
-const w=dom.window,evaluate=code=>runInContext(code,dom.getInternalVMContext());let cookie='',loseFavouriteResponse=false,holdFavourite=null,favouriteCalls=0,cateringPreviewCalls=0,failRecipeRead=false;const recipeReads=[];
+const w=dom.window,evaluate=code=>runInContext(code,dom.getInternalVMContext());let cookie='',loseFavouriteResponse=false,holdFavourite=null,favouriteCalls=0,cateringPreviewCalls=0,failRecipeRead=false,holdDiary=null,diaryCalls=0,failDiary=false,loseDiaryResponse=false,holdDiaryRead=null,diaryReads=0,switchAccountOnSession=false;const recipeReads=[];
 w.AbortController=AbortController;w.structuredClone=structuredClone;w.crypto.randomUUID=randomUUID;w.confirm=()=>true;
 w.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}});w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
 w.fetch=async(path,options={})=>{
+ if(path==='/api/session'&&switchAccountOnSession){switchAccountOnSession=false;const login=await fetch(origin+'/api/auth/login',{method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-CSRF-Token':evaluate('session.csrf')},body:JSON.stringify({email:otherUser.email,password})});assert.equal(login.status,200);cookie=login.headers.get('set-cookie').split(';')[0];}
+
  if(/^\/api\/nutrition\/recipes\/[^/]+$/.test(path)){recipeReads.push(path);if(failRecipeRead)throw Error('Simulated recipe transport failure');}
  if(path==='/api/nutrition/catering-preview')cateringPreviewCalls++;
+ if(path.startsWith('/api/nutrition/diary?')){diaryReads++;if(holdDiaryRead)await holdDiaryRead;}
+ const diaryWrite=path.startsWith('/api/nutrition/diary')&&['POST','PUT'].includes(options.method);if(diaryWrite){diaryCalls++;if(holdDiary)await holdDiary;if(failDiary)throw Error('Simulated diary connection failure');}
  const favourite=path.includes('/favourite');if(favourite){favouriteCalls++;if(holdFavourite)await holdFavourite;}
  const headers={...options.headers,Cookie:cookie};if(options.method&&options.method!=='GET')headers.Origin=origin;
  const response=await fetch(origin+path,{...options,headers});if(response.headers.get('set-cookie'))cookie=response.headers.get('set-cookie').split(';')[0];
+ if(diaryWrite&&loseDiaryResponse){loseDiaryResponse=false;throw Error('Simulated lost diary response');}
  if(favourite&&loseFavouriteResponse){loseFavouriteResponse=false;throw Error('Simulated lost response');}return response;
 };
 const query=selector=>w.document.querySelector(selector),all=selector=>[...w.document.querySelectorAll(selector)];
@@ -86,6 +92,52 @@ try{
  assert.equal(w.document.activeElement,profileField,'Finishing a save after navigation must not steal focus');
  assert.equal(query('.recipe-save-status'),null,'Finishing a save must not inject the old card into another page');
  console.log('FAVOURITES: CONFIRMED IN-PLACE SAVE, FOCUS, DUPLICATE INPUT, LOST RESPONSE RETRY AND SAVED-LIST REFRESH PASSED');
+
+ // Complete an old write after a newer route has been rendered and edited.
+ await go('/portal/recipe?id='+id+'&day=2026-09-28');
+ let diaryForm=query('form[data-form="nutrition-log"]'),key=diaryForm.elements.idempotency_key.value;
+ let diaryBefore=diaryCalls;holdDiary=new Promise(resolve=>release=resolve);let sending=submit(diaryForm);
+ await until(()=>diaryCalls===diaryBefore+1);assert.equal(diaryForm.getAttribute('aria-busy'),'true');assert.equal(diaryForm.elements.quantity.readOnly,true);assert.equal(diaryForm.elements.slot.disabled,true);
+ const duplicate=new w.Event('submit',{bubbles:true,cancelable:true});diaryForm.dispatchEvent(duplicate);assert.equal(duplicate.defaultPrevented,true);assert.equal(diaryCalls,diaryBefore+1,'Repeated submit must not write twice');
+ await go('/portal/profile');const newerProfile=query('form[data-form="profile"]'),newerName=newerProfile.elements.name;newerName.value='Unsent newer name';newerName.dispatchEvent(new w.Event('input',{bubbles:true}));newerName.focus();
+ release();holdDiary=null;assert.equal((await sending).ok,true);
+ assert.equal(w.location.hash,'#/portal/profile');assert.equal(query('form[data-form="profile"]'),newerProfile);assert.equal(newerName.value,'Unsent newer name');assert.equal(w.document.activeElement,newerName);
+ assert.equal(app.db.prepare('SELECT COUNT(*) n FROM food_diary WHERE user_id=? AND idempotency_key=?').get(user.id,key).n,1,'Write still commits once after navigation');
+
+ // Newer edits on the same rendered page survive, even without changing routes.
+ await evaluate(`api('/nutrition/diary','POST',{kind:'recipe',source_id:${JSON.stringify(id)},day:'2026-09-28',slot:'dinner',quantity:1,idempotency_key:crypto.randomUUID()})`);
+ await go('/portal/nutrition?day=2026-09-28');let edits=all('form[data-form="nutrition-edit"]');assert.ok(edits.length>=2);
+ diaryForm=edits[0];const newerEdit=edits[1],editedId=diaryForm.elements.id.value,otherId=newerEdit.elements.id.value;diaryForm.closest('details').open=true;newerEdit.closest('details').open=true;
+ diaryForm.elements.quantity.value='2';diaryForm.elements.quantity.dispatchEvent(new w.Event('input',{bubbles:true}));holdDiary=new Promise(resolve=>release=resolve);diaryBefore=diaryCalls;sending=submit(diaryForm);await until(()=>diaryCalls===diaryBefore+1);
+ newerEdit.elements.quantity.value='3';newerEdit.elements.quantity.dispatchEvent(new w.Event('input',{bubbles:true}));newerEdit.elements.quantity.focus();release();holdDiary=null;assert.equal((await sending).ok,true);
+ assert.equal(query(`form[data-form="nutrition-edit"] [name="id"][value="${otherId}"]`).form,newerEdit);assert.equal(newerEdit.elements.quantity.value,'3');assert.equal(w.document.activeElement,newerEdit.elements.quantity);
+ assert.equal(diaryForm.getAttribute('data-form'),null,'Successful original form cannot submit the same entry again');assert.match(diaryForm.textContent,/other edits are still here/);
+ assert.equal(app.db.prepare('SELECT quantity FROM food_diary WHERE id=?').get(editedId).quantity,2);assert.equal(app.db.prepare('SELECT quantity FROM food_diary WHERE id=?').get(otherId).quantity,1,'Typing is not an automatic save');
+ assert.equal((await submit(newerEdit)).ok,true);await until(()=>!newerEdit.isConnected);assert.equal(app.db.prepare('SELECT quantity FROM food_diary WHERE id=?').get(otherId).quantity,3);
+
+ // Editing while the follow-up read is pending must also cancel the DOM replacement.
+ await go('/portal/nutrition?day=2026-09-28');edits=all('form[data-form="nutrition-edit"]');diaryForm=edits[0];const refreshEdit=edits[1];diaryForm.closest('details').open=true;refreshEdit.closest('details').open=true;
+ diaryForm.elements.quantity.value='4';diaryForm.elements.quantity.dispatchEvent(new w.Event('input',{bubbles:true}));let beforeDiaryReads=diaryReads;holdDiaryRead=new Promise(resolve=>release=resolve);sending=submit(diaryForm);await until(()=>diaryReads>beforeDiaryReads);
+ refreshEdit.elements.quantity.value='5';refreshEdit.elements.quantity.dispatchEvent(new w.Event('input',{bubbles:true}));refreshEdit.elements.quantity.focus();release();holdDiaryRead=null;assert.equal((await sending).ok,true);
+ assert.equal(refreshEdit.isConnected,true);assert.equal(refreshEdit.elements.quantity.value,'5');assert.equal(w.document.activeElement,refreshEdit.elements.quantity);assert.match(diaryForm.textContent,/other edits are still here/);
+
+ // A failed request restores every control and keeps the same retry key and entered data.
+ await go('/portal/recipe?id='+id+'&day=2026-09-29');diaryForm=query('form[data-form="nutrition-log"]');key=diaryForm.elements.idempotency_key.value;diaryForm.elements.quantity.value='2';failDiary=true;
+ assert.equal((await submit(diaryForm)).ok,false);assert.equal(diaryForm.elements.quantity.value,'2');assert.equal(diaryForm.elements.quantity.readOnly,false);assert.equal(diaryForm.elements.slot.disabled,false);assert.equal(diaryForm.getAttribute('aria-busy'),null);assert.equal(diaryForm.elements.idempotency_key.value,key);
+ assert.equal(app.db.prepare('SELECT COUNT(*) n FROM food_diary WHERE idempotency_key=?').get(key).n,0);failDiary=false;loseDiaryResponse=true;
+ assert.equal((await submit(diaryForm)).ok,false);assert.equal(app.db.prepare('SELECT COUNT(*) n FROM food_diary WHERE idempotency_key=?').get(key).n,1,'Lost response follows the real commit');
+ assert.equal((await submit(diaryForm)).ok,true);assert.equal(app.db.prepare('SELECT COUNT(*) n FROM food_diary WHERE idempotency_key=?').get(key).n,1,'Retry cannot duplicate the saved entry');
+
+ // Failed older saves must not scroll or focus a newly opened form.
+ await go('/portal/recipe?id='+id+'&day=2026-09-30');diaryForm=query('form[data-form="nutrition-log"]');holdDiary=new Promise(resolve=>release=resolve);diaryBefore=diaryCalls;failDiary=true;sending=submit(diaryForm);await until(()=>diaryCalls===diaryBefore+1);
+ await go('/portal/profile');const failureName=query('form[data-form="profile"]').elements.name;failureName.focus();let oldScroll=0;diaryForm.querySelector('.error').scrollIntoView=()=>{oldScroll++;};release();holdDiary=null;assert.equal((await sending).ok,false);failDiary=false;
+ assert.equal(w.location.hash,'#/portal/profile');assert.equal(w.document.activeElement,failureName);assert.equal(oldScroll,0);assert.match(query('#toast').textContent,/wasn’t confirmed/);
+ // The session refresh may discover another tab switched accounts after the write.
+ await go('/portal/nutrition?day=2026-09-28');diaryForm=query('form[data-form="nutrition-edit"]');const oldAccountId=diaryForm.elements.id.value;diaryForm.closest('details').open=true;diaryForm.elements.quantity.value='6';switchAccountOnSession=true;
+ assert.equal((await submit(diaryForm)).ok,true);assert.equal(evaluate('session.user.id'),otherUser.id);assert.equal(diaryForm.isConnected,false,'Old-account inputs must be removed despite the refresh guard');assert.equal(query(`[name="id"][value="${oldAccountId}"]`),null);assert.equal(app.db.prepare('SELECT COUNT(*) n FROM food_diary WHERE user_id=?').get(otherUser.id).n,0);assert.match(query('#toast').textContent,/account changed/);
+ await evaluate(`api('/auth/login','POST',{email:${JSON.stringify(user.email)},password:${JSON.stringify(password)}})`);await go('/portal');
+ console.log('DIARY SAVES: NEWER ROUTES/EDITS, REPEATED SUBMITS, COMMITTED DATA, FAILURE RECOVERY AND LOST-RESPONSE RETRY PASSED');
+
 
  await go('/portal/recipe?id=starter-oats&day=2026-09-28');
  assert.equal(query('.adaptation-launch a[href*="/catering?"]'),null,'An unmeasured recipe must not offer a broken group-quantity action');
