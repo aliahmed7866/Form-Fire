@@ -138,7 +138,7 @@ document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset.form
  if(k.startsWith('adapt-')){await submitAdaptationForm(k,b,f);return;}
  if(k.startsWith('movement-')){await submitMovementForm(k,b);return;}
  if(k.startsWith('rhythm-')){await submitRhythmForm(k,b,f);return;}
- if(k.startsWith('fitness-')){await submitFitnessForm(k,b);return;}
+ if(k.startsWith('fitness-')){await submitFitnessForm(k,b,f);return;}
  if(k.startsWith('nutrition-')){await submitNutritionForm(k,b,f);return;}
  if(k==='contact-settings')await api('/admin/contact','PUT',{...b,version:Number(b.version)});
  if(k==='profile')await api('/profile','PUT',profilePayload(b,fd));

@@ -68,42 +68,16 @@ function nutritionSummary(d){return `<div class="nutrition-totals">${Object.entr
 async function nutritionDiaryPage(){if(session.user?.role!=='client')return '<div class="notice">Use a client account to keep a food diary.</div>';const day=query().get('day')||localNutritionDay(),[d,recent]=await Promise.all([api('/nutrition/diary?day='+day),api('/nutrition/recent')]);return `<div class="nutrition-heading"><div><span class="eyebrow">A little awareness. A little support.</span><h2>Your food,<br><span class="serif">your day.</span></h2><p>Log what you ate, in portions that work for you. Targets are optional and agreed with Alex.</p></div>${artwork('eat')}</div><div class="card narrow">${nutritionDateForm(day)}</div>${nutritionSummary(d)}<div class="actions">${link('/portal/recipes?day='+day,'Browse recipes ↗')}${link('/portal/foods?day='+day,'Log individual foods','secondary')}</div><p class="micro">Totals are estimates. Unknown fibre stays unknown. Logged meals retain the recipe version used at the time.</p><div class="nutrition-grid">${d.entries.map(diaryEntry).join('')||empty('Room for your first meal.','Choose a recipe or log a food to get started.')}</div>${recentMealsView(recent.entries,day)}`;}
 async function nutritionFoodsPage(){const q=query(),day=q.get('day')||localNutritionDay();const d=q.get('q')?await api('/nutrition/foods?q='+encodeURIComponent(q.get('q'))):{foods:[]};return `<h2>What did you eat?</h2><p>Find the food entry that matches its raw, cooked or drained state. Weights are edible grams.</p><div class="card">${form('nutrition-food-search',`<input type="hidden" name="day" value="${esc(day)}">`+field('q','Search UK foods',q.get('q')||'','search','required maxlength="200"'),'Search foods')}</div><p class="micro">Showing up to 50 matching foods. Add more words to narrow your search.</p><div class="nutrition-grid">${d.foods.map(f=>`<article class="card"><h3>${esc(f.name)}</h3>${nutritionMacros({...f,source:'UK CoFID 2021'}).replace('Estimated per serving','Estimated per 100g')}<details><summary>Log this food</summary>${nutritionLogForm(f,day,'food')}</details></article>`).join('')||empty('Find something you enjoyed.','Search by food name, then choose the closest matching entry.')}</div>`;}
 async function adminNutritionPage(d){const q=query(),client=d.clients.find(c=>c.id===q.get('client'))||d.clients[0];if(!client)return empty('Your nutrition workspace is ready.','Client diaries and optional targets appear once clients join.');const day=q.get('day')||localNutritionDay(),data=await api('/admin/nutrition/'+client.id+'?day='+day),t=data.targets||{};return `<h2>Food that fits <span class="serif">their life.</span></h2><div class="card">${form('nutrition-admin-day',select('client','Client',d.clients.map(c=>[c.id,c.name]),client.id)+field('day','Diary date',day,'date','required'),'View diary')}</div>${nutritionSummary(data)}<div class="split"><div><h3>${esc(client.name)} · ${esc(day)}</h3>${data.entries.map(e=>`<article class="card"><span class="eyebrow">${esc(e.slot)}</span><h3>${esc(e.snapshot.title)}</h3><p>${e.quantity} ${esc(e.snapshot.unit)}</p>${nutritionMacros({...e.totals,source:e.snapshot.nutrition.source}).replace('Estimated per serving','Estimated for logged quantity')}</article>`).join('')||empty('No meals logged on this day.','Choose another date to review their diary.')}</div><div class="card"><h3>Optional daily targets</h3><p class="micro">Agree targets with the client. Leave a field blank to use no target.</p>${form('nutrition-targets',`<input type="hidden" name="client" value="${esc(client.id)}"><input type="hidden" name="version" value="${t.version||0}">`+Object.entries(nutritionLabels).map(([k,v])=>field(k,v+(k==='kcal'?' per day':' (g per day)'),t[k]??'','number','min="0" step="0.1"')).join('')+area('notes','Guidance for this client',t.notes||'',false),'Save targets')}${link('/admin/plans?view=recipes','Edit & tailor recipes ↗','secondary small')}</div></div>`;}
-// A saved entry must not take over a newer route or discard another form's edits.
-const nutritionPendingSaves=new WeakMap();
-let nutritionEditVersion=0;
-for(const event of ['input','change'])document.addEventListener(event,()=>{nutritionEditVersion++;});
-document.addEventListener('submit',e=>{if(nutritionPendingSaves.has(e.target)){e.preventDefault();e.stopImmediatePropagation();}},true);
-function nutritionSaveView(state){return state.form.isConnected&&state.render===renderVersion&&state.hash===location.hash&&state.owner===session.user?.id;}
+// Diary writes use the same interruption-safe form lifecycle as planner and progress.
 async function saveNutritionEntry(kind,body,f){
- if(nutritionPendingSaves.has(f))return;
- nutritionEditVersion++;
- const state={form:f,render:renderVersion,hash:location.hash,owner:session.user?.id,edits:nutritionEditVersion,locked:[]};
- nutritionPendingSaves.set(f,state);f.setAttribute('aria-busy','true');
- // Capture happened before locking. Read-only text remains selectable; choices cannot change mid-save.
- for(const control of f.elements){if(control.type==='hidden')continue;const property=control.tagName==='SELECT'||control.tagName==='BUTTON'||['checkbox','radio'].includes(control.type)?'disabled':'readOnly';state.locked.push([control,property,control[property]]);control[property]=true;}
- try{
-  await api('/nutrition/diary'+(kind==='nutrition-edit'?'/'+body.id:''),kind==='nutrition-edit'?'PUT':'POST',{...body,quantity:Number(body.quantity),...(kind==='nutrition-edit'?{version:Number(body.version)}:{})});
-  if(state.owner!==session.user?.id)return;
-  const sameView=nutritionSaveView(state),untouched=state.edits===nutritionEditVersion;
-  toast('Diary entry saved for '+body.day+'.');
-  if(sameView&&untouched){
-   const destination='/portal/nutrition?day='+body.day;
-   if(location.hash==='#'+destination)await render({canCommit:()=>state.owner!==session.user?.id||(state.edits===nutritionEditVersion&&state.hash===location.hash)});
-   else{navigate(destination);await render();}
-   if(state.owner!==session.user?.id)toast('Your signed-in account changed. Reopen the task in this account.');
-  }
-  if(f.isConnected&&state.hash===location.hash&&state.owner===session.user?.id&&state.edits!==nutritionEditVersion){
-   // Leave all other forms exactly as they are, including typing during a same-page refresh.
-   f.removeAttribute('data-form');f.innerHTML=`<p role="status">Your diary entry for ${esc(body.day)} is saved. Your other edits are still here.</p>${link('/portal/nutrition?day='+encodeURIComponent(body.day),'View saved diary','secondary small')}`;
-  }
- }catch(error){
-  error.preserveFormFocus=!nutritionSaveView(state)||state.edits!==nutritionEditVersion;
-  if(state.owner===session.user?.id&&!nutritionSaveView(state))toast('Diary save wasn’t confirmed. Check Food diary before trying again.');
-  throw error;
- }finally{
-  for(const [control,property,value] of state.locked)control[property]=value;
-  f.removeAttribute('aria-busy');nutritionPendingSaves.delete(f);
- }
+ return saveFormTask(f,{
+  write:()=>api('/nutrition/diary'+(kind==='nutrition-edit'?'/'+body.id:''),kind==='nutrition-edit'?'PUT':'POST',{...body,quantity:Number(body.quantity),...(kind==='nutrition-edit'?{version:Number(body.version)}:{})}),
+  destination:'/portal/nutrition?day='+body.day,
+  success:'Diary entry saved for '+body.day+'.',
+  confirmation:'Your diary entry for '+body.day+' is saved. Your other edits are still here.',
+  linkLabel:'View saved diary',
+  unconfirmed:'Diary save wasn’t confirmed. Check Food diary before trying again.'
+ });
 }
 async function submitNutritionForm(k,b,f){if(k==='nutrition-search'){const q=new URLSearchParams({q:b.q,tag:b.tag,max_minutes:b.max_minutes||'',sort:b.sort||'title',exclude:b.exclude||''});if(b.day)q.set('day',b.day);if(new FormData(f).has('favourites'))q.set('favourites','1');navigate('/portal/recipes?'+q);return;}
   if(k==='nutrition-food-search'){navigate('/portal/foods?'+new URLSearchParams({q:b.q,day:b.day}));return;}

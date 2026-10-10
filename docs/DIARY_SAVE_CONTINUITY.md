@@ -31,3 +31,7 @@ DOM tests are not rendered mobile/browser acceptance. Physical Android/Termux se
 ## Running the optional UI suite
 
 Install jsdom outside the dependency-free application, then set `FF_JSDOM_MODULE` to that installation's `jsdom/lib/api.js` and run `npm run test:usability`. Normal CI continues to require no npm runtime dependencies; the new Node VM regressions run there.
+
+## Shared lifecycle follow-on
+
+The subsequent [planner/progress pass](SAVE_WORKFLOWS.md) extracts this behavior into a shared helper. Cross-page diary saves now also confirm in place with an explicit View saved diary link instead of automatically navigating.
