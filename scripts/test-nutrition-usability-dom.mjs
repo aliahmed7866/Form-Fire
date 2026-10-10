@@ -67,6 +67,20 @@ try{
  const clear=query('.recipe-clear-filters');assert.deepEqual([...new URLSearchParams(clear.hash.split('?')[1])],[['day','2026-09-28']]);
  console.log('RECIPE DISCOVERY: OPTIONAL FILTERS, REMOVABLE CHIPS, COMBINED PRESETS, CLEAR AND DATE-AWARE BACK NAVIGATION PASSED');
 
+ // Detours through kitchen, swaps and group quantities must return to the same search and day.
+ const assertRecipeReturn=async()=>{const back=query('.back');const params=new URLSearchParams(back.hash.slice(back.hash.indexOf('?')+1));assert.equal(params.get('q'),'chicken');assert.equal(params.get('sort'),'protein');assert.equal(params.get('max_minutes'),'30');assert.equal(params.get('day'),'2026-09-28');};
+ await go(recipeRoute);let tool=query('a[href*="/portal/cook?"]');assert.ok(tool);await go(tool.hash.slice(1));let backToMeal=query('.back').hash.slice(1);const kitchenPortion=all('[data-cooking-body] a').find(a=>a.textContent.includes('Plan or log'));assert.ok(kitchenPortion);assert.equal(kitchenPortion.hash.slice(1),backToMeal,'Main kitchen action must preserve the same context as Back');assert.equal(new URLSearchParams(backToMeal.split('?')[1]).get('day'),'2026-09-28');await go(backToMeal);await assertRecipeReturn();
+ tool=query('.adaptation-launch a[href*="/portal/adapt?"]');assert.ok(tool);await go(tool.hash.slice(1));let swapOptions=query('form[data-form="adapt-options"]');assert.ok(swapOptions.elements.catalogue.value.includes('q=chicken'));swapOptions.elements.protein.value='lentil';assert.equal((await submit(swapOptions)).ok,true);await until(()=>!swapOptions.isConnected);assert.equal(new URLSearchParams(w.location.hash.split('?')[1]).get('protein'),'lentil');
+ backToMeal=query('.back').hash.slice(1);await go(backToMeal);await assertRecipeReturn();
+ tool=query('.adaptation-launch a[href*="/portal/catering?"]');assert.ok(tool);await go(tool.hash.slice(1));backToMeal=query('.back').hash.slice(1);await go(backToMeal);await assertRecipeReturn();
+ // Save a fictional private adaptation; source filters are navigation-only and must not enter its POST.
+ tool=query('.adaptation-launch a[href*="/portal/adapt?"]');await go(tool.hash.slice(1));const adaptedSave=query('form[data-form="adapt-save"]');assert.ok(adaptedSave);const previousFetch=w.fetch;let adaptedPayload;
+ w.fetch=async(path,options={})=>{if(path==='/api/nutrition/adaptations')adaptedPayload=JSON.parse(options.body);return previousFetch(path,options);};assert.equal((await submit(adaptedSave)).ok,true);await until(()=>!adaptedSave.isConnected);w.fetch=previousFetch;assert.equal(Object.hasOwn(adaptedPayload,'catalogue'),false);assert.equal(query('form[data-form="nutrition-log"]').elements.day.value,'2026-09-28');await assertRecipeReturn();
+ const selectedRecipeId=new URLSearchParams(recipeRoute.split('?')[1]).get('id');const planned=await evaluate(`api('/planner','POST',{recipe_id:${JSON.stringify(selectedRecipeId)},day:'2026-09-28',slot:'lunch',quantity:1,idempotency_key:crypto.randomUUID()})`);await go('/portal/cook?planned='+planned.id+'&day=2026-09-28');assert.equal(query('.back').hash,'#/portal/planner?day=2026-09-28','Planned meals still return to their planner');assert.ok(all('[data-cooking-body] a').some(a=>a.hash==='#/portal/planner?day=2026-09-28'));
+ await go(returnRoute);
+ console.log('RECIPE DETOURS: KITCHEN, SWAP PREVIEW, GROUP QUANTITIES AND SAVED COPY RETAIN SEARCH/FILTERS/DATE WITHOUT SERVER CONTEXT LEAKAGE PASSED');
+
+
  const button=query('[data-nutrition-favourite]'),id=button.dataset.nutritionFavourite,card=button.closest('[data-recipe-card]');
  app.db.prepare('DELETE FROM recipe_favourites WHERE user_id=? AND recipe_id=?').run(user.id,id);
  const firstButton=button;button.focus();let release;holdFavourite=new Promise(resolve=>release=resolve);
