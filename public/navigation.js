@@ -68,6 +68,21 @@ function workspaceTasks(admin=false) {
  ];
  return entries.map(([path,title,description,keywords])=>({href:(admin?'/admin':'/portal')+(path?'/'+path:''),title,description,keywords}));
 }
+// Fixed page labels keep browser history useful without exposing client names or answers.
+function pageTitle(path=route()) {
+ const p=path.split('?')[0].replace(/\/$/,'')||'/';
+ const protectedPage=/^\/(portal|admin)(?:\/|$)/.test(p)||/^\/(request|plan)\/[^/]+$/.test(p);
+ if(protectedPage&&!session.user)return 'Sign in · FORM & FIRE';
+ const client={ '':'Today',today:'Daily schedule',plans:'My plans',movement:'Move your way',recipes:'Recipes',recipe:'Recipe',foods:'Food library',nutrition:'Food diary',planner:'Meal planner',shopping:'Shop & prepare',cook:'Kitchen mode',adapt:'Recipe swaps',catering:'Group quantities',progress:'My progress',checkins:'Check-ins',requests:'My requests',rhythm:'My rhythm',profile:'My details',money:'Payments',contact:'Contact Alex',learn:'Field guide','feel-good':'Feel-good ideas' };
+ const coach={ '':'Overview',requests:'Requests',clients:'Clients',checkins:'Check-ins',plans:'Plan studio',nutrition:'Nutrition',rhythm:'Client weeks',progress:'Plan activity',fitness:'Fitness progress',services:'Services',money:'Money',contact:'Contact options',audit:'Activity',setup:'Setup & testing' };
+ if(['/google-setup','/test-admin'].includes(p))return (session.user?.role==='admin'?(p==='/google-setup'?'Connection setup':'Setup & testing'):'Your space')+' · FORM & FIRE';
+ const publicPages={'/':'Build strength. Eat brilliantly.','/work':'Work with Alex','/about':'Meet Alex','/chef':'Private dining enquiry','/enquire':'Coaching enquiry','/login':'Sign in','/register':'Create account','/recover':'Password recovery','/reset':'Reset password','/verify':session.requireVerification?'Verify account':'Sign in','/faq':'FAQs','/contact':'Contact Alex','/feel-good':'Feel-good ideas','/privacy':'Privacy','/terms':'Service terms'};
+ if(/^\/portal(?:\/|$)/.test(p)){const section=p.slice('/portal'.length).replace(/^\//,'');return (Object.hasOwn(client,section)?client[section]:'Your space')+' · FORM & FIRE';}
+ if(/^\/admin(?:\/|$)/.test(p)){const section=p.slice('/admin'.length).replace(/^\//,'');return (Object.hasOwn(coach,section)?coach[section]:'Workspace')+' · Alex’s admin · FORM & FIRE';}
+ if(/^\/request\/[^/]+$/.test(p))return 'Conversation · FORM & FIRE';
+ if(/^\/plan\/[^/]+$/.test(p))return 'Published plan · FORM & FIRE';
+ return (Object.hasOwn(publicPages,p)?publicPages[p]:'Page not found')+' · FORM & FIRE';
+}
 function workspaceTaskMatches(admin,queryText) {
  const words=String(queryText).toLowerCase().trim().split(/\s+/).filter(Boolean);
  if(!words.length)return [];
