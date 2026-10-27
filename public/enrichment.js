@@ -6,17 +6,17 @@ function requestNextStep(r,isAdmin=false){
   const messages={enquiry:isAdmin?'Review the gathering details, then agree the menu, date and price before sending a proposal.':'Alex will review your gathering and agree the details with you. This enquiry is not a confirmed booking.',proposed:isAdmin?'The proposal is waiting for the client to review and accept. Acceptance and booking confirmation are separate.':'Read the proposal below. Accept it only when you are happy with the details; confirmation is a separate step.',accepted:isAdmin?'Check the agreed requirements and payment record, then confirm the booking.':'Your proposal is accepted. Alex will confirm the booking once its requirements are met.',confirmed:'The booking is confirmed. Keep the agreed proposal here as your reference.',cancelled:'The booking is cancelled. Any payment refund is recorded separately.'};copy=messages[r.booking_status]||messages.enquiry;
  }else if(r.active)copy=isAdmin?'The service is active. Publish the agreed plan so the client can follow it, then review their check-ins.':'Your service is active. Published plans, your activity and check-ins stay in your space.';
  else if(r.status==='approved')copy=isAdmin?'The request is approved. Record the agreed package below and explicitly choose Activate service when onboarding is ready.':'Alex has approved the request. Your service begins once the package and onboarding are agreed and Alex activates it.';
- else if(r.status==='awaiting_client_response')copy=isAdmin?'You are waiting for a client reply. If you discuss it elsewhere, keep agreed package or booking changes in this app.':'Alex has a question for you. Reply here or use the configured contact option below; keep agreed details in this request.';
- else copy=isAdmin?(r.status==='submitted'?'Read the short enquiry, then choose Start / resume review. Ask for any missing details in the conversation.':'Discuss what the client needs, then approve or decline the request. Approval alone does not activate a service.'):'Your request is saved. Alex will review it and agree the next step with you. You can add a reply below whenever you need.';
+ else if(r.status==='awaiting_client_response')copy=isAdmin?'You are waiting for a client reply. If you discuss it elsewhere, keep agreed package or booking changes in this app.':'Alex has a question for you. Use WhatsApp below when available, then save agreed details in this request.';
+ else copy=isAdmin?(r.status==='submitted'?'Read the short enquiry, then choose Start / resume review. Discuss missing details on WhatsApp and record the outcome here.':'Discuss what the client needs, then approve or decline the request. Approval alone does not activate a service.'):'Your request is saved. Alex will review it and agree the next step with you. Use WhatsApp for a chat and save agreed updates below.';
  return `<div class="notice request-next-step"><strong>${heading}</strong><p>${esc(copy)}</p></div>`;
 }
 function clientNextStep(d) {
   if(!d.user.verified)return ['Verify your account','Use the verification code from the local test outbox to get started.','/verify'];
   const waiting=d.requests.find(r=>r.status==='awaiting_client_response');
-  if(waiting)return ['Alex has a question for you','Pick up your conversation so you can agree the next step.','/request/'+waiting.id];
+  if(waiting)return ['Alex has a question for you','Open your request and agree the next step on WhatsApp when available.','/request/'+waiting.id];
   if(currentActivePlans(d).length)return ['Make a little time for you.','Your current plans are ready. Start with what fits today.','/portal/today'];
   if(d.requests.some(r=>r.active))return ['A plan is taking shape.','Your service is active. Alex will share your plan here when it is ready.','/portal/requests'];
-  if(d.requests.some(r=>!['withdrawn','declined'].includes(r.status)))return ['You’ve made a start.','Follow your request and keep the conversation going with Alex.','/portal/requests'];
+  if(d.requests.some(r=>!['withdrawn','declined'].includes(r.status)))return ['You’ve made a start.','Follow your request and save agreed next steps with Alex.','/portal/requests'];
   return ['Let’s find your starting point.','Tell Alex what you’re working towards. You don’t need to have it all figured out.','/work'];
 }
 function clientOverview(d) {

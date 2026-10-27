@@ -1,12 +1,12 @@
 /* Small, honest next steps. Presentation helpers never change coaching records. */
 function clientCoachAction(d,day) {
   const waiting=d.requests.find(r=>r.status==='awaiting_client_response');
-  if(waiting)return ['Your coach','Alex has a question for you.','Pick up your conversation and agree the next step.','/request/'+waiting.id,'Reply to Alex'];
+  if(waiting)return ['Your coach','Alex has a question for you.','Open your request, chat on WhatsApp and save the agreed next step.','/request/'+waiting.id,'View request'];
   const week=dateShift(day,-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7));
   const saved=d.checkins.find(c=>c.week===week);
   if(saved)return ['Your coach',saved.feedback?'Alex’s feedback is here.':'Your check-in is saved.',saved.feedback?'Read the response with your weekly update.':'Alex can review it. Your saved update is here whenever you need it.','/portal/checkins',saved.feedback?'Read feedback':'View my check-in'];
   if(d.requests.some(r=>r.active))return ['Your coach','How has your week felt?','A win, a tricky moment or a question. There’s room for all of it.','/portal/checkins','Catch up with Alex'];
-  return ['Your coach','A conversation comes first.','Follow your enquiry or find the support that fits you.','/portal/requests','My conversations'];
+  return ['Your coach','A conversation comes first.','Follow your enquiry or find the support that fits you.','/portal/requests','My requests'];
 }
 function clientActionArt(kind) {
   const scene=kind==='Eat'?'eat':kind==='Move'?'move':'coach';

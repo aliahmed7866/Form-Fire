@@ -17,7 +17,7 @@ test('Request handoff is optional and only prepares a fixed greeting after an ex
  assert.deepEqual([...url.searchParams.keys()],['text']);
  assert.equal(url.searchParams.get('text'),'Hi Alex, I have sent an enquiry through FORM & FIRE. Can we talk about the next steps?');
  assert.doesNotMatch(html,/PRIVATE_HEALTH_ANSWER|PRIVATE_CLIENT_NAME|PRIVATE_AUTH_TOKEN|<script>|onclick=/);
- assert.match(html,/&lt;script&gt;/);assert.match(html,/nothing is sent automatically/);assert.match(html,/reply below/);assert.match(html,/messages are not copied into the app/);
+ assert.match(html,/&lt;script&gt;/);assert.match(html,/nothing is sent automatically/);assert.match(html,/Save agreed changes in the request record/);assert.match(html,/messages are not copied into the app/);
  assert.match(html,/rel="noopener noreferrer"/);assert.match(html,/referrerpolicy="no-referrer"/);
  assert.equal(runInContext('requestContactHandoff(contact,{closed:true})',c),'');
  assert.equal(runInContext('requestContactHandoff(null)',c),'');
@@ -37,4 +37,22 @@ test('Check-in default week follows the client time zone at Sunday/Monday bounda
  assert.equal(runInContext(`checkinMonday('America/Los_Angeles',new Date('2026-09-28T00:30:00Z'))`,c),'2026-09-21');
  assert.equal(runInContext(`checkinMonday('Europe/London',new Date('2026-09-28T00:30:00Z'))`,c),'2026-09-28');
  assert.equal(runInContext(`checkinMonday('Pacific/Auckland',new Date('2026-09-27T12:30:00Z'))`,c),'2026-09-28');
+});
+
+test('Request records preserve old updates, disclose shared visibility and keep the editor secondary',()=>{
+ const c=createContext({Intl,Date});
+ runInContext(`const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const stamp=v=>v;const link=(href,title)=>'<a href="#'+href+'">'+title+'</a>';const area=(name,title)=>'<label>'+title+'<textarea name="'+name+'"></textarea></label>';const form=(kind,content,title)=>'<form data-form="'+kind+'">'+content+'<button>'+title+'</button></form>';`,c);
+ runInContext(script,c);
+ c.record={id:'request-1',status:'under_review',replies:[{name:'Sam <script>',role:'client',body:'Agreed <change>',created_at:'2026-10-27'}]};
+ c.contact={channels:[{kind:'whatsapp',url:'https://wa.me/447700900123'}]};
+ let html=runInContext('requestRecordPanel(record,false,contact)',c);
+ assert.match(html,/Request record/);assert.match(html,/Continue on WhatsApp/);assert.match(html,/Sam &lt;script&gt;/);assert.match(html,/Agreed &lt;change&gt;/);
+ assert.match(html,/<details class="request-update-editor"><summary>Add a request update/);
+ assert.match(html,/Shared with Alex/);assert.match(html,/does not send a WhatsApp message/);assert.match(html,/Save update/);
+ html=runInContext('requestRecordPanel(record,true,contact)',c);
+ assert.doesNotMatch(html,/wa\.me/);assert.match(html,/visible to the client/);
+ c.record.status='withdrawn';html=runInContext('requestRecordPanel(record,false,contact)',c);
+ assert.doesNotMatch(html,/data-form="reply"|wa\.me/);assert.match(html,/Agreed &lt;change&gt;/);
+ c.record.status='submitted';c.record.replies=[];html=runInContext('requestRecordPanel(record,false,null)',c);
+ assert.match(html,/Contact Alex/);assert.match(html,/No updates recorded yet/);assert.match(html,/data-form="reply"/);
 });

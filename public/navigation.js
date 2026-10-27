@@ -34,7 +34,7 @@ function clientPrimarySection(path=route()) {
 function workspaceTasks(admin=false) {
  const entries=admin?[
   ['', 'What needs my attention?', 'Overview, pending replies and the next useful action.', 'home overview dashboard queue'],
-  ['requests','Review a request','Enquiries, conversations and private dining bookings.','reply message inbox booking proposal approve'],
+  ['requests','Review a request','Enquiries, saved updates and private dining bookings.','reply message inbox booking proposal approve'],
   ['clients','Find a client','Client details, goals and private coaching notes.','people search profile notes'],
   ['checkins','Reply to a check-in','Read the week, see their context and leave feedback.','weekly check in checkins check-in feedback reply energy'],
   ['plans','Create or publish a plan','Training, recipes and meal plans in the plan studio.','assign workout meal recipe exercise template library publish'],
@@ -58,7 +58,7 @@ function workspaceTasks(admin=false) {
   ['nutrition','Log what I ate','Your food diary, with optional nutrition detail.','meals eating food calories breakfast lunch dinner journal'],
   ['progress','See my progress','Record a measurement or review comparable results.','weight strength fitness goal metrics chart trend'],
   ['checkins','Check in with Alex','Share your week and read coaching feedback.','weekly check in checkins check-in energy support reply'],
-  ['requests','Find my conversations','Read or reply to your requests with Alex.','message inbox coach support enquiry booking'],
+  ['requests','Track my requests','Enquiry status, agreed updates and booking records.','message inbox coach support enquiry booking'],
   ['rhythm','Shape my week','Choose habits that fit your life.','routine habit planner week'],
   ['profile','Update my details','Name, goals, preferences, time zone and units.','account settings password export delete dietary allergies profile'],
   ['money','See my payments','Agreed invoices and manual payment records.','invoice money cost price deposit'],
