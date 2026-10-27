@@ -23,7 +23,14 @@ for row in list(workbook['1.3 Proximates'].values)[3:]:
     # Alcoholic beverages have a different mass/volume basis. Leave them out.
     if (number(row[23]) or 0) > 0 or str(row[3]).startswith('OA'):
         continue
-    foods.append(dict(id='cofid-'+row[0], name=row[1], group=row[3],
+    # CoFID 2021 assigns 13-669 to two different foods. Keep the legacy
+    # watercress ID and disambiguate aubergine without changing source_code.
+    food_id = 'cofid-'+row[0]
+    if row[0] == '13-669' and row[1] == 'Aubergine, flesh and skin, roasted in rapeseed oil':
+        food_id += '-aubergine-roasted'
+    if any(food['id'] == food_id for food in foods):
+        raise ValueError(f'Duplicate food ID: {food_id}')
+    foods.append(dict(id=food_id, name=row[1], group=row[3],
                       kcal=number(row[12]), protein_g=number(row[9]),
                       fat_g=number(row[10]), carbs_g=number(row[11]),
                       fibre_g=number(row[25]), source_code=row[0], basis='100g'))

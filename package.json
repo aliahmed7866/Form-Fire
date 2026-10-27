@@ -15,6 +15,7 @@
     "art": "node scripts/bundle-art.mjs",
     "test:enquiry": "node scripts/test-enquiry-dom.mjs",
     "test:experience": "node scripts/test-experience-dom.mjs",
-    "test:usability": "node scripts/test-experience-dom.mjs && node scripts/test-coaching-drafts-dom.mjs && node scripts/test-nutrition-usability-dom.mjs && node scripts/test-fitness-dom.mjs && node scripts/test-enquiry-dom.mjs && node scripts/test-save-workflows-dom.mjs"
+    "test:usability": "node scripts/test-experience-dom.mjs && node scripts/test-coaching-drafts-dom.mjs && node scripts/test-nutrition-usability-dom.mjs && node scripts/test-fitness-dom.mjs && node scripts/test-enquiry-dom.mjs && node scripts/test-save-workflows-dom.mjs",
+    "audit:nutrition": "node scripts/audit-nutrition.ts"
   }
 }

@@ -6,19 +6,33 @@ import { LibraryError } from './plan-library.ts';
 export const nutritionSource='UK CoFID 2021';
 export const foods=JSON.parse(readFileSync(new URL('../data-sources/cofid-2021.json',import.meta.url),'utf8'));
 const foodMap=new Map<string,any>(foods.map((f:any)=>[f.id,f]));
+if(foodMap.size!==foods.length)throw Error('Duplicate food IDs in the nutrition catalogue. Run the source audit before starting.');
 export const nutrients=['kcal','protein_g','carbs_g','fat_g','fibre_g'] as const;
 function check(ok:any,message:string,status=400):asserts ok {if(!ok)throw new LibraryError(message,status);}
 export function amount(v:any,name:string,min=0.01,max=10000) {check(typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max,`${name} must be between ${min} and ${max}.`);return v;}
 function text(v:any,name:string,max=200) {check(typeof v==='string'&&v.trim().length>0&&v.length<=max,`Enter ${name} (up to ${max} characters).`);return v.trim();}
 export function nutritionDate(v:any) {check(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v,'Choose a valid diary date.');return v;}
 const rounded=(v:number)=>Math.round(v*10)/10;
-export function scaleNutrition(n:any,factor:number) {return Object.fromEntries(nutrients.map(k=>[k,n[k]===null?null:rounded(n[k]*factor)]));}
+const known=(v:any):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
+// New calculations retain their unrounded values. Legacy snapshots keep their
+// original precision; never recalculate a historical meal from today's recipe.
+export function nutritionValues(n:any,factor=1) {
+  check(known(factor),'Nutrition multiplier must be a finite non-negative number.');
+  const values=n?.unrounded??n;
+  return Object.fromEntries(nutrients.map(k=>[k,known(values?.[k])?values[k]*factor:null]));
+}
+export function scaleNutrition(n:any,factor:number) {const values=nutritionValues(n,factor);return Object.fromEntries(nutrients.map(k=>[k,values[k]===null?null:rounded(values[k])]));}
+export function sumNutrition(parts:{nutrition:any,quantity:number}[]) {
+  const values=parts.map(p=>nutritionValues(p.nutrition,p.quantity));
+  return Object.fromEntries(nutrients.map(k=>[k,values.some(v=>v[k]===null)?null:rounded(values.reduce((sum,v)=>sum+v[k],0))]));
+}
 export function calculateRecipe(items:any,yieldServings:any) {
   const servings=amount(yieldServings,'Recipe yield',0.25,100);
   check(Array.isArray(items)&&items.length>0&&items.length<=50,'Add between 1 and 50 ingredients.');
   const resolved=items.map((i:any)=>{check(i&&typeof i==='object','Enter a valid ingredient.');const f=foodMap.get(i.food_id);check(f,'Choose an ingredient from the food library.');return {food_id:f.id,name:f.name,grams:amount(i.grams,'Ingredient grams'),source_code:f.source_code};});
   const total=Object.fromEntries(nutrients.map(k=>[k,resolved.some((i:any)=>foodMap.get(i.food_id)[k]===null)?null:resolved.reduce((sum:number,i:any)=>sum+foodMap.get(i.food_id)[k]*i.grams/100,0)]));
-  return {items:resolved,nutrition:{...scaleNutrition(total,1/servings),source:nutritionSource,estimated:true,basis:'per serving'},yield_servings:servings};
+  const unrounded=nutritionValues(total,1/servings);
+  return {items:resolved,nutrition:{...scaleNutrition(total,1/servings),unrounded,source:nutritionSource,estimated:true,basis:'per serving'},yield_servings:servings};
 }
 export function decorateRecipe(r:any) {return {...r,ingredient_items:typeof r.ingredient_items==='string'?JSON.parse(r.ingredient_items):r.ingredient_items||[],nutrition:typeof r.nutrition==='string'?JSON.parse(r.nutrition):r.nutrition||null,tags:typeof r.tags==='string'?JSON.parse(r.tags):r.tags||[]};}
 export function recipeNutritionInput(db:DatabaseSync,b:any,old:any) {
@@ -79,7 +93,7 @@ export function updateDiary(db:DatabaseSync,userId:string,entryId:string,b:any,r
 export function diary(db:DatabaseSync,userId:string,day:string) {
   nutritionDate(day);
   const entries=db.prepare('SELECT * FROM food_diary WHERE user_id=? AND day=? ORDER BY created_at,rowid').all(userId,day).map((r:any)=>{const snapshot=JSON.parse(r.snapshot);return {...r,snapshot,totals:scaleNutrition(snapshot.nutrition,r.quantity)};});
-  const totals=Object.fromEntries(nutrients.map(k=>[k,entries.some(e=>e.totals[k]===null)?null:rounded(entries.reduce((sum,e)=>sum+e.totals[k],0))]));
+  const totals=sumNutrition(entries.map(e=>({nutrition:e.snapshot.nutrition,quantity:e.quantity})));
   const target=db.prepare('SELECT * FROM nutrition_targets WHERE user_id=?').get(userId) as any;
   return {day,entries,totals,targets:target?{...JSON.parse(target.targets),version:target.version}:null};
 }

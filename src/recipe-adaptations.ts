@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
-import { calculateRecipe, decorateRecipe, foods, visibleRecipe, nutritionDate, scaleNutrition, nutrients } from './nutrition.ts';
+import { calculateRecipe, decorateRecipe, foods, visibleRecipe, nutritionDate, scaleNutrition, sumNutrition } from './nutrition.ts';
 import { LibraryError } from './plan-library.ts';
 import { planMeal } from './rhythm.ts';
 const foodMap=new Map<string,any>(foods.map((f:any)=>[f.id,f]));
@@ -75,7 +75,7 @@ export function cateringPreview(r:any,b:any){
  const counts=guestInput(b),protein=b.protein||'tofu';check(Object.hasOwn(proteinSwaps,protein),'Choose a plant protein.');check(r.nutrition&&r.ingredient_items.length,'This recipe needs calculated ingredients first.',409);
  const batches=Object.entries(counts).filter(([,n])=>n>0).map(([style,servings])=>{const adaptation=style==='original'?null:recipeAdaptation(r,style,protein);check(!adaptation||adaptation.available,(adaptation as any)?.reason||'This adaptation needs review.',409);const recipe=adaptation?.recipe||r;return {style,servings,recipe,swaps:adaptation?.swaps||[],totals:scaleNutrition(recipe.nutrition,servings)};});
  const ingredients=new Map<string,any>();for(const batch of batches)for(const i of batch.recipe.ingredient_items){const grams=i.grams*batch.servings/batch.recipe.yield_servings,old=ingredients.get(i.food_id);ingredients.set(i.food_id,{food_id:i.food_id,name:i.name,grams:(old?.grams||0)+grams});}
- return {source_id:r.id,source_version:r.version,protein,counts,batches,total_servings:Object.values(counts).reduce((a,n)=>a+n,0),shopping:[...ingredients.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(i=>({...i,grams:Math.round(i.grams*10)/10})),totals:Object.fromEntries(nutrients.map(k=>[k,batches.some(b=>b.totals[k]===null)?null:Math.round(batches.reduce((n,b)=>n+b.totals[k],0)*10)/10]))};
+ return {source_id:r.id,source_version:r.version,protein,counts,batches,total_servings:Object.values(counts).reduce((a,n)=>a+n,0),shopping:[...ingredients.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(i=>({...i,grams:Math.round(i.grams*10)/10})),totals:sumNutrition(batches.map(b=>({nutrition:b.recipe.nutrition,quantity:b.servings})))};
 }
 export function saveCatering(db:DatabaseSync,userId:string,b:any){
  const submission=key(b.idempotency_key),day=nutritionDate(b.day);check(['breakfast','lunch','dinner','snack'].includes(b.slot),'Choose a meal.');const counts=guestInput(b),request=JSON.stringify({recipe_id:b.recipe_id,source_version:b.source_version,counts,protein:b.protein||'tofu',day,slot:b.slot});

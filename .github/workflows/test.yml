@@ -17,5 +17,6 @@ jobs:
           python-version: '3.12'
       - run: npm run check
       - run: npm test
+      - run: npm run audit:nutrition
       - run: python tests/hub_registry_test.py
       - run: bash -n termux/install.sh termux/update.sh termux/recover-backup-update.sh

@@ -1,0 +1,18 @@
+{
+  "source": "UK CoFID 2021",
+  "workbook_sha256": "436e9445ef2adb2a75f3d7edd51302de3adad25385f9795fc94ba58bd030e97d",
+  "catalogue_sha256": "158b36774970271da6a79e027b1bc79e245ef28c870866c7a40a983c52ac9f2d",
+  "source_code_collisions": {
+    "13-669": [
+      "Aubergine, flesh and skin, roasted in rapeseed oil",
+      "Watercress, raw"
+    ]
+  },
+  "foods_compared": 2767,
+  "nutrient_values_compared": 13835,
+  "mismatches": 0,
+  "excluded_source_rows": 120,
+  "trace_values_as_zero": 278,
+  "unknown_fibre": 1292,
+  "method": "Named source columns; exact values, names, codes, groups and 100g basis"
+}
