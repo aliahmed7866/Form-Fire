@@ -25,7 +25,7 @@ function workspaceIcon(name) {
 function clientPrimarySection(path=route()) {
   const section=path.split('?')[0].replace(/\/$/,'').split('/')[2]||'';
   if(['recipes','recipe','foods','nutrition','planner','shopping','cook','adapt','catering'].includes(section))return 'eat';
-  if(['plans','movement'].includes(section))return 'train';
+  if(['plans','movement','programmes'].includes(section))return 'train';
   if(section==='progress')return 'progress';
   if(['profile','money'].includes(section))return 'account';
   return 'today';
@@ -35,6 +35,7 @@ function workspaceTasks(admin=false) {
  const entries=admin?[
   ['', 'What needs my attention?', 'Overview, pending replies and the next useful action.', 'home overview dashboard queue'],
   ['requests','Review a request','Enquiries, saved updates and private dining bookings.','reply message inbox booking proposal approve'],
+  ['training','Review programme records','Walk/run and strength companion attempts, or copy a review draft.','programme program couch 5k running exercise strength'],
   ['clients','Find a client','Client details, goals and private coaching notes.','people search profile notes'],
   ['checkins','Reply to a check-in','Read the week, see their context and leave feedback.','weekly check in checkins check-in feedback reply energy'],
   ['plans','Create or publish a plan','Training, recipes and meal plans in the plan studio.','assign workout meal recipe exercise template library publish'],
@@ -51,6 +52,7 @@ function workspaceTasks(admin=false) {
   ['', 'My next step', 'Your daily hub and a few useful actions.', 'home today overview dashboard'],
   ['today','Follow today’s plan','Open scheduled workouts and meals; save what you did.','workout training exercise log session schedule'],
   ['plans','Open my plans','Training and meal plans Alex has published for you.','programme program coach assigned'],
+  ['programmes','Explore training programmes','Couch to 5K and source-linked strength foundations.','running run couch 5k beginner exercise strength workout'],
   ['movement','Record an activity','Log a walk, a class or other movement you chose.','exercise workout training swimming running yoga cycling'],
   ['recipes','Find something to cook','Browse recipes and your saved favourites.','eat food meals dinner breakfast lunch vegan vegetarian favourite favorite quick'],
   ['planner','Plan my meals','Choose meals and quantities for the days ahead.','food week batch cooking servings'],
@@ -73,8 +75,8 @@ function pageTitle(path=route()) {
  const p=path.split('?')[0].replace(/\/$/,'')||'/';
  const protectedPage=/^\/(portal|admin)(?:\/|$)/.test(p)||/^\/(request|plan)\/[^/]+$/.test(p);
  if(protectedPage&&!session.user)return 'Sign in · FORM & FIRE';
- const client={ '':'Today',today:'Daily schedule',plans:'My plans',movement:'Move your way',recipes:'Recipes',recipe:'Recipe',foods:'Food library',nutrition:'Food diary',planner:'Meal planner',shopping:'Shop & prepare',cook:'Kitchen mode',adapt:'Recipe swaps',catering:'Group quantities',progress:'My progress',checkins:'Check-ins',requests:'My requests',rhythm:'My rhythm',profile:'My details',money:'Payments',contact:'Contact Alex',learn:'Field guide','feel-good':'Feel-good ideas' };
- const coach={ '':'Overview',requests:'Requests',clients:'Clients',checkins:'Check-ins',plans:'Plan studio',nutrition:'Nutrition',rhythm:'Client weeks',progress:'Plan activity',fitness:'Fitness progress',services:'Services',money:'Money',contact:'Contact options',audit:'Activity',setup:'Setup & testing' };
+ const client={ '':'Today',today:'Daily schedule',plans:'My plans',movement:'Move your way',programmes:'Training programmes',recipes:'Recipes',recipe:'Recipe',foods:'Food library',nutrition:'Food diary',planner:'Meal planner',shopping:'Shop & prepare',cook:'Kitchen mode',adapt:'Recipe swaps',catering:'Group quantities',progress:'My progress',checkins:'Check-ins',requests:'My requests',rhythm:'My rhythm',profile:'My details',money:'Payments',contact:'Contact Alex',learn:'Field guide','feel-good':'Feel-good ideas' };
+ const coach={ '':'Overview',requests:'Requests',training:'Programme records',clients:'Clients',checkins:'Check-ins',plans:'Plan studio',nutrition:'Nutrition',rhythm:'Client weeks',progress:'Plan activity',fitness:'Fitness progress',services:'Services',money:'Money',contact:'Contact options',audit:'Activity',setup:'Setup & testing' };
  if(['/google-setup','/test-admin'].includes(p))return (session.user?.role==='admin'?(p==='/google-setup'?'Connection setup':'Setup & testing'):'Your space')+' · FORM & FIRE';
  const publicPages={'/':'Build strength. Eat brilliantly.','/work':'Work with Alex','/about':'Meet Alex','/chef':'Private dining enquiry','/enquire':'Coaching enquiry','/login':'Sign in','/register':'Create account','/recover':'Password recovery','/reset':'Reset password','/verify':session.requireVerification?'Verify account':'Sign in','/faq':'FAQs','/contact':'Contact Alex','/feel-good':'Feel-good ideas','/privacy':'Privacy','/terms':'Service terms'};
  if(/^\/portal(?:\/|$)/.test(p)){const section=p.slice('/portal'.length).replace(/^\//,'');return (Object.hasOwn(client,section)?client[section]:'Your space')+' · FORM & FIRE';}
@@ -101,7 +103,7 @@ function updateWorkspaceTaskSearch(finder) {
 function clientWorkspaceTabs() {
   const primary=[['','Today','today'],['plans','Train','train'],['recipes','Eat','eat'],['progress','Progress','progress'],['profile','Account','account']];
   const groups=[
-    ['Your week','☀️',[['today','Daily schedule'],['plans','My plans'],['checkins','Check-ins'],['movement','Move your way'],['rhythm','My rhythm']]],
+    ['Your week','☀️',[['today','Daily schedule'],['plans','My plans'],['checkins','Check-ins'],['movement','Move your way'],['programmes','Training programmes'],['rhythm','My rhythm']]],
     ['Food & kitchen','🍽️',[['planner','Meal planner'],['shopping','Shop & prepare'],['nutrition','Food diary']]],
     ['Support & ideas','💬',[['requests','My requests'],['contact','Contact Alex'],['money','Payments'],['learn','Field guide'],['feel-good','Feel-good ideas']]]
   ];
@@ -113,7 +115,7 @@ function clientWorkspaceTabs() {
 function workspaceTabs(admin=false) {
   if(!admin)return clientWorkspaceTabs();
   const groups=[
-    ['Day to day',[['','Overview'],['requests','Requests'],['clients','Clients'],['checkins','Check-ins']]],
+    ['Day to day',[['','Overview'],['requests','Requests'],['clients','Clients'],['training','Programme records'],['checkins','Check-ins']]],
     ['Plans & progress',[['plans','Plan studio'],['nutrition','Nutrition'],['rhythm','Client weeks'],['progress','Plan activity'],['fitness','Fitness progress']]],
     ['Your business',[['services','Services'],['money','Money'],['contact','Contact options'],['audit','Activity'],['setup','Setup & testing']]]
   ];

@@ -204,3 +204,17 @@ Alex can set WhatsApp and Instagram details in **Alex’s admin → Contact opti
 Coaching starts with a service choice and one goal. Routine, experience, equipment and food preferences are optional; clients review their answers before sending. Coaching and private-dining forms use short panels with Back/Edit, preserve drafts through account setup, and keep duplicate-submission protection.
 
 Alex can enable WhatsApp in **Contact options**. An open client request then offers an optional WhatsApp handoff with a generic editable greeting; questionnaire answers stay in the app. External messages do not sync back automatically. Plans, progress, check-ins and agreed booking changes remain in the app. See [usability decisions and validation](docs/USABILITY_IMPROVEMENTS.md).
+
+
+### Research-informed training companions
+
+Open **Train → Explore training programmes** for the 27-session Couch to 5K
+walk/run companion and two six-stage strength foundations. Session attempts save
+to your account, with repeated, partial and skipped attempts retained. Running
+clocks work in the foreground and never save workout completion automatically.
+
+Alex can use **Programme records** to review a client's attempts, or copy a
+strength A/B week to Plan studio as a review draft before explicitly publishing.
+Migration 014 is applied on normal startup without replacing existing records.
+Sources, evidence limits, progression choices and checks are documented in
+[docs/RESEARCHED_TRAINING.md](docs/RESEARCHED_TRAINING.md).

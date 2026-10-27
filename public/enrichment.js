@@ -26,7 +26,7 @@ function clientOverview(d) {
 }
 function clientPlans(d) {
   const current=currentActivePlans(d),ids=new Set(current.map(a=>a.id)),history=d.assignments.filter(a=>!ids.has(a.id));
-  return `<div class="row"><div><h2>Made for your week.</h2><p class="muted">Your latest plans for active services. Each published version stays intact.</p></div>${link('/portal/shopping','Shop & prepare ↗','secondary small')}</div><div class="grid">${planCards(current)}</div>${history.length?`<details class="plan-history"><summary>Previous plans & paused services (${history.length})</summary><p class="micro">Keep these for reference. Today and your shopping list use current plans for active services.</p><div class="grid">${planCards(history,[])}</div></details>`:''}`;
+  return `<section class="card"><span class="eyebrow">Looking for a starting point?</span><h3>A little structure. Your own pace.</h3><p>Explore a walk/run companion or a strength foundation, with source notes and saved session records.</p>${link('/portal/programmes','Explore training programmes →','secondary')}</section><div class="row"><div><h2>Made for your week.</h2><p class="muted">Your latest plans for active services. Each published version stays intact.</p></div>${link('/portal/shopping','Shop & prepare ↗','secondary small')}</div><div class="grid">${planCards(current)}</div>${history.length?`<details class="plan-history"><summary>Previous plans & paused services (${history.length})</summary><p class="micro">Keep these for reference. Today and your shopping list use current plans for active services.</p><div class="grid">${planCards(history,[])}</div></details>`:''}`;
 }
 function shoppingCard(list) {
   const count=list.purchased.length;

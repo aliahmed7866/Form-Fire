@@ -1,0 +1,47 @@
+// Original programme presentation and strength templates; source-linked factual timings.
+// Keep versioned programmes stable so saved session snapshots remain interpretable.
+export const trainingSources={
+ nhsRun:{title:'NHS Couch to 5K schedule',url:'https://www.nhs.uk/better-health/get-active/get-running-with-couch-to-5k/couch-to-5k-running-plan/'},
+ acsm:{title:'ACSM 2026 resistance-training position stand',url:'https://pubmed.ncbi.nlm.nih.gov/41843416/'},
+ aceRow:{title:'ACE single-arm row technique reference',url:'https://www.acefitness.org/resources/everyone/exercise-library/126/single-arm-row/'},
+ aceSquat:{title:'ACE goblet squat technique reference',url:'https://www.acefitness.org/resources/everyone/exercise-library/362/goblet-squat/'},
+ nhsStrength:{title:'NHS home strength exercise guidance',url:'https://www.nhs.uk/live-well/exercise/strength-exercises/'},
+ cmo:{title:'UK Chief Medical Officers’ activity guidance',url:'https://www.gov.uk/government/publications/physical-activity-guidelines-uk-chief-medical-officers-report/uk-chief-medical-officers-physical-activity-guidelines'},
+ runStudy:{title:'2023 observational study of a modified Couch-to-5K programme',url:'https://pubmed.ncbi.nlm.nih.gov/37681822/'}
+};
+export const trainingSafety='General adult programmes, not rehabilitation or a personal medical assessment. If you have health concerns or a recent injury, seek advice before starting. Stop for pain, dizziness or feeling unwell. Chest pain, fainting or severe breathing difficulty need urgent medical help.';
+export const trainingExercises:any={
+ squat:{id:'starter-squat',name:'Chair squat',equipment:'Stable chair without wheels',cues:'Bring the chair close behind you. Keep your feet planted as you sit back with control, then stand. Use support or a shorter range if needed.',alternative:'Supported mini-squat',pattern:'Squat'},
+ push:{id:'starter-push',name:'Wall press-up',equipment:'Clear, stable wall',cues:'Place your hands at chest height. Bend your elbows as you approach the wall, then push away while keeping your body steady.',alternative:'Move your feet closer to the wall',pattern:'Push'},
+ row:{id:'starter-row',name:'Supported dumbbell row',equipment:'Dumbbell and secure support',cues:'Support one hand and keep your torso steady. Bring the weight towards your side, then lower without twisting. Repeat on each side.',alternative:'Securely anchored band row, checked with Alex',pattern:'Pull'},
+ bridge:{id:'starter-glute-bridge',name:'Glute bridge',equipment:'Mat',cues:'Lie with knees bent and feet planted. Raise your hips without forcing an arch in your back, then lower smoothly. Keep breathing.',alternative:'Smaller lift or standing hip extension with support',pattern:'Hips'},
+ calf:{id:'starter-calf-raise',name:'Supported calf raise',equipment:'Stable support',cues:'Hold support, rise onto the balls of your feet, then lower with control. Keep a comfortable range.',alternative:'Seated calf raise',pattern:'Calves'},
+ core:{id:'starter-dead-bug',name:'Dead bug',equipment:'Mat',cues:'Lie on your back and keep your trunk steady. Slowly move an opposite arm and leg away, return, then switch sides. Reduce the reach if your back arches.',alternative:'Move one limb at a time',pattern:'Trunk'},
+ goblet:{id:'starter-goblet-squat',name:'Goblet squat',equipment:'One dumbbell',cues:'Hold the weight close to your chest. Bend your hips and knees within a comfortable range, then stand. Keep your feet grounded.',alternative:'Chair squat',pattern:'Squat'},
+ hinge:{id:'starter-romanian-deadlift',name:'Dumbbell Romanian deadlift',equipment:'Two dumbbells',cues:'Soften your knees and move your hips back with weights close to your legs. Stop before your back rounds, then stand. Learn the hinge with Alex first.',alternative:'Unloaded hip hinge',pattern:'Hinge'},
+ press:{id:'starter-floor-press',name:'Dumbbell floor press',equipment:'Two dumbbells and mat',cues:'Lie on your back with knees bent. Lower weights with control until upper arms meet the floor gently, then press up. Agree the setup and load first.',alternative:'Wall or incline press-up',pattern:'Push'},
+ shoulder:{id:'starter-shoulder-press',name:'Dumbbell shoulder press',equipment:'Two dumbbells',cues:'Start near shoulder height and press through a comfortable range without leaning backwards. Lower steadily; use a manageable weight.',alternative:'Light seated press after checking comfort with Alex',pattern:'Shoulders'},
+ split:{id:'starter-split-squat',name:'Supported split squat',equipment:'Stable support; optional dumbbells',cues:'Use a split stance with support nearby. Bend both knees to a comfortable depth and stand again. Repeat each side without bouncing.',alternative:'Chair squat',pattern:'Squat'},
+ pulldown:{id:'starter-lat-pulldown',name:'Lat pulldown',equipment:'Lat pulldown machine',cues:'Secure the thigh pad and plant your feet. Draw the bar towards your upper chest without swinging, then return it slowly. Check setup with Alex.',alternative:'Supported dumbbell row',pattern:'Pull'},
+ bird:{id:'starter-bird-dog',name:'Bird dog',equipment:'Mat',cues:'From hands and knees, reach an opposite arm and leg without twisting. Return and change sides; keep the reach small enough to stay steady.',alternative:'Move one limb at a time',pattern:'Trunk'}
+};
+const exercise=(key:string,reps='8–12',rest=90)=>({...trainingExercises[key],key,sets:2,reps,rest_seconds:rest});
+const homeA=[exercise('squat'),exercise('push'),exercise('row','8–12 each side'),exercise('bridge'),exercise('calf','10–15'),exercise('core','5–8 each side')];
+const homeB=[exercise('squat'),exercise('row','8–12 each side'),exercise('push'),exercise('bridge'),exercise('calf','10–15'),exercise('bird','5–8 each side')];
+const gymA=[exercise('goblet','8–12',120),exercise('press','8–12',120),exercise('row','8–12 each side',120),exercise('hinge','8–12',120),exercise('shoulder'),exercise('core','5–8 each side')];
+const gymB=[exercise('split','8–12 each side',120),exercise('pulldown','8–12',120),exercise('press','8–12',120),exercise('bridge'),exercise('calf','10–15'),exercise('bird','5–8 each side')];
+const strengthProgression='First learn the movements with a light load; one set is enough to practise. Work towards the listed two sets when manageable. Finish with roughly 2–3 good repetitions still possible. When every set reaches the top of the range comfortably in two sessions, discuss a small load increase with Alex and return to the lower end. Repeat or reduce work when needed; the calendar does not increase your weights.';
+function strength(id:string,title:string,kit:string,a:any[],b:any[]){return {id,version:1,kind:'strength',title,weeks:6,sessions_per_week:2,equipment:kit,summary:'A repeatable full-body foundation with time to learn and recover.',evidence:'Original FORM & FIRE template informed by resistance-training evidence. This exact routine has not been tested in a clinical trial; Alex should review suitability and technique.',sources:['acsm','cmo','nhsStrength','aceRow','aceSquat'],progression:strengthProgression,recovery:'Leave at least one rest day between strength sessions. Start with 5–10 minutes of easy movement and lighter practice sets. Rest longer than listed if you need it.',sessions:Array.from({length:6},(_,w)=>[a,b].map((items,i)=>({id:`w${w+1}s${i+1}`,week:w+1,number:i+1,title:`Full body ${i===0?'A':'B'}`,exercises:items,intervals:[]}))).flat()};}
+const repeat=(count:number,...values:number[])=>Array.from({length:count},()=>values).flat();
+// Alternating run/walk seconds, beginning and ending with a run. Warm/cool walks added below.
+const runWeeks=[
+ [repeat(7,60,90).concat(60)], [repeat(5,90,120).concat(90)], [[90,90,180,180,90,90,180]],
+ [[180,90,300,150,180,90,300]], [[300,180,300,180,300],[480,300,480],[1200]],
+ [[300,180,480,180,300],[600,180,600],[1500]], [[1500]], [[1680]], [[1800]]
+];
+const runSessions=runWeeks.flatMap((runs,w)=>Array.from({length:3},(_,i)=>{const blocks=runs[i]||runs[0];const intervals=[{kind:'warmup',seconds:300},...blocks.map((seconds,n)=>({kind:n%2?'walk':'run',seconds})),{kind:'cooldown',seconds:300}];return {id:`w${w+1}s${i+1}`,week:w+1,number:i+1,title:`Week ${w+1} · run ${i+1}`,exercises:[],intervals,total_seconds:intervals.reduce((s,b)=>s+b.seconds,0),running_seconds:intervals.filter(b=>b.kind==='run').reduce((s,b)=>s+b.seconds,0)};}));
+export const trainingProgrammes:any[]=[
+ {id:'walk-run-9',version:1,kind:'running',title:'Couch to 5K · walk to 30 minutes',weeks:9,sessions_per_week:3,equipment:'Comfortable running shoes, a safe route and a timer',summary:'A time-based walk/run route, with space to repeat a session or week.',evidence:'Interval timings checked against the NHS schedule. Independent companion, not an NHS product or endorsement. A familiar public programme is not a guarantee of completion or freedom from injury.',sources:['nhsRun','runStudy'],progression:'Work towards 30 minutes of running; distance varies with pace. Repeat any session or week before moving on. There is no deadline.',recovery:'Keep a rest day between runs. Run at a comfortable pace, slowing down or walking when needed. Each session includes five-minute walks before and after.',sessions:runSessions},
+ strength('strength-home-6','Find your strength · home','Chair, mat, dumbbell or a suitable band setup',homeA,homeB),
+ strength('strength-gym-6','Build a foundation · gym','Dumbbells, mat and lat pulldown machine',gymA,gymB)
+];

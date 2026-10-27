@@ -35,11 +35,11 @@ test('Five labelled client destinations simplify the workspace without exposing 
  h.c.route=()=>'/admin/requests';const admin=runInContext('workspaceTabs(true)',h.c);assert.ok(admin.includes('href="#/admin/requests" class="active" aria-current="page"'));assert.ok(admin.includes('#/admin/plans'));assert.ok(!admin.includes('#/portal'));
  assert.ok(!admin.includes('client-primary-links'));
 });
-test('Expandable client shortcuts preserve every existing destination, and admin groups remain unchanged',()=>{
+test('Expandable client shortcuts preserve every existing destination, and admin programme review is reachable',()=>{
  const h=harness();
  for(const [admin,expected] of [
-  [false,['','today','movement','progress','nutrition','recipes','planner','rhythm','learn','shopping','feel-good','requests','plans','checkins','money','contact','profile']],
-  [true,['','requests','clients','plans','nutrition','rhythm','checkins','progress','fitness','services','money','audit','contact','setup']]
+  [false,['','today','movement','programmes','progress','nutrition','recipes','planner','rhythm','learn','shopping','feel-good','requests','plans','checkins','money','contact','profile']],
+  [true,['','requests','clients','training','plans','nutrition','rhythm','checkins','progress','fitness','services','money','audit','contact','setup']]
  ] as const){
   const html=runInContext(`workspaceTabs(${admin})`,h.c),base=admin?'/admin':'/portal';
   const paths=[...html.matchAll(/href="#([^"]+)"/g)].map(m=>m[1]);
